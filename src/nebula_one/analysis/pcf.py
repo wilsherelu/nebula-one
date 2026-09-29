@@ -265,11 +265,13 @@ def build_product_pcf(
         else "foreground_only"
     )
     validation_rules = manifest.get("validation_rules")
-    limitations = (
-        validation_rules.get("limitations")
-        if isinstance(validation_rules, dict)
-        else None
-    )
+    limitations = validation_rules.get("limitations") if isinstance(validation_rules, dict) else None
+    if isinstance(validation_rules, dict) and "limitations_by_coverage" in validation_rules:
+        by_coverage = validation_rules["limitations_by_coverage"]
+        if not isinstance(by_coverage, dict) or coverage not in by_coverage:
+            raise DomainError(code="PCF_METHOD_PACKAGE_INVALID",
+                              message="PCF method package lacks limitations for this coverage", status_code=422)
+        limitations = [*limitations, *by_coverage[coverage]] if isinstance(limitations, list) and isinstance(by_coverage[coverage], list) else None
     if not isinstance(limitations, list) or any(
         not isinstance(item, str) or not item.strip() for item in limitations
     ):

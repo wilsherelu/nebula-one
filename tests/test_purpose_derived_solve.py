@@ -690,7 +690,7 @@ def test_ef_default_uses_the_effective_cbam_source_after_reviewed_unlink(steel_p
     assert frozen.status_code == 201, frozen.text
     snapshot = frozen.json()
     run = steel_project.run(snapshot["provider_receipt"]["analysis_run_id"])
-    assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.1"
+    assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.2"
     assert run.parameters["lcia_methods"] == ["EF v3.1"]
     assert run.parameters["calculation_basis"]["effective_mapped_background_process_pins"] == []
     assert "mapped_background_process_pins" not in steel_project.solve_requests()[0]

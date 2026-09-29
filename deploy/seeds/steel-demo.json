@@ -11,18 +11,18 @@
     },
     {
       "kind": "register_method_package",
-      "path": "src/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.1.json",
+      "path": "src/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.2.json",
       "package_id": "pcf.product.ef31.foreground",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "package_kind": "product_carbon_footprint",
-      "content_sha256": "312ba6f7629cc619175646956e4392e822370081bb1a2a0cb5f262004488654f"
+      "content_sha256": "516a07750f744d25e20c36850c356e9cce95fc037c4f88f819754ad6741bf13c"
     },
     {
       "kind": "ensure_application",
       "key": "iron-steel-bf-bof-crude-steel-1.1.0",
       "name": "钢铁高炉—转炉示例（标准种子 1.1.0）",
       "application_type": "cbam",
-      "method_package_refs": ["pcf.product.ef31.foreground@1.0.1", "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1"]
+      "method_package_refs": ["pcf.product.ef31.foreground@1.0.2", "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1"]
     },
     {
       "kind": "ensure_period",

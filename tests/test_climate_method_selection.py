@@ -22,7 +22,7 @@ def test_new_nonsteel_climate_solve_pins_the_registered_ef_method(client):
     with client.app.state.container.database.session() as db:
         run = db.get(AnalysisRun, snapshot["provider_receipt"]["analysis_run_id"])
         assert run.parameters["calculation_method"]["lcia_method"] == "EF v3.1"
-        assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.1"
+        assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.2"
         assert len(run.parameters["calculation_method"]["content_sha256"]) == 64
         assert run.parameters["lcia_methods"] == ["EF v3.1"]
     resolved = client.get(
@@ -50,7 +50,7 @@ def test_climate_default_does_not_reuse_the_same_revisions_inventory_snapshot(cl
     assert climate.json()["solve_hash"] != inventory.json()["solve_hash"]
     basis = climate.json()["provider_receipt"]["calculation_basis"]
     assert basis["lcia_methods"] == ["EF v3.1"]
-    assert basis["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.1"
+    assert basis["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.2"
     assert len(basis["calculation_method"]["content_sha256"]) == 64
 
     replay = client.post(url, json=climate_request)
@@ -81,7 +81,7 @@ def test_frozen_ef_answer_resolves_registered_method_without_project_name(client
         "/api/v1/solved-system-snapshots/frozen-ef-default/product-carbon-footprint/default-method"
     )
     assert response.status_code == 200, response.text
-    assert response.json()["reference"] == "pcf.product.ef31.foreground@1.0.1"
+    assert response.json()["reference"] == "pcf.product.ef31.foreground@1.0.2"
     assert response.json()["method"]["lcia_method"] == "EF v3.1"
     assert response.json()["method"]["result_unit"] == "kg CO2-Eq"
     assert len(response.json()["content_sha256"]) == 64

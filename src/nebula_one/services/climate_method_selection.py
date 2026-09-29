@@ -14,7 +14,7 @@ from ..runtime_models import MethodPackage, SolvedSystemSnapshot
 from ..runtime_schemas import MethodPackageCreate
 
 _OFFICIAL_FILES = (
-    "pcf-ef31-foreground-1.0.1.json",
+    "pcf-ef31-foreground-1.0.2.json",
     "pcf-ef31-native-model-boundary-1.0.0.json",
 )
 _NATIVE_RESPONSE = "provider.native-background-climate-total.response.v1"
