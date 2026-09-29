@@ -458,7 +458,7 @@ export interface OrganizationLifecycleResult {
   solved_snapshot_id: string;
   content_sha256: string;
   result: {
-    reporting_period: { name: string };
+    reporting_period: { name: string; start_date?: string; end_date?: string };
     facility: string;
     activity_basis: { mode: string; baseline_output: number; period_output: number; unit: string; scale_factor: number };
     method_package: { reference: string; content_sha256: string };

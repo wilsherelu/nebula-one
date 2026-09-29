@@ -41,7 +41,7 @@ def test_display_refuses_method_hash_drift():
 def test_english_report_uses_pinned_category_labels_without_changing_result():
     display = organization_lifecycle_display(_method(), "en")
     record = {"content_sha256": "a" * 64, "result": {
-        "facility": "Steel", "reporting_period": {"name": "2026"},
+        "facility": "Steel", "reporting_period": {"name": "2026", "start_date": "2026-01-01", "end_date": "2026-12-31"},
         "method_package": {"reference": "nebula.organization-lifecycle-carbon.steel-model@1.0.5",
                            "content_sha256": display["method_package"]["content_sha256"]},
         "source_snapshot": {"id": "snapshot", "content_sha256": "b" * 64},
@@ -59,5 +59,6 @@ def test_english_report_uses_pinned_category_labels_without_changing_result():
     assert "Upstream purchased iron ore" in html
     assert "Scope 1: on site direct emissions" in html
     assert "Some required data is missing" in html
+    assert "2026-01-01—2026-12-31" in html
     assert "采购铁矿石上游" not in html
     assert "not a complete lifecycle inventory" in html

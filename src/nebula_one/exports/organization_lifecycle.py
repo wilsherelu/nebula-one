@@ -80,12 +80,15 @@ def _render_english(record: dict, labels: dict) -> str:
                 if item.get("boundary_status") == "not_in_boundary"]
     basis = result["activity_basis"]
     total = amount(result["combined_total"], "No total: the selected boundary has missing activities or example proxy factors")
+    period = result["reporting_period"]
+    period_name = (f"{period['start_date']}—{period['end_date']}"
+                   if period.get("start_date") and period.get("end_date") else period["name"])
     return ("<!doctype html><html lang='en'><meta charset='utf-8'><title>Organizational lifecycle carbon accounting</title>"
             "<style>body{font:16px/1.7 sans-serif;max-width:850px;margin:40px auto;color:#182b3a}"
             "table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd6df;padding:10px;text-align:left}"
             "small{overflow-wrap:anywhere}</style>"
             f"<h1>Organizational lifecycle carbon accounting</h1><p>{escape(result['facility'])} · "
-            f"{escape(result['reporting_period']['name'])}</p>"
+            f"{escape(period_name)}</p>"
             f"<p>Input basis: {escape(labels['input_basis'][basis['mode']])}; model output "
             f"{basis['baseline_output']:.9g} kg; period output {basis['period_output']:.9g} kg; "
             f"scale factor {basis['scale_factor']:.9g}.</p>"

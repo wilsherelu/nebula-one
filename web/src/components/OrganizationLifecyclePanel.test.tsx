@@ -37,7 +37,7 @@ it('uses the versioned English projection for organization categories and exchan
   vi.spyOn(api, 'workspace').mockResolvedValue({ process_graph: { nodes: [{ id: 'steel' }] } } as never);
   vi.spyOn(api, 'organizationLifecycleInventories').mockResolvedValue([{
     id: 'record', solved_snapshot_id: 'snapshot', content_sha256: 'c'.repeat(64),
-    result: { method_package: { reference: 'org.steel@1.0.5' }, reporting_period: { name: '2026' }, facility: 'Steel',
+    result: { method_package: { reference: 'org.steel@1.0.5' }, reporting_period: { name: '2026', start_date: '2026-01-01', end_date: '2026-12-31' }, facility: 'Steel',
       activity_basis: { mode: 'per_unit_product', period_output: 1000, scale_factor: 1 },
       groups: { on_site_direct: { value: 10, unit: 'kg CO2-Eq', label: '范围 1：厂内直接排放', status: 'calculated_from_controlled_foreground' },
         purchased_energy_lifecycle: { value: 2, unit: 'kg CO2-Eq', label: 'LC-Scope 2：外购二次能源生命周期排放', status: 'calculated_from_exclusive_energy_background_paths' },
@@ -68,6 +68,7 @@ it('uses the versioned English projection for organization categories and exchan
   expect(screen.getByText('Iron ore purchased for sintering')).toBeInTheDocument();
   expect(screen.getByText('Scope 1: on site direct emissions')).toBeInTheDocument();
   expect(screen.getByText('Some required data is missing')).toBeInTheDocument();
+  expect(screen.getByText('2026-01-01—2026-12-31 · Steel')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Open HTML report' })).toHaveAttribute('href', expect.stringContaining('report.html?lang=en'));
   expect(screen.queryByText('采购铁矿石上游')).not.toBeInTheDocument();
   expect(screen.queryByText('范围 1：厂内直接排放')).not.toBeInTheDocument();

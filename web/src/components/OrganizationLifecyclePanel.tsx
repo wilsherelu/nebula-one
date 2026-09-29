@@ -30,6 +30,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const categoryName = (key: string) => lang === 'en' ? display.data?.labels.categories[key] ?? key : rules[key]?.name ?? key;
   const exchangeName = (key: string, rule: CategoryRule) => lang === 'en' ? display.data?.labels.exchanges[key] ?? key : rule.exchange_labels?.[key] ?? key;
   const groupStatus = (key: string) => lang === 'en' ? display.data?.labels.group_status[key] ?? key : labels.group_status?.[key] ?? key;
+  const periodName = (period: { name: string; start_date?: string; end_date?: string }) =>
+    lang === 'en' && period.start_date && period.end_date ? `${period.start_date}—${period.end_date}` : period.name;
   const basis = (snapshot.provider_receipt.calculation_basis ?? {}) as Record<string, unknown>;
   const demand = Array.isArray(basis.demand) ? basis.demand[0] as { amount?: number; unit?: string } | undefined : undefined;
   const baseline = Number(demand?.amount);
@@ -95,7 +97,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
     <div className="project-period-form">
-      <label>{t('org.period')}<Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${item.name} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></label>
+      <label>{t('org.period')}<Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${periodName(item)} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></label>
       <label>{t('org.facility')}<input aria-label={t('org.facilityAria')} value={facility} onChange={event => setFacility(event.target.value)} /></label>
       <label>{t('org.basis')}<Select aria-label={t('org.basis')} value={basisMode} onChange={value => setBasisMode(value as typeof basisMode)} options={[{ label: lang === 'zh' ? labels.input_basis?.per_unit_product ?? t('org.perProduct') : t('org.perProduct'), value: 'per_unit_product' }, { label: lang === 'zh' ? labels.input_basis?.annual_total ?? t('org.annual') : t('org.annual'), value: 'annual_total' }]} /></label>
       <label>{t('org.output', { unit: demand?.unit ?? 'kg' })}<input aria-label={t('org.outputAria')} type="number" min="0" step="any" value={output} onChange={event => setOutput(event.target.value)} /></label>
@@ -146,7 +148,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     {create.isError ? <ErrorState error={create.error} /> : null}
     <h4>{t('org.savedResults')}</h4>
     {matching.length ? matching.map(record => <section className="section-panel" key={record.id}>
-      <strong>{record.result.reporting_period.name} · {record.result.facility}</strong>
+      <strong>{periodName(record.result.reporting_period)} · {record.result.facility}</strong>
       <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></p>
       <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
       <Table rowKey="key" pagination={false} data={[
