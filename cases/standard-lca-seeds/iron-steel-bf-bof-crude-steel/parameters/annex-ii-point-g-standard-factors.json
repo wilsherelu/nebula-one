@@ -1,0 +1,115 @@
+{
+  "schema_version": "nebula.standard-seed.parameter-record.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "parameter_id": "crude-steel.annex-ii-point-g-standard-factor-rows",
+  "clause_refs": ["ST-08", "ST-11", "ST-12", "ST-18", "ST-19"],
+  "claim_level": "demonstration",
+  "measured": false,
+  "purpose": "the numeric standard-factor rows of Annex II point G that a BF-BOF crude steel boundary can cite, recorded as versioned references. The seed quotes the row and its offset; it never copies a bare number into code, a boundary file or an operator.",
+  "source": {
+    "instrument": "Commission Implementing Regulation (EU) 2025/2547 of 10 December 2025 laying down rules for the application of Regulation (EU) 2023/956 as regards the methods for the calculation of emissions embedded in goods, OJ L 2025/2547, 22.12.2025",
+    "celex": "32025R2547",
+    "section": "Annex II, point G 'STANDARD FACTORS USED IN THE MONITORING OF DIRECT EMISSIONS AT INSTALLATION LEVEL' @183800",
+    "source_namespace": "eur-lex.europa.eu",
+    "source_record_id": "eu-2025-2547",
+    "source_version": "2025-12-22",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32025R2547",
+    "license": "EUR-Lex legal-document reuse under Commission Decision 2011/833/EU",
+    "license_url": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html?locale=en",
+    "source_hash_method": "canonical_text_sha256",
+    "source_content_sha256": "7e614b4d284afdde6d4e61b2bcad8fc1ffd1d8318e1c11c6b839cf7f31002680",
+    "hash_length": 238312,
+    "retrieved_at": "2026-09-19",
+    "canonicalization": "drop <script> and <style> blocks, replace tags and character entities with a space, collapse whitespace, trim; SHA-256 over the UTF-8 bytes of the result",
+    "re_verification": "a same-session re-fetch on 2026-09-21 and again on 2026-09-22 returned HTTP 202 with an empty body (AWS WAF challenge), so the hash above is the authoring-time value carried forward, not a second reading. Gap GS-02 keeps that fact attached to this record."
+  },
+  "rows": [
+    {
+      "table": "Table 1 Fuel emission factors related to NCV and net calorific values per mass of fuel",
+      "table_offset": 183954,
+      "row_label": "Blast furnace gas",
+      "as_published": {"ncv": "260", "factor": "2,47", "source_column": "IPCC 2006 GL"},
+      "quote_verbatim": "Blast furnace gas 260 2,47 IPCC 2006 GL",
+      "canonical_offset": 185333,
+      "columns": ["Fuel", "Emission factor (t CO2/TJ)", "Net calorific value (TJ/Gg)", "Source"],
+      "used_by_this_seed": false,
+      "why_not": "the seed derives its furnace carbon dioxide by the mass balance method of ST-08 rather than from a fuel duty, and blast furnace gas is a secondary gas this model does not sell or burn at a authored port (MG-S11). The row is recorded so that a later version that models gas export can cite it instead of inventing a factor."
+    },
+    {
+      "table": "Table 3 Stoichiometric emission factor for process emissions from carbonate decomposition (Method A)",
+      "table_offset": 186576,
+      "row_label": "CaCO3 / MgCO3",
+      "as_published": {"caco3": "0,440", "mgco3": "0,522"},
+      "quote_verbatim": "CaCO 3 0,440 MgCO 3 0,522",
+      "canonical_offset": 186725,
+      "used_by_this_seed": true,
+      "where": "the two carbonate exchanges ore-sintering::co2-sinter-carbonate-out and basic-oxygen-converter::co2-converter-flux-out, through parameters/carbon-content.json#published_constants/stoichiometric_CaCO3",
+      "decimal_comma_note": "0,440 is stored as the string above and normalised to 0.440 in the carbon book, never by dropping the comma silently"
+    },
+    {
+      "table": "Table 3 Stoichiometric emission factor for process emissions from carbonate decomposition (Method A)",
+      "table_offset": 186576,
+      "row_label": "FeCO3",
+      "as_published": {"value": "0,380"},
+      "quote_verbatim": "FeCO 3 0,380",
+      "canonical_offset": 186838,
+      "used_by_this_seed": false,
+      "why_not": "no iron carbonate is authored in the burden of this model; the row matters for a siderylite or sinter-with-siderite activity, which is a different installation"
+    },
+    {
+      "table": "Table 5 Emission factors for process emissions from other process materials (production of iron or steel, and processing of ferrous metals)",
+      "table_offset": 187689,
+      "row_label": "Steel / steel scrap",
+      "as_published": {"values": ["0,0109", "0,04"]},
+      "quote_verbatim": "Steel / steel scrap 0,0109 0,04",
+      "canonical_offset": 188167,
+      "used_by_this_seed": false,
+      "why_not": "this is the activity-data side row for scrap as a process material. In this model scrap enters the carbon book through its declared carbon fraction and the ST-08 mass balance, so applying the Table 5 row on top of the mass balance would count the same carbon twice. ST-19 records the second half of the reading: the same table also carries the pig iron row, which is why these rows are factor rows for a monitoring method and not embedded emissions of the good."
+    },
+    {
+      "table": "Table 5 Emission factors for process emissions from other process materials (production of iron or steel, and processing of ferrous metals)",
+      "table_offset": 187689,
+      "row_label": "Pig iron",
+      "as_published": {"values": ["0,0409", "0,15"]},
+      "quote_verbatim": "Pig iron 0,0409 0,15",
+      "canonical_offset": 188116,
+      "adjacent_quote": {"text": "Iron / iron scrap 0,0409 0,15 Steel / steel scrap 0,0109 0,04", "offset": 188137},
+      "used_by_this_seed": false,
+      "why_not": "the hot metal of this model never leaves the installation and is not an input obtained from another process boundary, so no factor is applied to it (ST-15 first branch)"
+    },
+    {
+      "table": "Table 6 Global warming potentials",
+      "table_offset": 188255,
+      "row_label": "N2O",
+      "as_published": {"gwp": "265"},
+      "used_by_this_seed": false,
+      "why_not": "ST-02 gives the crude steel segment of the Annex I table the greenhouse gas column 'Carbon dioxide' only, so there is no non-CO2 gas to characterise in this boundary. The row is recorded because a seed for a different iron and steel good may need it, and because 'the table exists' is a fact the seed should not have to re-derive."
+    }
+  ],
+  "default_values_not_available": {
+    "state": "not_retrieved",
+    "gap_ref": "GS-01",
+    "what_was_sought": "the numeric default values an operator uses when actual data is incomplete, which both cached texts point at without printing",
+    "quotes": [
+      {"source": "32025R2547", "text": "the applicable default values made available in accordance with Annex IV of Regulation (EU) 2023/956 shall be used.", "offset": 182472},
+      {"source": "32025R2547", "text": "ANNEX V Region-specific adaptations of default values", "offset": 236165},
+      {"source": "32023R0956", "text": "calculated in accordance with the methods set out in Annex IV and further specified in the implementing acts adopted pursuant to Article 7(7)", "offset": "@s1:62837"}
+    ],
+    "measurement": "a decimal-times-tonne-CO2 pattern search over the cached S1 canonical text returns zero hits; the 28 decimal strings that do occur are all Official Journal citations in the closing notices, the first being 'OJ C 152, 6.4.2022, p. 181' at @s1:136534",
+    "blocking_fetch": "the implementing act that carries the numeric table was not retrieved: EUR-Lex returned HTTP 202 with an empty body on 2026-09-21 and 2026-09-22 and publications.europa.eu timed out from this machine. Which instrument it is has not been verified either, so this record does not name one.",
+    "consequence": "every candidate item that would be reported through embedded default values stays pending (MG-S05) and is never written as zero. The boundary, precursor and mass-balance criteria of this seed are unaffected, because all of them sit in the cached and hashed text.",
+    "forbidden": "inventing a default number to make a candidate item computable"
+  },
+  "basis": {
+    "material_condition": "as_published_row",
+    "energy_convention": "net_calorific_value_lower_heating_value",
+    "reference_temperature_k": null,
+    "reference_pressure_pa": null
+  },
+  "usage_gate": "research",
+  "runtime_consumption": {
+    "status": "not_consumed_by_any_code_path",
+    "note": "the only row this seed derives numbers from is the Table 3 carbonate row, and it does so at authoring time through parameters/carbon-content.json. No runtime path reads this file."
+  }
+}

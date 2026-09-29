@@ -1,0 +1,22 @@
+{
+  "schema_version": "nebula_one.native-background-climate-contract.v1",
+  "source_contract": {
+    "repository": "nebula-lca",
+    "commit": "55a4aa02e7ddad995145f3ba2161213d2d321538",
+    "document": "docs/PROVIDER_NATIVE_CLIMATE_TOTAL_V1.md",
+    "document_sha256": "90cc0d3308d22d4188c9761e6a2efb263794b15478b3a0d07712c3cc78cc4d33"
+  },
+  "solve_request_pin": {
+    "schema_version": "provider.native-background-climate-total.request.v1",
+    "database_release": "ecoinvent_3.11",
+    "method_package_id": "ecoinvent-ef31-climate-total-3.11",
+    "method_package_version": "1.0.0",
+    "method_package_sha256": "b3cb07ccb69f9e6efa6669c6dcc68912de82ae54ea6f1fa5974dbce1d1797633",
+    "runtime_manifest_sha256": "1400827ead4757d1cab956da503eb86848a1cc9823da3408dd6107f9a33c5e9e",
+    "flow_snapshot_hash": "70dda0cf2d79108ca4ff96a203cb61eb76a9e550288e05be133e684b4747b1dd",
+    "reference_dependency_snapshot_hash": "92016cdbbd2abd4b1a619d0048432313f9e0cf5327cf1c98a049b5a5c1155f29"
+  },
+  "provider_solve_request": {
+    "lcia_methods": ["EF v3.1"]
+  }
+}

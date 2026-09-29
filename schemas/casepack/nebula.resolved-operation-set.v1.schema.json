@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "ResolvedModelOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "operation_type": {
+          "enum": [
+            "flow.update_port",
+            "system.scale_flows"
+          ],
+          "title": "Operation Type",
+          "type": "string"
+        },
+        "parameter_key": {
+          "title": "Parameter Key",
+          "type": "string"
+        },
+        "payload": {
+          "title": "Payload",
+          "type": "object"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "target_id": {
+          "title": "Target Id",
+          "type": "string"
+        },
+        "target_kind": {
+          "enum": [
+            "flow",
+            "system"
+          ],
+          "title": "Target Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "binding_id",
+        "parameter_key",
+        "operation_type",
+        "target_kind",
+        "target_id",
+        "payload"
+      ],
+      "title": "ResolvedModelOperation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "binding_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Binding Content Sha256",
+      "type": "string"
+    },
+    "binding_id": {
+      "title": "Binding Id",
+      "type": "string"
+    },
+    "binding_version": {
+      "title": "Binding Version",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "operation_set_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Operation Set Sha256",
+      "type": "string"
+    },
+    "operations": {
+      "items": {
+        "$ref": "nebula.resolved-operation-set.v1.schema.json#/$defs/ResolvedModelOperation"
+      },
+      "minItems": 1,
+      "title": "Operations",
+      "type": "array"
+    },
+    "parameter_set_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Parameter Set Content Sha256",
+      "type": "string"
+    },
+    "parameter_set_id": {
+      "title": "Parameter Set Id",
+      "type": "string"
+    },
+    "parent_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Parent Content Sha256",
+      "type": "string"
+    },
+    "parent_revision_id": {
+      "title": "Parent Revision Id",
+      "type": "string"
+    },
+    "rule_version": {
+      "const": "model-operation.v1",
+      "enum": [
+        "model-operation.v1"
+      ],
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula.resolved-operation-set.v1",
+      "enum": [
+        "nebula.resolved-operation-set.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "binding_id",
+    "binding_version",
+    "rule_version",
+    "binding_content_sha256",
+    "parameter_set_id",
+    "parameter_set_content_sha256",
+    "parent_revision_id",
+    "parent_content_sha256",
+    "operations",
+    "operation_set_sha256",
+    "idempotency_key"
+  ],
+  "title": "ResolvedOperationSet",
+  "type": "object"
+}

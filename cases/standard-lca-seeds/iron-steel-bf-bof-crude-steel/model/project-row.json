@@ -1,0 +1,19 @@
+{
+  "schema_version": "nebula.standard-seed.project-row.v1",
+  "note": "This is the engine Model row (project.json inside the native bundle). created_at and updated_at are frozen literals so that the bundle bytes, and therefore the install idempotency key, are reproducible. The builder copies the payload block verbatim.",
+  "payload": {
+    "id": "852aa1f8-ca2a-5ecd-86d1-ace69b5f6170",
+    "name": "Nebula standard LCA seed - crude steel by blast furnace and basic oxygen converter 1.1.0",
+    "functional_unit": "1 kg crude steel",
+    "reference_product": "Crude steel (continuously cast slab)",
+    "system_boundary": "BF-BOF crude steel: iron ore sintering, blast furnace, basic oxygen converter, secondary metallurgy and vacuum degassing, continuous casting, monitored as one production process boundary",
+    "time_representativeness": "demonstration steady state",
+    "geography": "CN demonstration site label",
+    "description": "Standardised structure, identity and parameter provenance for crude steel on the blast furnace route. Coefficients derive from the authored carbon book and the standard factor rows of Regulation (EU) 2025/2547 Annex II point G, or are labelled demonstration activity slots. This is software verification material, not a certified installation inventory.",
+    "source_policy": "open_mixed",
+    "allowed_lcia_scope": "ef31_only",
+    "status": "active",
+    "created_at": "2026-09-21T00:00:00",
+    "updated_at": "2026-09-21T00:00:00"
+  }
+}

@@ -1,0 +1,422 @@
+{
+  "schema_version": "nebula.standard-seed.boundary.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "application": "mfa",
+  "clause_refs": [
+    "ST-03",
+    "ST-04",
+    "ST-08",
+    "ST-10",
+    "ST-16",
+    "ST-18"
+  ],
+  "result_contract": {
+    "headline": "kg material in and kg material out per 1000 kg of continuously cast slab, with the unclosed residual reported as a number and explained term by term",
+    "unit": "kg",
+    "functional_unit": "1 kg crude steel",
+    "balance_rule": "sum(mass inputs) versus sum(mass outputs); an MJ amount is never added to a kg sum, and a transfer between two processes of this boundary appears on neither side",
+    "activity_level_clause": "ST-16"
+  },
+  "segments": {
+    "mass_inputs": {
+      "conclusion": "included",
+      "clause": "ST-10",
+      "in_mass_sum": "in",
+      "entries": [
+        {
+          "exchange_id": "ore-sintering::iron-ore-in",
+          "process": "ore-sintering",
+          "amount": "1490.0",
+          "unit": "kg",
+          "purpose": "unagglomerated iron ore concentrate, crossing the boundary"
+        },
+        {
+          "exchange_id": "ore-sintering::limestone-in",
+          "process": "ore-sintering",
+          "amount": "180.0",
+          "unit": "kg",
+          "purpose": "carbonate flux, crossing the boundary"
+        },
+        {
+          "exchange_id": "ore-sintering::coke-breeze-in",
+          "process": "ore-sintering",
+          "amount": "60.0",
+          "unit": "kg",
+          "purpose": "solid fuel for the sinter strand, crossing the boundary"
+        },
+        {
+          "exchange_id": "blast-furnace::coke-in",
+          "process": "blast-furnace",
+          "amount": "400.0",
+          "unit": "kg",
+          "purpose": "metallurgical coke, crossing the boundary"
+        },
+        {
+          "exchange_id": "blast-furnace::pci-coal-in",
+          "process": "blast-furnace",
+          "amount": "130.0",
+          "unit": "kg",
+          "purpose": "pulverised coal injection, crossing the boundary"
+        },
+        {
+          "exchange_id": "blast-furnace::natural-gas-in",
+          "process": "blast-furnace",
+          "amount": "8.0",
+          "unit": "kg",
+          "purpose": "injected gas for ignition and enrichment, crossing the boundary"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::scrap-in",
+          "process": "basic-oxygen-converter",
+          "amount": "150.0",
+          "unit": "kg",
+          "purpose": "steel scrap, crossing the boundary"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::limestone-in",
+          "process": "basic-oxygen-converter",
+          "amount": "45.0",
+          "unit": "kg",
+          "purpose": "converter flux, crossing the boundary"
+        }
+      ],
+      "total": "2463.0"
+    },
+    "mass_outputs": {
+      "conclusion": "included",
+      "clause": "ST-08",
+      "in_mass_sum": "out",
+      "entries": [
+        {
+          "exchange_id": "continuous-casting::crude-steel-slab-out",
+          "process": "continuous-casting",
+          "amount": "1000.0",
+          "unit": "kg",
+          "purpose": "declared good, the denominator of the CBAM result"
+        },
+        {
+          "exchange_id": "continuous-casting::casting-crop-out",
+          "process": "continuous-casting",
+          "amount": "20.0",
+          "unit": "kg",
+          "purpose": "cutting loss, an output of mass with zero embedded emissions"
+        },
+        {
+          "exchange_id": "blast-furnace::bf-slag-out",
+          "process": "blast-furnace",
+          "amount": "424.122369",
+          "unit": "kg",
+          "purpose": "furnace slag, leaves the boundary as a product of the slag reaction"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::converter-slag-out",
+          "process": "basic-oxygen-converter",
+          "amount": "41.396796",
+          "unit": "kg",
+          "purpose": "converter slag, leaves the boundary"
+        },
+        {
+          "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+          "process": "ore-sintering",
+          "amount": "193.4592",
+          "unit": "kg",
+          "purpose": "fossil CO2 of the sinter solid fuel"
+        },
+        {
+          "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+          "process": "ore-sintering",
+          "amount": "74.448",
+          "unit": "kg",
+          "purpose": "carbonate CO2 of the sinter flux"
+        },
+        {
+          "exchange_id": "blast-furnace::co2-bf-reduction-out",
+          "process": "blast-furnace",
+          "amount": "524.748873",
+          "unit": "kg",
+          "purpose": "process CO2 of the burden reduction"
+        },
+        {
+          "exchange_id": "blast-furnace::co2-bf-raceway-out",
+          "process": "blast-furnace",
+          "amount": "976.902701",
+          "unit": "kg",
+          "purpose": "combustion CO2 of the raceway carbon"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+          "process": "basic-oxygen-converter",
+          "amount": "152.56896",
+          "unit": "kg",
+          "purpose": "mass-balance CO2 of the hot metal carbon"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+          "process": "basic-oxygen-converter",
+          "amount": "18.612",
+          "unit": "kg",
+          "purpose": "carbonate CO2 of the converter flux"
+        }
+      ],
+      "total": "3426.258899"
+    },
+    "internal_transfers": {
+      "conclusion": "reported_separately_not_mass",
+      "in_mass_sum": "none",
+      "clause": "ST-04",
+      "rule": "sintered ore, hot metal, liquid steel and secondary-metallurgy steel move between five processes that this seed monitors as one production process boundary, so each pair cancels; charging a transfer to a total would count the same iron twice",
+      "entries": [
+        {
+          "exchange_id": "basic-oxygen-converter::hot-metal-in",
+          "process": "basic-oxygen-converter",
+          "amount": "923.297",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::liquid-steel-out",
+          "process": "basic-oxygen-converter",
+          "amount": "1020.0",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "blast-furnace::hot-metal-out",
+          "process": "blast-furnace",
+          "amount": "923.297",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "blast-furnace::sinter-in",
+          "process": "blast-furnace",
+          "amount": "1602.800755",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "continuous-casting::treated-steel-in",
+          "process": "continuous-casting",
+          "amount": "1020.0",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "ore-sintering::sinter-out",
+          "process": "ore-sintering",
+          "amount": "1602.800755",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "secondary-metallurgy-and-degassing::liquid-steel-in",
+          "process": "secondary-metallurgy-and-degassing",
+          "amount": "1020.0",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        },
+        {
+          "exchange_id": "secondary-metallurgy-and-degassing::treated-steel-out",
+          "process": "secondary-metallurgy-and-degassing",
+          "amount": "1020.0",
+          "unit": "kg",
+          "purpose": "transfer between two processes of one boundary, cancels against its counterpart"
+        }
+      ]
+    },
+    "energy_carriers": {
+      "conclusion": "reported_separately_not_mass",
+      "in_mass_sum": "none",
+      "clause": "ST-12",
+      "rule": "grid electricity is an activity in this model, not a mass. Its embodied emissions are excluded from the CBAM numerator for crude steel by the Annex II direct-only rule, and they are an open item for the PCF reading in boundaries/pcf.json",
+      "entries": [
+        {
+          "exchange_id": "continuous-casting::grid-electricity-in",
+          "process": "continuous-casting",
+          "amount": "25.0",
+          "unit": "MJ",
+          "purpose": "purchased electricity"
+        },
+        {
+          "exchange_id": "ore-sintering::grid-electricity-in",
+          "process": "ore-sintering",
+          "amount": "600.0",
+          "unit": "MJ",
+          "purpose": "purchased electricity"
+        }
+      ]
+    },
+    "air_and_flue_terms": {
+      "conclusion": "coverage_limit",
+      "gap_ref": "MG-S09",
+      "clause": "ST-10",
+      "reason": "hot blast air, lance oxygen and the water vapour that leaves with the flue gas are not authored as exchanges, and the furnace gas that would carry carbon out of the boundary is not authored either. The consequence is a material account that is open on three of five nodes, reported with the residual terms below rather than closed by an invented coefficient."
+    }
+  },
+  "balance_expectation": {
+    "authored_residual_out_minus_in": "963.258899",
+    "sign": "positive, i.e. the model appears to output more mass than it takes in",
+    "explained_by": [
+      {
+        "term": "unported blast oxygen for the sintering breeze carbon",
+        "value": "140.6592",
+        "derivation": "(f - 1) x carbon of the coke breeze, with the published f = 3,664 t CO2/t C of ST-08; the oxygen comes from blast air that this model does not author"
+      },
+      {
+        "term": "published carbonate factor versus the atomic residue in the sinter",
+        "value": "0.048755",
+        "derivation": "CaCO3 mass x (0,440 published minus the atomic residue 0.4397118478108826409288012), modeling gap MG-S07"
+      },
+      {
+        "term": "unported blast oxygen for the furnace raceway carbon",
+        "value": "710.280785",
+        "derivation": "(f - 1) x raceway carbon of coke, PCI coal and injected gas"
+      },
+      {
+        "term": "unported blast oxygen for the methane hydrogen",
+        "value": "15.956118",
+        "derivation": "oxygen that ends up bound in the CO2 made from methane hydrogen, 2 x 15.999 / 16.043 x 8 kg of natural gas"
+      },
+      {
+        "term": "unauthored flue water of the injected natural gas",
+        "value": "-17.966714",
+        "derivation": "combustion water of the methane hydrogen, negative because the model neither authors it as an output nor takes it in"
+      },
+      {
+        "term": "unported lance oxygen for the converter carbon",
+        "value": "110.92896",
+        "derivation": "(f - 1) x carbon burnt in the converter, i.e. hot metal and scrap carbon minus the carbon left in liquid steel"
+      },
+      {
+        "term": "unported lance oxygen bound in the converter slag iron oxide",
+        "value": "3.339607",
+        "derivation": "oxygen of the iron oxidised at the converter and held in the converter slag"
+      },
+      {
+        "term": "published carbonate factor versus the atomic residue in the converter slag",
+        "value": "0.012189",
+        "derivation": "converter CaCO3 mass x the same published-versus-atomic residue as the sinter term, modeling gap MG-S07"
+      }
+    ],
+    "term_sum": "963.258900",
+    "residual_after_explanation": "1e-06 relative, i.e. the 0.000001 kg difference between 963.258900 and 963.258899 is the six-decimal rounding of the eight terms, not an unexplained flow",
+    "tolerance": "1e-06 relative",
+    "acceptance": "an MFA result must print the residual and all eight named terms; printing a closed balance, or a bare residual without the terms, both fail"
+  },
+  "node_closures": [
+    {
+      "node_id": "ore-sintering",
+      "mass_in": "1730.0",
+      "mass_out": "1870.707955",
+      "residual_out_minus_in": "140.707955",
+      "expectation": "open_with_gap",
+      "gap_ref": "MG-S09",
+      "terms": [
+        {
+          "term": "unported blast oxygen for the sintering breeze carbon",
+          "value": "140.6592"
+        },
+        {
+          "term": "published carbonate factor versus the atomic residue in the sinter",
+          "value": "0.048755"
+        }
+      ]
+    },
+    {
+      "node_id": "blast-furnace",
+      "mass_in": "2140.800755",
+      "mass_out": "2849.070943",
+      "residual_out_minus_in": "708.270188",
+      "expectation": "open_with_gap",
+      "gap_ref": "MG-S09",
+      "terms": [
+        {
+          "term": "unported blast oxygen for the furnace raceway carbon",
+          "value": "710.280785"
+        },
+        {
+          "term": "unported blast oxygen for the methane hydrogen",
+          "value": "15.956118"
+        },
+        {
+          "term": "unauthored flue water of the injected natural gas",
+          "value": "-17.966714"
+        }
+      ]
+    },
+    {
+      "node_id": "basic-oxygen-converter",
+      "mass_in": "1118.297",
+      "mass_out": "1232.577756",
+      "residual_out_minus_in": "114.280756",
+      "expectation": "open_with_gap",
+      "gap_ref": "MG-S09",
+      "terms": [
+        {
+          "term": "unported lance oxygen for the converter carbon",
+          "value": "110.92896"
+        },
+        {
+          "term": "unported lance oxygen bound in the converter slag iron oxide",
+          "value": "3.339607"
+        },
+        {
+          "term": "published carbonate factor versus the atomic residue in the converter slag",
+          "value": "0.012189"
+        }
+      ]
+    },
+    {
+      "node_id": "secondary-metallurgy-and-degassing",
+      "mass_in": "1020.0",
+      "mass_out": "1020.0",
+      "residual_out_minus_in": "0.0",
+      "expectation": "closed",
+      "terms": []
+    },
+    {
+      "node_id": "continuous-casting",
+      "mass_in": "1020.0",
+      "mass_out": "1020.0",
+      "residual_out_minus_in": "0.0",
+      "expectation": "closed",
+      "terms": []
+    }
+  ],
+  "exclusions": [
+    {
+      "label": "purchase and maintenance of infrastructure and equipment",
+      "clause": "ST-07",
+      "kind": "regulatory_exclusion",
+      "note": "the only enumeration permitted as a sector neutral exclusion; an excluded list entry that is not a clause-backed rule must block import"
+    },
+    {
+      "label": "electric arc furnace and direct reduced iron routes",
+      "clause": "ST-19",
+      "kind": "route_scope",
+      "note": "a different production route with its own boundary wording; the seed declares the BF-BOF route and must fail validation if it uses another route's boundary set"
+    },
+    {
+      "label": "finished rolling beyond primary hot rolling and rough forging",
+      "clause": "ST-07",
+      "kind": "route_scope",
+      "note": "belongs to the iron or steel products aggregated goods category, modeling gap MG-S01"
+    }
+  ],
+  "undecided": [
+    {
+      "item": "the mass split of the exported furnace gas",
+      "clause": "ST-10",
+      "state": "undecided",
+      "gap_ref": "MG-S11",
+      "effect": "a plant that exports coke oven, blast furnace or converter gas leaves the boundary with carbon in it, which this model does not represent, so its mass account is read as open rather than as a complete physical loop"
+    }
+  ],
+  "refusal_conditions": [
+    "a mass sum that includes an MJ amount",
+    "a balance presented as closed while the air and flue terms are absent",
+    "an internal transfer counted on both sides of a total",
+    "a node closure whose authored in and out do not equal the graph ports of that node"
+  ]
+}

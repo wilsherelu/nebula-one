@@ -1,0 +1,51 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "capability_key": {
+      "const": "water.balance.solved.v1",
+      "enum": [
+        "water.balance.solved.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula_one.water-balance.solved.v1",
+      "enum": [
+        "nebula_one.water-balance.solved.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "series": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Series",
+      "type": "array"
+    },
+    "source_snapshot": {
+      "title": "Source Snapshot",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "source_snapshot",
+    "series",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "WaterBalanceOut",
+  "type": "object"
+}

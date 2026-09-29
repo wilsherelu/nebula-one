@@ -1,0 +1,33 @@
+{
+  "name": "nebula-one-web",
+  "private": true,
+  "version": "1.0.0-rc.2",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "test": "vitest run",
+    "build": "npm run typecheck && vite build"
+  },
+  "dependencies": {
+    "@arco-design/web-react": "^2.66.1",
+    "@tanstack/react-query": "^5.66.8",
+    "echarts": "6.1.0",
+    "echarts-for-react": "3.0.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.5"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
+  }
+}

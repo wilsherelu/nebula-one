@@ -1,0 +1,58 @@
+.audit-heading { margin: var(--no-space-6) 0 var(--no-space-2); font-size: 16px; line-height: 24px; }
+.audit-json { max-height: 360px; overflow: auto; margin: var(--no-space-3) 0 0; padding: var(--no-space-3); border: 1px solid var(--no-color-border); border-radius: var(--no-radius-control); background: var(--no-color-surface-muted); color: var(--no-color-text); font: 12px/18px "Cascadia Mono", Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.audit-scenario + .audit-scenario { margin-top: var(--no-space-6); padding-top: var(--no-space-6); border-top: 1px solid var(--no-color-border); }
+.audit-scenario h3 { margin: 0; font-size: 16px; }
+.spatial-result__selectors { display: grid; grid-template-columns: auto minmax(220px, 320px); align-items: center; gap: var(--no-space-2) var(--no-space-3); }
+.spatial-result__selectors label { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; }
+.spatial-energy-chart__viewport { width: 100%; overflow-x: auto; overflow-y: hidden; outline: none; scrollbar-gutter: stable; }
+.spatial-energy-chart__viewport:focus-visible { box-shadow: inset 0 0 0 2px var(--no-color-primary); }
+.pcf-result__chart .spatial-energy-chart__viewport img { width: max(100%, 960px); max-width: none; }
+.revision-lineage { overflow: hidden; padding: var(--no-space-2) var(--no-space-3); }
+.revision-lineage__item { min-width: 0; padding-bottom: var(--no-space-2); }
+.revision-lineage__item strong { font-size: 14px; margin-right: var(--no-space-2); }
+.period-trend { display: grid; min-width: 0; gap: var(--no-space-4); }
+.period-trend > * { min-width: 0; }
+.period-trend__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--no-space-4); }
+.period-trend__head h3 { margin: 0; font-size: 18px; line-height: 26px; }
+.period-trend__head p { margin: var(--no-space-1) 0 0; color: var(--no-color-text-secondary); font-size: 14px; line-height: 22px; }
+.period-trend__bindings { display: grid; gap: var(--no-space-2); }
+.period-trend__binding { display: grid; grid-template-columns: minmax(180px, 0.75fr) minmax(280px, 1.25fr); align-items: center; gap: var(--no-space-3); padding: var(--no-space-2) var(--no-space-3); border: 1px solid var(--no-color-border); border-radius: var(--no-radius-control); background: var(--no-color-surface-muted); }
+.period-trend__binding > div { display: flex; min-width: 0; flex-direction: column; }
+.period-trend__binding strong { font-size: 14px; line-height: 22px; }
+.period-trend__binding small { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; font-variant-numeric: tabular-nums; }
+.period-trend__baseline { display: grid; grid-template-columns: 120px minmax(220px, 360px); align-items: center; gap: var(--no-space-3); }
+.period-trend__baseline label { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; }
+.period-trend__summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--no-space-3); color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; }
+.period-trend__summary .arco-btn { margin-left: auto; }
+.period-trend__chart { width: 100%; overflow-x: auto; border: 1px solid var(--no-color-border); border-radius: var(--no-radius-panel); background: var(--no-color-surface-muted); outline: none; scrollbar-gutter: stable; }
+.period-trend__chart:focus-visible { box-shadow: inset 0 0 0 2px var(--no-color-primary); }
+.period-trend__chart img { display: block; width: max(100%, 960px); max-width: none; }
+.period-total { display: grid; min-width: 0; gap: var(--no-space-4); margin-top: var(--no-space-2); padding-top: var(--no-space-5); border-top: 1px solid var(--no-color-border); }
+.organization-ghg { display: grid; min-width: 0; gap: var(--no-space-4); }
+.organization-ghg__methods { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: var(--no-space-3); }
+.organization-ghg__methods > div { display: grid; min-width: 0; gap: var(--no-space-1); }
+.organization-ghg__methods label { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; }
+.organization-ghg__summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--no-space-3); }
+.organization-ghg__summary--formal { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.organization-binding-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--no-space-2); }
+.organization-binding-card { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--no-space-3); padding: var(--no-space-3); border: 1px solid var(--no-color-border); border-radius: var(--no-radius-control); background: var(--no-color-surface-muted); }
+.organization-binding-card > div:first-child { min-width: 0; display: grid; gap: var(--no-space-1); }
+.organization-binding-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 22px; }
+.organization-ghg__chart { width: 100%; overflow-x: auto; border: 1px solid var(--no-color-border); border-radius: var(--no-radius-panel); background: var(--no-color-surface-muted); outline: none; scrollbar-gutter: stable; }
+.organization-ghg__chart:focus-visible { box-shadow: inset 0 0 0 2px var(--no-color-primary); }
+.organization-ghg__chart img { display: block; width: max(100%, 960px); max-width: none; }
+.dependency-gap { margin-top: var(--no-space-2); display: grid; gap: var(--no-space-1); font-size: 13px; line-height: 20px; }
+.dependency-gap__row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--no-space-2); }
+.dependency-gap__row > strong { color: var(--no-color-text-secondary); font-weight: 500; }
+.dependency-gap__row ul, .dependency-gap__row ol { margin: 0; padding-left: 18px; }
+@media (max-width: 768px) {
+  .arco-drawer.audit-drawer { width: 100% !important; }
+  .revision-lineage .arco-timeline { padding-left: 0; }
+  .spatial-result__selectors { width: 100%; grid-template-columns: 1fr; }
+  .period-trend__head { align-items: stretch; flex-direction: column; }
+  .period-trend__head .arco-btn { width: 100%; }
+  .period-trend__binding, .period-trend__baseline { grid-template-columns: 1fr; }
+  .period-trend__summary .arco-btn { margin-left: 0; }
+  .organization-ghg__methods, .organization-ghg__summary, .organization-binding-grid { grid-template-columns: 1fr; }
+  .organization-binding-card { align-items: flex-start; flex-direction: column; }
+}

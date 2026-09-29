@@ -1,0 +1,362 @@
+{
+  "schema_version": "nebula.standard-seed.flow-dependencies.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "version": "1.1.0",
+  "probe": {
+    "probed_at": "2026-09-18",
+    "engine_base_url": "http://127.0.0.1:8001",
+    "engine_database": "runtime/isolated-2026-09-17/engine-db/lca_isolated.db",
+    "engine_commit": "8b151025d1ac5affaabc04427039895f6e96df60",
+    "endpoints_used": [
+      "GET /api/flows?search=",
+      "GET /api/reference/flows/{flow_uuid}",
+      "GET /api/reference/units?unit_group=",
+      "POST /api/provider/v1/catalog/resolve"
+    ],
+    "caveat": "These observations were measured on the previous round's isolated engine, not on the acceptance database, and only for the four identities this seed did not create (the elementary carbon dioxide row, the two hydrogen seed catalog flows and the two unit groups). The install validation step must re-run the same read-only probes against the target engine and store both readings in the install receipt; a changed row is a blocking finding, not a warning. No catalog probe exists for any of the fourteen seed owned rows."
+  },
+  "policies": {
+    "bundled_owned": "the seed owns the identity, derives flow_uuid from the instance namespace, and ships the catalog row in catalog/flows.json",
+    "verify_present": "the identity belongs to the engine catalog or to another seed; the seed declares it and never ships a catalog row, because a bundled row whose flow_uuid already exists must match every destination column or the whole import aborts",
+    "blocked": "no acceptable exact identity is established; the seed refuses to compute and names the missing item",
+    "name_matching": "forbidden - the catalog holds several near-identical 'carbon dioxide (fossil)' uuids and at least eight 'alternating current' rows"
+  },
+  "elementary_identity_resolution": {
+    "endpoint": "POST /api/provider/v1/catalog/resolve",
+    "scope": "every biosphere port of this seed, resolved as an exact dataset version identity rather than an emission factor",
+    "caveat": "GET /api/reference/flows/{flow_uuid} carries no version identity for elementary flows: source_namespace, version_label and tidas_flow_property_uuid all read null there, so a probe through that endpoint can neither prove nor disprove a pin. The provider catalog resolver is the only public endpoint that returns exact elementary Flow version identity, and the installer must re-call it read-only at the verified stage of every install.",
+    "evidence": "runtime/seed-install-2026-09-18/evidence/catalog-resolve-response-04.json",
+    "resolved_at": "2026-09-18T15:16:22+00:00",
+    "engine_database": "runtime/seed-install-2026-09-18/engine-db/lca_seed_install.db",
+    "resolved_roles": [
+      "carbon_dioxide_fossil"
+    ]
+  },
+  "dependencies": [
+    {
+      "role": "carbon_dioxide_fossil",
+      "disposition": "verify_present",
+      "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+      "observed": {
+        "flow_name_en": "carbon dioxide (fossil)",
+        "flow_type": "Elementary flow",
+        "default_unit": "kg",
+        "unit_group": "Units of mass",
+        "source": "ef3.1",
+        "source_namespace": null,
+        "source_version": null,
+        "compartment": "Emissions;Emissions to air;Emissions to air, unspecified",
+        "is_custom": false,
+        "tidas_flow_property_uuid": null
+      },
+      "ambiguity": "the catalog holds several rows named carbon dioxide (fossil) with different uuid segments, so this pin is only meaningful as an exact uuid, and the reference-flow row itself carries a null namespace and a null version. The identity the solver needs comes from resolved_identity, read from the provider catalog resolver, which is also where the hydrogen and ammonia seeds took theirs",
+      "resolved_identity": {
+        "source_namespace": "tiangong_open_data",
+        "version": "03.00.004",
+        "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+        "flow_property_version": "03.00.003",
+        "unit": "kg",
+        "direction": "output",
+        "compartment": "Emissions to air, unspecified",
+        "content_hash": "4ae6d7d5aae3e2c994a372ffc3ea5512db95a94f058dfafe9a6fcb718712d9ee",
+        "content_hash_scope": "provider_canonical_runtime_record",
+        "database_release": "EF3.1",
+        "resolved_via": "POST /api/provider/v1/catalog/resolve",
+        "resolved_at": "2026-09-18T15:16:22+00:00",
+        "engine_database": "runtime/seed-install-2026-09-18/engine-db/lca_seed_install.db",
+        "evidence": "runtime/seed-install-2026-09-18/evidence/catalog-resolve-response-04.json",
+        "carried_from": "cases/standard-lca-seeds/hydrogen-natural-gas-smr/model/flow-dependencies.json#dependencies/1",
+        "re_probe_required": "the acceptance run of this seed must re-call the resolver read-only and store the second reading in the install receipt; a changed row is a blocking finding"
+      }
+    },
+    {
+      "role": "natural_gas",
+      "disposition": "verify_present",
+      "flow_uuid": "345ca664-03ac-55d0-b66b-141c91029812",
+      "observed": {
+        "flow_name_en": "Natural gas (seed owned, mass basis)",
+        "flow_type": "Product flow",
+        "default_unit": "kg",
+        "unit_group": "Units of mass",
+        "source": "nebula_standard_seed",
+        "source_namespace": "nebula.standard-lca-seed",
+        "source_version": "1.3.0",
+        "version_label": "standard seed 1.3.0",
+        "is_custom": true,
+        "tidas_flow_property_uuid": null
+      },
+      "provided_by": {
+        "seed_id": "nebula.hydrogen.natural-gas-smr",
+        "seed_version": "1.3.0",
+        "flow_key": "natural-gas",
+        "seed_directory": "hydrogen-natural-gas-smr",
+        "bundle_content_sha256": "acfa0630535f7af5d78412d0f7186bbbaf99cd81f3dd0847f7cb049fe1325b67"
+      },
+      "note": "reusing the hydrogen seed's catalog row is a versioned prerequisite, not a convenience: the builder re-derives the uuid from that seed's id and version and reads the pinned bundle hash out of its own manifest, so a changed hydrogen release breaks this build rather than drifting silently."
+    },
+    {
+      "role": "grid_electricity",
+      "disposition": "verify_present",
+      "flow_uuid": "222665f3-76a4-5894-a34a-27107e793f08",
+      "observed": {
+        "flow_name_en": "Grid electricity (seed owned, energy basis)",
+        "flow_type": "Product flow",
+        "default_unit": "MJ",
+        "unit_group": "Units of energy",
+        "source": "nebula_standard_seed",
+        "source_namespace": "nebula.standard-lca-seed",
+        "source_version": "1.3.0",
+        "version_label": "standard seed 1.3.0",
+        "is_custom": true,
+        "tidas_flow_property_uuid": null
+      },
+      "provided_by": {
+        "seed_id": "nebula.hydrogen.natural-gas-smr",
+        "seed_version": "1.3.0",
+        "flow_key": "grid-electricity",
+        "seed_directory": "hydrogen-natural-gas-smr",
+        "bundle_content_sha256": "acfa0630535f7af5d78412d0f7186bbbaf99cd81f3dd0847f7cb049fe1325b67"
+      },
+      "note": "reusing the hydrogen seed's catalog row is a versioned prerequisite, not a convenience: the builder re-derives the uuid from that seed's id and version and reads the pinned bundle hash out of its own manifest, so a changed hydrogen release breaks this build rather than drifting silently."
+    },
+    {
+      "role": "iron_ore",
+      "disposition": "bundled_owned",
+      "flow_name": "iron-ore",
+      "flow_uuid": "fdba4f91-bbc9-5ea8-86d9-2ecb831afe09",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "no catalog audit exists for an unagglomerated iron ore concentrate in this repository, and the goods list only covers the agglomerated product, so claiming an upstream identity would be a guess"
+    },
+    {
+      "role": "limestone_flux",
+      "disposition": "bundled_owned",
+      "flow_name": "limestone-flux",
+      "flow_uuid": "ca40b889-cf9a-5aac-89c6-45f820da3b65",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "the flux is not on the Annex I goods list, and no reviewed upstream row for a metallurgical limestone was probed in this round"
+    },
+    {
+      "role": "coke_breeze",
+      "disposition": "bundled_owned",
+      "flow_name": "coke-breeze",
+      "flow_uuid": "89e07856-8713-57ff-b4a8-104b0119975c",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "coke and coke breeze are not on the Annex I goods list; the seed needs a carbon mass, which the catalog cannot supply without a fuel analysis, so the row is seed owned and the carbon content is a cited parameter record"
+    },
+    {
+      "role": "sintered_ore",
+      "disposition": "bundled_owned",
+      "flow_name": "sintered-ore",
+      "flow_uuid": "f4c2a1b3-c84d-5582-88f7-30cf0626045c",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "an in-house intermediate between two processes of one installation. It is an Annex I good, which is exactly why the seed publishes its own identity rather than borrowing a catalog row whose composition is unknown"
+    },
+    {
+      "role": "metallurgical_coke",
+      "disposition": "bundled_owned",
+      "flow_name": "metallurgical-coke",
+      "flow_uuid": "1b8ac953-3db1-5fef-8fa7-7112ed40aeb3",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "not a listed good, and its fixed carbon share is an authored parameter rather than a catalog property"
+    },
+    {
+      "role": "pci_bituminous_coal",
+      "disposition": "bundled_owned",
+      "flow_name": "pci-bituminous-coal",
+      "flow_uuid": "abf85061-0371-5ab5-9426-942df477cd84",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "not a listed good; no upstream coal row with a declared fixed carbon share was probed in this round"
+    },
+    {
+      "role": "steel_scrap",
+      "disposition": "bundled_owned",
+      "flow_name": "steel-scrap",
+      "flow_uuid": "74d988a9-b09d-5549-9672-64234caa6f0a",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "CN 7204 ferrous waste and scrap is excluded from the Annex I iron and steel cell, so it is neither a precursor nor a good with an upstream identity here; its carbon enters the mass balance as an authored share"
+    },
+    {
+      "role": "blast_furnace_hot_metal",
+      "disposition": "bundled_owned",
+      "flow_name": "blast-furnace-hot-metal",
+      "flow_uuid": "df1c5ffd-830d-52f4-b600-9a28e8c73013",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "the splitting stream of ST-04, transferred between two processes of the same installation and never sold, so the seed owns its identity"
+    },
+    {
+      "role": "bf_process_slag",
+      "disposition": "bundled_owned",
+      "flow_name": "bf-process-slag",
+      "flow_uuid": "e4019f2f-542c-59f4-afbd-cee42dd4915f",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "a co-product of the furnace with no upstream dataset identity for a demonstration composition"
+    },
+    {
+      "role": "converter_liquid_steel",
+      "disposition": "bundled_owned",
+      "flow_name": "converter-liquid-steel",
+      "flow_uuid": "af57ba56-81ba-58f9-a753-c50d578dc816",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "an in-house intermediate between the converter and secondary metallurgy"
+    },
+    {
+      "role": "converter_slag",
+      "disposition": "bundled_owned",
+      "flow_name": "converter-slag",
+      "flow_uuid": "320a0821-db11-57c9-a1fb-a5f964b998aa",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "a co-product of the converter; its remaining carbon is subtracted by the mass balance, so the identity must stay reproducible from the seed's own book"
+    },
+    {
+      "role": "secondary_metallurgy_treated_steel",
+      "disposition": "bundled_owned",
+      "flow_name": "secondary-metallurgy-treated-steel",
+      "flow_uuid": "a5d9b9da-dd04-5a82-968a-ec0b131c3f33",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "an in-house intermediate between secondary metallurgy and the caster"
+    },
+    {
+      "role": "crude_steel_slab",
+      "disposition": "bundled_owned",
+      "flow_name": "crude-steel-slab",
+      "flow_uuid": "e31064bf-4268-5617-b79d-8b7f326d966e",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "the declared good itself. The seed publishes it as a product flow with its own identity; a verified market row for continuously cast slab is a later change and would need a seed version bump"
+    },
+    {
+      "role": "continuous_casting_crop",
+      "disposition": "bundled_owned",
+      "flow_name": "continuous-casting-crop",
+      "flow_uuid": "f44cc9da-b3a8-583e-963d-4ac456a4cd49",
+      "unit": "kg",
+      "unit_group": "Units of mass",
+      "basis": "mass",
+      "why_not_upstream": "cut loss leaving the boundary in version 1.1.0; ST-16 gives it zero embedded emissions, so it must be a named port rather than an invisible subtraction"
+    }
+  ],
+  "unit_groups": [
+    {
+      "disposition": "verify_present",
+      "name": "Units of mass",
+      "observed": {
+        "source_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+        "source_version": "03.00.003",
+        "contains": [
+          "kg",
+          "g",
+          "Mg",
+          "kt"
+        ],
+        "source_package_version": "Tiangong 1.0 (ILCD reference seed v4 + official open flow properties)"
+      },
+      "observed_at": "2026-09-19",
+      "observed_via": "GET /api/reference/units?unit_group=Units of mass on the acceptance engine",
+      "note": "not bundled: unit_groups are compared by name only, so a bundled copy would have to match every destination column"
+    },
+    {
+      "disposition": "verify_present",
+      "name": "Units of energy",
+      "observed": {
+        "source_uuid": "93a60a57-a3c8-11da-a746-0800200c9a66",
+        "source_version": "03.00.003",
+        "contains": [
+          "J",
+          "MJ",
+          "GJ",
+          "kWh",
+          "btu",
+          "kcal"
+        ],
+        "source_package_version": "Tiangong 1.0 (ILCD reference seed v4 + official open flow properties)"
+      },
+      "observed_at": "2026-09-19",
+      "observed_via": "GET /api/reference/units?unit_group=Units of energy on the acceptance engine",
+      "note": "the same group uuid that electricity.province.mee-2023@1.0.0 pins for MJ"
+    }
+  ],
+  "technosphere_identity": {
+    "contract": "docs/STANDARD_LCA_SEED_PACKAGE_V1.md section 5.2. Every type == technosphere port of model/graph.json must carry the flow property pair and the unit group pair of its own basis, and the builder compares the port against this block rather than against any constant of its own.",
+    "why": "Nebula One submits the graph as an inline_snapshot, so the engine judges each technosphere flow from the request body alone: an incomplete port identity is a 422 CUSTOM_TECHNOSPHERE_IDENTITY_INCOMPLETE naming that exchange, and no amount of request-side reference carries the identity. A snapshot_ref solve of the same stored model returns 200 with the same nulls, so the gap stays invisible until the application layer runs it.",
+    "probe_evidence": "runtime/seed-install-2026-09-18/evidence/segment9-slice5-1.2.0-01/inline-solve-probe.json",
+    "bases": {
+      "mass": {
+        "unit": "kg",
+        "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+        "flow_property_version": "03.00.003",
+        "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+        "unit_group_version": "03.00.003",
+        "read_as": "Mass",
+        "attestable_on_current_engine": true,
+        "provenance": "POST /api/provider/v1/catalog/resolve flow_properties on the acceptance engine, status resolved, name_en Mass (runtime/seed-install-2026-09-18/evidence/segment9-slice5-1.2.0-01/flow-property-resolve-02.json)"
+      },
+      "electricity": {
+        "unit": "MJ",
+        "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200c9a66",
+        "flow_property_version": "03.00.003",
+        "unit_group_uuid": "93a60a57-a3c8-11da-a746-0800200c9a66",
+        "unit_group_version": "03.00.003",
+        "read_as": "the FlowProperty the exact Tiangong read-back recorded for the electricity flow",
+        "attestable_on_current_engine": false,
+        "provenance": "docs/TIDAS_BACKGROUND_PROCESS_AUDIT_2026-08-31.md line 101, content_hash 6681b7a20422d08035b46be567aee02b160656c6d3123c511dbe7d44279ca96a",
+        "gap_ref": "GS-04"
+      }
+    },
+    "ports": {
+      "ore-sintering::iron-ore-in": "mass",
+      "ore-sintering::limestone-in": "mass",
+      "ore-sintering::coke-breeze-in": "mass",
+      "ore-sintering::grid-electricity-in": "electricity",
+      "ore-sintering::sinter-out": "mass",
+      "blast-furnace::sinter-in": "mass",
+      "blast-furnace::coke-in": "mass",
+      "blast-furnace::pci-coal-in": "mass",
+      "blast-furnace::natural-gas-in": "mass",
+      "blast-furnace::hot-metal-out": "mass",
+      "blast-furnace::bf-slag-out": "mass",
+      "basic-oxygen-converter::hot-metal-in": "mass",
+      "basic-oxygen-converter::scrap-in": "mass",
+      "basic-oxygen-converter::limestone-in": "mass",
+      "basic-oxygen-converter::liquid-steel-out": "mass",
+      "basic-oxygen-converter::converter-slag-out": "mass",
+      "secondary-metallurgy-and-degassing::liquid-steel-in": "mass",
+      "secondary-metallurgy-and-degassing::treated-steel-out": "mass",
+      "continuous-casting::treated-steel-in": "mass",
+      "continuous-casting::grid-electricity-in": "electricity",
+      "continuous-casting::crude-steel-slab-out": "mass",
+      "continuous-casting::casting-crop-out": "mass"
+    },
+    "caveat": "The engine's inline check only proves the four fields are present; it does not test whether a flow property matches its unit group, and the electricity property above cannot be named by the current engine, which answers FLOW_PROPERTY_RESOURCE_UNAVAILABLE for any exact-version Flow Property resource. So the two electricity ports carry a declared identity the builder checks for completeness and consistency, not one the engine has confirmed, and gap GS-04 records that."
+  },
+  "bundled_catalog_columns": {
+    "flow_versions": [],
+    "unit_groups": [],
+    "unit_definitions": [],
+    "reason": "the seed ships no new unit group or flow version; catalog/flow_versions.json, catalog/unit_groups.json and catalog/unit_definitions.json are present as empty arrays so the byte layout stays stable"
+  }
+}

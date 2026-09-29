@@ -1,0 +1,56 @@
+{
+  "schema_version": "nebula.standard-seed.parameter-record.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "parameter_id": "crude-steel.bf-bof-activity-data-slots",
+  "clause_refs": ["ST-06", "ST-09", "ST-10", "ST-16"],
+  "claim_level": "demonstration",
+  "measured": false,
+  "purpose": "which activity quantity each port of the model stands for, on which basis, and what an installation would have to supply to turn it from a demonstration slot into a monitored figure. A slot is a data field, never a factor.",
+  "activity_level_rule": {
+    "clause": "ST-16",
+    "quote_verbatim": "The activity level of a production process shall be calculated as the total mass of the goods leaving the production process during the reporting period measured in functional units and in tonnes of goods.",
+    "canonical_offset": 182797,
+    "second_sentence": "Off-spec products, by-products, waste, and scrap produced in a production process, irrespective of whether they are returned to production processes, delivered to other installations, or disposed of, shall not be included in the determination of the activity level. They shall therefore be assigned zero embedded emissions when entering another production process.",
+    "second_offset": 183346,
+    "reading": "the denominator of this seed is the 1000 kg of continuously cast slab that leaves the boundary, not the 1020 kg that enters the caster and not the sum of the five processes' outputs. The 20 kg of casting crop therefore appears as an output port with zero embedded emissions and no share of the activity level, which is modeling gap MG-S10 rather than a hidden subtraction."
+  },
+  "slots": [
+    {"slot_id": "ore-sintering/iron_ore_burden", "exchange_id": "ore-sintering::iron-ore-in", "quantity": "1490.000", "unit": "kg", "basis": "dry mass of unagglomerated concentrate", "clause_refs": ["ST-03"], "installation_data_needed": "belt-conveyor totaliser reading plus the moisture and Fe assay of the same lot"},
+    {"slot_id": "ore-sintering/sinter_flux", "exchange_id": "ore-sintering::limestone-in", "quantity": "180.000", "unit": "kg", "basis": "as-fed mass, with the carbonate share declared in parameters/carbon-content.json", "clause_refs": ["ST-03", "ST-18"], "installation_data_needed": "flux weighbridge reading plus a CaCO3 assay"},
+    {"slot_id": "ore-sintering/sinter_solid_fuel", "exchange_id": "ore-sintering::coke-breeze-in", "quantity": "60.000", "unit": "kg", "basis": "as-fed dry mass", "clause_refs": ["ST-03", "ST-10"], "installation_data_needed": "breeze weigh feeder plus a fuel analysis giving fixed carbon and ash"},
+    {"slot_id": "ore-sintering/auxiliary_electricity", "exchange_id": "ore-sintering::grid-electricity-in", "quantity": "600", "unit": "MJ", "basis": "net calorific value convention of ST-18 definition (15), metered at the sinter plant", "clause_refs": ["ST-12"], "cbam_disposition": "excluded from the numerator with the ST-12 direct-only basis; the slot exists for MFA and for the PCF question", "installation_data_needed": "revenue-grade meter reading for the reporting period"},
+    {"slot_id": "blast-furnace/burden_from_sinter", "exchange_id": "blast-furnace::sinter-in", "quantity": "1602.800755", "unit": "kg", "basis": "tapped sinter charged to the furnace, transferred inside the same production process boundary", "clause_refs": ["ST-04", "ST-15"], "installation_data_needed": "charge totaliser; the amount must equal the sinter strand output or the transfer is not internal"},
+    {"slot_id": "blast-furnace/coke_burden", "exchange_id": "blast-furnace::coke-in", "quantity": "400.000", "unit": "kg", "basis": "dry coke mass charged", "clause_refs": ["ST-04", "ST-10"], "installation_data_needed": "skip weight plus coke analysis (fixed carbon, ash, M40/M10 strength is not needed for the carbon book)"},
+    {"slot_id": "blast-furnace/pulverised_coal_injection", "exchange_id": "blast-furnace::pci-coal-in", "quantity": "130.000", "unit": "kg", "basis": "dry coal mass injected", "clause_refs": ["ST-10"], "installation_data_needed": "coal-powder carrier flow totaliser plus a fuel analysis"},
+    {"slot_id": "blast-furnace/natural_gas_injection", "exchange_id": "blast-furnace::natural-gas-in", "quantity": "8.000", "unit": "kg", "basis": "mass of injected gas on the pure methane reading of the hydrogen seed's catalog row; a volume reading would need the density receipt the TIDAS resolution manifest refused, which is why this seed charges mass", "clause_refs": ["ST-10", "ST-13"], "installation_data_needed": "gas meter plus the composition the operator actually fires, or the declared pure-CH4 basis kept as an explicit assumption"},
+    {"slot_id": "blast-furnace/hot_metal_tap", "exchange_id": "blast-furnace::hot-metal-out", "quantity": "923.297", "unit": "kg", "basis": "tapped liquid pig iron, the stream ST-04 makes the splitting point between the pig iron and the crude steel process", "clause_refs": ["ST-04"], "installation_data_needed": "torpedo-ladle weighbridge plus a hot-metal carbon and silicon analysis"},
+    {"slot_id": "blast-furnace/furnace_slag_tap", "exchange_id": "blast-furnace::bf-slag-out", "quantity": "424.122369", "unit": "kg", "basis": "granulated furnace slag tapped", "clause_refs": ["ST-08", "ST-16"], "installation_data_needed": "slag weighbridge; the carbon that stays bound in slag must be reported through the mass balance, not through this mass"},
+    {"slot_id": "basic-oxygen-converter/hot_metal_charge", "exchange_id": "basic-oxygen-converter::hot-metal-in", "quantity": "923.297", "unit": "kg", "basis": "the same vessel charge the furnace tapped", "clause_refs": ["ST-04", "ST-06"]},
+    {"slot_id": "basic-oxygen-converter/scrap_charge", "exchange_id": "basic-oxygen-converter::scrap-in", "quantity": "150.000", "unit": "kg", "basis": "scrap charged as the cooling agent", "clause_refs": ["ST-08", "ST-14"], "declaration_field": "the two scrap fields of ST-09, tonnes of scrap per tonne of crude steel and the pre-consumer share, are reported in parameters/sector-specific-declaration-parameters.json; the pre/post allocation is not modelled (MG-S04)"},
+    {"slot_id": "basic-oxygen-converter/converter_flux", "exchange_id": "basic-oxygen-converter::limestone-in", "quantity": "45.000", "unit": "kg", "basis": "as-fed flux mass", "clause_refs": ["ST-08", "ST-18"]},
+    {"slot_id": "basic-oxygen-converter/liquid_steel_tap", "exchange_id": "basic-oxygen-converter::liquid-steel-out", "quantity": "1020.000", "unit": "kg", "basis": "tap-to-tundish mass before the caster cut", "clause_refs": ["ST-06"]},
+    {"slot_id": "secondary-metallurgy-and-degassing/treated_steel", "exchange_id": "secondary-metallurgy-and-degassing::treated-steel-out", "quantity": "1020.000", "unit": "kg", "basis": "ladle-treated steel delivered to the caster; no alloy, protective gas or refractory mass is authored, which is modeling gap MG-S09", "clause_refs": ["ST-06"]},
+    {"slot_id": "continuous-casting/cast_steel", "exchange_id": "continuous-casting::crude-steel-slab-out", "quantity": "1000.000", "unit": "kg", "basis": "slab shipped as the declared good; this is the activity level of the boundary", "clause_refs": ["ST-01", "ST-06", "ST-16"]},
+    {"slot_id": "continuous-casting/cut_loss", "exchange_id": "continuous-casting::casting-crop-out", "quantity": "20.000", "unit": "kg", "basis": "crop and return scrap cut off at the caster, leaving the boundary in version 1.1.0", "clause_refs": ["ST-16"], "installation_data_needed": "crop weighbridge plus the re-melt routing, so that a later version can close the loop instead of exporting the mass (MG-S10)"},
+    {"slot_id": "continuous-casting/auxiliary_electricity", "exchange_id": "continuous-casting::grid-electricity-in", "quantity": "25", "unit": "MJ", "basis": "metered mould and tundish drives", "clause_refs": ["ST-12"]}
+  ],
+  "slots_that_do_not_exist_yet": [
+    {"slot": "hot blast air volume, temperature and humidity", "clause_refs": ["ST-10"], "gap_ref": "MG-S09", "effect": "the oxygen the blast delivers is what the carbon book's two residual terms name, so the furnace node cannot close on authored mass alone"},
+    {"slot": "lance oxygen blown in the converter", "clause_refs": ["ST-06"], "gap_ref": "MG-S09", "effect": "same reading as the blast: the converter's decarburisation and slag iron oxide take their oxygen from a stream with no port"},
+    {"slot": "secondary gas cleaning reagents and their electricity", "clause_refs": ["ST-06", "ST-18"], "gap_ref": "MG-S09", "effect": "ST-18 counts carbonate used for flue gas cleaning as a process emission, so a version that adds the reagent must add its carbonate decomposition exchange, not a factor"},
+    {"slot": "exported blast furnace, coke oven and converter gas", "clause_refs": ["ST-10"], "gap_ref": "MG-S11", "effect": "the gas carbon is counted where it is generated, so a plant that exports gas shows a lower numerator than this model does"}
+  ],
+  "basis": {
+    "material_condition": "dry_mass_as_charged",
+    "energy_convention": "net_calorific_value_lower_heating_value",
+    "reference_temperature_k": null,
+    "reference_pressure_pa": null,
+    "gas_basis_note": "every gas in this model is charged on mass. The TIDAS flow resolution manifest of 2026-08-31 rejected the volume-based natural gas identity for want of a density receipt, so a mass basis is the only one this seed can defend."
+  },
+  "usage_gate": "research",
+  "runtime_consumption": {
+    "status": "not_consumed_by_any_code_path",
+    "note": "the amounts above are the same literals model/graph.json stores; this record exists so a reader can see which physical quantity each port stands for and which installation instrument would replace it."
+  }
+}

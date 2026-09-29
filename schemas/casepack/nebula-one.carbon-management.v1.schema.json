@@ -1,0 +1,83 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "capability_key": {
+      "const": "carbon.management.v1",
+      "enum": [
+        "carbon.management.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "carbon_attribution": {
+      "title": "Carbon Attribution",
+      "type": "object"
+    },
+    "climate_change_total": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Climate Change Total"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "direct_emission_inventory": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Direct Emission Inventory",
+      "type": "array"
+    },
+    "energy_result": {
+      "title": "Energy Result",
+      "type": "object"
+    },
+    "method_package": {
+      "title": "Method Package",
+      "type": "object"
+    },
+    "reporting_period": {
+      "title": "Reporting Period",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "nebula_one.carbon.management.v1",
+      "enum": [
+        "nebula_one.carbon.management.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_snapshot": {
+      "title": "Source Snapshot",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "method_package",
+    "source_snapshot",
+    "reporting_period",
+    "energy_result",
+    "direct_emission_inventory",
+    "climate_change_total",
+    "carbon_attribution",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "CarbonManagementOut",
+  "type": "object"
+}

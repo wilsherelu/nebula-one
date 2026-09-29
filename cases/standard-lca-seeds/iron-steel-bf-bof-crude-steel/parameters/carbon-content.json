@@ -1,0 +1,279 @@
+{
+  "schema_version": "nebula.standard-seed.parameter-record.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "parameter_id": "crude-steel.bf-bof-carbon-book",
+  "clause_refs": ["ST-03", "ST-04", "ST-08", "ST-10", "ST-18", "ST-19"],
+  "claim_level": "demonstration",
+  "measured": false,
+  "purpose": "the carbon book the model's six fossil carbon dioxide exchanges are derived from, and the two published conversion constants they are multiplied by. This is the seed's own accounting record: it states which kilogram of carbon leaves through which port, not an emission factor applied to an activity.",
+  "method": {
+    "name": "mass_balance",
+    "clause": "ST-08",
+    "as_written_in_the_regulation": "carbon entering the process in scrap, alloys, graphite etc. and carbon remaining in the product or in slags or wastes is taken into account by using a mass balance method in accordance with point B.3.2 of Annex III",
+    "offset": "@73489",
+    "cross_reference_defect": "the clause points at 'point B.3.2 of Annex III', but the section number 'B.3.2.' occurs once in the whole of source S3, at @107951, inside Annex II, under the heading 'B.3.2. Mass balance method'. The neighbouring entries are not consistent with each other: pig iron 3.13 cites 'point B.3.2 of Annex II. 3.13. Pig Iron' @67649 while crude steel 3.15 and iron or steel products 3.16 cite 'point B.3.2 of Annex III' @71624 and @74606. The seed records the citation as published and resolves it to Annex II point B.3.2 in the same record; modeling gap MG-S07 keeps the discrepancy visible instead of silently rewriting the clause.",
+    "co_handling": "ST-18 definitions (4) @40279 and (5) @40561 both count carbon monoxide as the molar equivalent amount of carbon dioxide, so a mass balance under this method does not need the oxidation state of the leaving carbon and no oxidation or conversion factor is applied to it. That is why this seed binds no fuel_combustion_coverage arithmetic check: four different carbon-bearing fuels with four different published factor rows must not be compressed into one duty-times-factor-times-oxidation pair."
+  },
+  "published_constants": [
+    {
+      "id": "f_CO2_over_C",
+      "symbol": "f",
+      "value": "3.664",
+      "unit": "t CO2 / t C",
+      "role": "the carbon to carbon dioxide ratio every carbon mass in this book is multiplied by",
+      "published_source": {
+        "source_namespace": "eur-lex.europa.eu",
+        "source_record_id": "eu-2025-2547-annex-ii-mass-balance-f",
+        "source_version": "2025-12-22",
+        "source_kind": "published_source",
+        "citation": "Commission Implementing Regulation (EU) 2025/2547, Annex II, mass balance method, definition of f.",
+        "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32025R2547",
+        "license": "EUR-Lex legal-document reuse under Commission Decision 2011/833/EU",
+        "license_url": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html?locale=en",
+        "source_hash_method": "canonical_text_sha256",
+        "source_content_sha256": "7e614b4d284afdde6d4e61b2bcad8fc1ffd1d8318e1c11c6b839cf7f31002680",
+        "hash_length": 238312,
+        "retrieved_at": "2026-09-19",
+        "quote_verbatim": "f is the ratio of the molar masses of CO 2 and C: f = 3,664 t CO 2 /t C.",
+        "canonical_offset": 105374,
+        "verification": "found verbatim at the stated offset of the cached canonical text on 2026-09-19; the offset was re-checked by tmp/segment9h_02_check_steel_offsets.py, which reported 79 quotes and 85 offset markers with zero problems"
+      },
+      "decimal_comma_note": "the published row writes 3,664 with a decimal comma; the comma is normalised to a point here and never dropped silently",
+      "atomic_cross_check": {
+        "value": "3.664057946882024810590292",
+        "derivation": "M_CO2 / Ar C = 44.009 / 12.011",
+        "divergence": "+1.59e-05 relative",
+        "reading": "the published ratio is the value the law applies; the atomic route is recorded so a reader can see the seed did not mistake one for the other. Every carbon mass in this book is multiplied by the published 3.664, never by the atomic ratio."
+      }
+    },
+    {
+      "id": "stoichiometric_CaCO3",
+      "symbol": "EF_CaCO3",
+      "value": "0.440",
+      "unit": "t CO2 / t CaCO3",
+      "role": "the flux carbonate decomposition term of both the sinter strand and the converter",
+      "published_source": {
+        "source_namespace": "eur-lex.europa.eu",
+        "source_record_id": "eu-2025-2547-annex-ii-point-g-table-3-calcium-carbonate",
+        "source_version": "2025-12-22",
+        "source_kind": "published_source",
+        "citation": "Commission Implementing Regulation (EU) 2025/2547, Annex II, point G, Table 3 'Stoichiometric emission factor for process emissions from carbonate decomposition (Method A)', row CaCO3.",
+        "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32025R2547",
+        "license": "EUR-Lex legal-document reuse under Commission Decision 2011/833/EU",
+        "license_url": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html?locale=en",
+        "source_hash_method": "canonical_text_sha256",
+        "source_content_sha256": "7e614b4d284afdde6d4e61b2bcad8fc1ffd1d8318e1c11c6b839cf7f31002680",
+        "hash_length": 238312,
+        "retrieved_at": "2026-09-19",
+        "quote_verbatim": "CaCO 3 0,440 MgCO 3 0,522",
+        "canonical_offset": 186725,
+        "verification": "found verbatim at the stated offset of the cached canonical text on 2026-09-19; the table heading 'Table 3 Stoichiometric emission factor for process emissions from carbonate decomposition (Method A)' is at @186576"
+      },
+      "atomic_cross_check": {
+        "value": "0.4397118478108826409288012",
+        "derivation": "M_CO2 / M_CaCO3 = 44.009 / 100.086",
+        "slack_per_kg_of_carbonate": "0.0002881521891173590711988",
+        "reading": "the published factor is 0.0655 % above the atomic ratio. The seed applies the published factor to the carbonate mass and keeps the residue in the slag at the atomic CaO / CaCO3 ratio, so the difference does not disappear: it surfaces as the two named residual terms 'published_carbonate_factor_versus_the_atomic_residue_in_the_sinter' and '..._in_the_converter_slag' in boundaries/mfa.json."
+      }
+    }
+  ],
+  "atomic_weights": {
+    "claim_level": "transcribed_reference",
+    "gap_ref": "GS-03",
+    "note": "the five values below were transcribed during authoring from standard reference tables without retrieval, hashing or a captured citation, which is the same class of evidence defect modeling gap MG-06 records for the hydrogen seed. They are used only to cross-check the published constants above and to derive the methane carbon fraction; no regulatory number depends on them.",
+    "rows": [
+      {"element": "C", "value": "12.011", "unit": "g/mol"},
+      {"element": "O", "value": "15.999", "unit": "g/mol"},
+      {"element": "H", "value": "1.008", "unit": "g/mol"},
+      {"element": "Fe", "value": "55.845", "unit": "g/mol"},
+      {"element": "Ca", "value": "40.078", "unit": "g/mol"}
+    ]
+  },
+  "molar_masses": {
+    "claim_level": "transcribed_reference",
+    "gap_ref": "GS-03",
+    "rows": [
+      {"species": "CO2", "formula": "C + 2 O", "value": "44.009", "unit": "g/mol"},
+      {"species": "CaCO3", "formula": "Ca + C + 3 O", "value": "100.086", "unit": "g/mol"},
+      {"species": "CaO", "formula": "Ca + O", "value": "56.077", "unit": "g/mol"},
+      {"species": "FeO", "formula": "Fe + O", "value": "71.844", "unit": "g/mol"},
+      {"species": "CH4", "formula": "C + 4 H", "value": "16.043", "unit": "g/mol"},
+      {"species": "H2O", "formula": "2 H + O", "value": "18.015", "unit": "g/mol"}
+    ],
+    "closure": "M_CaCO3 = M_CaO + M_CO2 holds on the transcribed values, which is the arithmetic identity the carbonate term relies on"
+  },
+  "declared_compositions": [
+    {
+      "flow_role": "coke_breeze",
+      "property": "carbon_mass_fraction",
+      "value": "0.88",
+      "unit": "kg C / kg dry fuel",
+      "basis": "demonstration slot for the sinter bed solid fuel",
+      "source": "no fuel analysis exists in this repository for coke breeze; the value is a declared composition of the demonstration activity, claim_level demonstration, and an installation must replace it with its own analysis before any filing",
+      "clause_refs": ["ST-03", "ST-10"]
+    },
+    {
+      "flow_role": "metallurgical_coke",
+      "property": "carbon_mass_fraction",
+      "value": "0.86",
+      "unit": "kg C / kg dry coke",
+      "basis": "demonstration slot; coke is not an Annex I good, so no upstream composition is inherited (ST-13)",
+      "clause_refs": ["ST-04", "ST-10"]
+    },
+    {
+      "flow_role": "pci_bituminous_coal",
+      "property": "carbon_mass_fraction",
+      "value": "0.78",
+      "unit": "kg C / kg dry coal",
+      "basis": "demonstration slot for pulverised coal injection",
+      "clause_refs": ["ST-10"]
+    },
+    {
+      "flow_role": "natural_gas",
+      "property": "carbon_mass_fraction",
+      "value": "0.748687901265349",
+      "unit": "kg C / kg",
+      "basis": "derived_stoichiometric on the pure methane reading the hydrogen seed's own catalog row declares: Ar C / M_CH4 = 12.011 / 16.043",
+      "consistency": "the same pure CH4 basis is what cases/standard-lca-seeds/hydrogen-natural-gas-smr declares for this flow at version 1.3.0, and this seed imports that flow identity rather than minting a second one; a fuel analysis would change both seeds, which is why the reuse is version-pinned in model/flow-dependencies.json",
+      "clause_refs": ["ST-10", "ST-13"]
+    },
+    {
+      "flow_role": "blast_furnace_hot_metal",
+      "property": "carbon_mass_fraction",
+      "value": "0.045",
+      "unit": "kg C / kg",
+      "basis": "demonstration tap composition; the carbon that stays dissolved in the metal is subtracted from the furnace gas carbon, which is exactly the 'carbon remaining in the product' leg of ST-08",
+      "clause_refs": ["ST-04", "ST-08"]
+    },
+    {
+      "flow_role": "steel_scrap",
+      "property": "carbon_mass_fraction",
+      "value": "0.004",
+      "unit": "kg C / kg",
+      "basis": "demonstration average for melted scrap; scrap is a listed exception of the Annex I iron and steel cell, so it is neither a precursor nor a good with an embedded-emissions declaration here (ST-14)",
+      "clause_refs": ["ST-08", "ST-14"],
+      "related_gap": "MG-S04"
+    },
+    {
+      "flow_role": "converter_liquid_steel",
+      "property": "carbon_mass_fraction",
+      "value": "0.0005",
+      "unit": "kg C / kg",
+      "basis": "demonstration non-alloy crude steel grade, 0.05 % C",
+      "clause_refs": ["ST-08"]
+    },
+    {
+      "flow_role": "crude_steel_slab",
+      "property": "carbon_mass_fraction",
+      "value": "0.0005",
+      "unit": "kg C / kg",
+      "basis": "the declared good keeps the same grade as the treated steel that entered the caster",
+      "clause_refs": ["ST-08"]
+    },
+    {
+      "flow_role": "continuous_casting_crop",
+      "property": "carbon_mass_fraction",
+      "value": "0.0005",
+      "unit": "kg C / kg",
+      "basis": "the cut loss carries the same grade; it leaves the boundary in version 1.1.0 and is assigned zero embedded emissions by ST-16",
+      "clause_refs": ["ST-08", "ST-16"],
+      "related_gap": "MG-S10"
+    }
+  ],
+  "other_declared_shares": [
+    {"flow_role": "iron_ore", "property": "iron_mass_fraction", "value": "0.604026845637584", "unit": "kg Fe / kg", "basis": "1490.000 kg of ore carries 900.000 kg of iron, all of it arriving as hematite Fe2O3", "clause_refs": ["ST-03"]},
+    {"flow_role": "iron_ore", "property": "lattice_oxygen_per_kg_iron", "value": "0.429734085414988", "unit": "kg O / kg Fe", "basis": "3 Ar O / 2 Ar Fe = 47.997 / 111.690, hematite stoichiometry", "clause_refs": ["ST-18"]},
+    {"flow_role": "limestone_flux", "property": "caco3_mass_fraction", "value": "0.94", "unit": "kg CaCO3 / kg flux", "basis": "demonstration flux purity; the 6 % inert residue travels into the slag unchanged", "clause_refs": ["ST-18"]},
+    {"flow_role": "metallurgical_coke", "property": "ash_mass_fraction", "value": "0.14", "unit": "kg ash / kg coke", "basis": "the complement of the declared carbon fraction, because the balance must go somewhere and is reported as slag", "clause_refs": ["ST-08"]}
+  ],
+  "carbon_to_port_book": [
+    {
+      "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+      "emission_kind": "combustion",
+      "carbon_origin": "the coke breeze of the sinter mix",
+      "carbon_kg": "52.800",
+      "formula": "carbon x f = 52.800 x 3.664",
+      "exact_kg_co2": "193.4592",
+      "stored_kg_co2": "193.4592",
+      "clause_refs": ["ST-03", "ST-08", "ST-10", "ST-18"]
+    },
+    {
+      "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+      "emission_kind": "process",
+      "carbon_origin": "the limestone flux carbonate of the sinter mix",
+      "carbonate_kg": "169.200",
+      "formula": "CaCO3 mass x the published Table 3 factor = 169.200 x 0.440",
+      "exact_kg_co2": "74.448",
+      "stored_kg_co2": "74.448",
+      "clause_refs": ["ST-03", "ST-18"],
+      "kind_note": "ST-18 definition (16)(c) puts the decomposition of carbonates, including those used for flue gas cleaning, among process emissions, so this exchange may not be hung on a combustion factor"
+    },
+    {
+      "exchange_id": "blast-furnace::co2-bf-reduction-out",
+      "emission_kind": "process",
+      "carbon_origin": "burden carbon that takes the oxygen left behind by the reduced iron oxides",
+      "carbon_kg": "143.2174872495380150496991",
+      "formula": "(lattice oxygen of the sinter iron minus the oxygen that ends up in the iron oxide sent to slag) / (f - 1) = (386.7606768734891216760676 - 5.229290840719849583669084) / 2.664, then x f",
+      "exact_kg_co2": "524.7488732823072871420975",
+      "stored_kg_co2": "524.748873",
+      "clause_refs": ["ST-04", "ST-08", "ST-10", "ST-18"],
+      "kind_note": "ST-18 definition (16)(a) names the chemical reduction of metal compounds in ores and concentrates a process emission. The denominator f - 1 is the oxygen the carbon takes from the burden, because one kilogram of carbon becomes 3.664 kg of CO2 of which 2.664 kg is oxygen; the furnace loses that oxygen from the ore and the seed counts it where it happens."
+    },
+    {
+      "exchange_id": "blast-furnace::co2-bf-raceway-out",
+      "emission_kind": "combustion",
+      "carbon_origin": "coke, injected coal and injected methane carbon burnt in the raceway with the preheated blast",
+      "carbon_kg": "266.6219162286144501999425",
+      "formula": "(coke + pci + methane carbon - carbon dissolved in the hot metal) - the reduction share above = (344.000 + 101.400 + 5.989403478152465249641588 - 41.550) - 143.2174872495380150496991, then x f",
+      "exact_kg_co2": "976.9027010616433455325893",
+      "stored_kg_co2": "976.902701",
+      "clause_refs": ["ST-08", "ST-10", "ST-18"],
+      "no_double_count": "the furnace's total gas carbon is split once between these two ports; no third exchange may attribute the same coke or coal carbon"
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+      "emission_kind": "process",
+      "carbon_origin": "hot metal carbon plus scrap carbon minus the carbon that stays in the liquid steel",
+      "carbon_kg": "41.640",
+      "formula": "41.550 + 0.600 - 0.510 = 41.640, then x f",
+      "exact_kg_co2": "152.56896",
+      "stored_kg_co2": "152.56896",
+      "clause_refs": ["ST-08", "ST-18"],
+      "kind_note": "this is the literal ST-08 case: carbon entering with scrap and remaining in the product are both read by the mass balance, and the difference is what leaves the vessel"
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+      "emission_kind": "process",
+      "carbon_origin": "the converter limestone flux carbonate",
+      "carbonate_kg": "42.300",
+      "formula": "45.000 x 0.94 purity x 0.440",
+      "exact_kg_co2": "18.612",
+      "stored_kg_co2": "18.612",
+      "clause_refs": ["ST-08", "ST-18"]
+    }
+  ],
+  "stored_versus_exact": "stored_kg_co2 is the six-decimal value the graph ports carry, which is what the engine will add as stored; exact_kg_co2 is the same product at full precision. The two furnace terms differ because their carbon masses are not finite six-decimal numbers; acceptance/expected-values.json keeps both readings and the engine result must equal the stored sum exactly and the exact sum within the stated tolerance.",
+  "negative_activity_data": {
+    "clause": "ST-08",
+    "quote_verbatim": "Carbon leaving the installation in products instead of being emitted is taken into account by output source streams, which have therefore negative activity data.",
+    "canonical_offset": 108148,
+    "reading_in_this_model": "the seed does not store a negative exchange: the retained carbon is subtracted inside the carbon book above (hot metal carbon, liquid steel carbon, slag carbon), and the graph keeps every physical output positive so the mass balance view stays readable. A model that instead reports a negative activity datum for the same carbon must not also subtract it here."
+  },
+  "basis": {
+    "material_condition": "dry_mass_as_declared",
+    "energy_convention": "not_applicable_to_this_record",
+    "reference_temperature_k": null,
+    "reference_pressure_pa": null
+  },
+  "usage_gate": "research",
+  "runtime_consumption": {
+    "status": "not_consumed_by_any_code_path",
+    "note": "src/nebula_one/analysis/cbam_trial.py sets no_lcia_factor_recalculation=true and reads the CO2 exchange amounts the engine characterises from model/graph.json, so this record is the authoring evidence for those amounts, not a runtime lookup. If a future build derives the exchanges from fuel quantities in code, the constants must move into a registered versioned method package instead of being read from this file."
+  },
+  "explicit_non_assertions": [
+    "the carbon fractions are demonstration declarations, not an installation fuel analysis",
+    "the two published constants are quoted from the version of the regulation named in each published_source block and must be re-verified against a newer consolidated text before any change of wording",
+    "this record asserts no compliance with any monitoring, reporting or verification obligation"
+  ]
+}

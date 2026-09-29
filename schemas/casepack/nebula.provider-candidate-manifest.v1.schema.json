@@ -1,0 +1,315 @@
+{
+  "$defs": {
+    "ExactDatasetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "dataset_kind": {
+          "enum": [
+            "flow",
+            "process",
+            "lifecycle_model"
+          ],
+          "title": "Dataset Kind",
+          "type": "string"
+        },
+        "source_namespace": {
+          "const": "tiangong_open_data",
+          "enum": [
+            "tiangong_open_data"
+          ],
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "uuid": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Uuid",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]{2}\\.[0-9]{2}\\.[0-9]{3}$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "dataset_kind",
+        "uuid",
+        "version",
+        "content_sha256"
+      ],
+      "title": "ExactDatasetRef",
+      "type": "object"
+    },
+    "ExactReferenceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "uuid": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Uuid",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]{2}\\.[0-9]{2}\\.[0-9]{3}$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uuid",
+        "version"
+      ],
+      "title": "ExactReferenceRef",
+      "type": "object"
+    },
+    "ProviderCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "disposition": {
+          "enum": [
+            "recall_only",
+            "rejected",
+            "accepted"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "flow_property_ref": {
+          "anyOf": [
+            {
+              "$ref": "nebula.provider-candidate-manifest.v1.schema.json#/$defs/ExactReferenceRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "identity": {
+          "$ref": "nebula.provider-candidate-manifest.v1.schema.json#/$defs/ExactDatasetRef"
+        },
+        "intended_role": {
+          "enum": [
+            "crude_oil",
+            "distillate",
+            "hydrogen",
+            "low_sulfur_diesel",
+            "other"
+          ],
+          "title": "Intended Role",
+          "type": "string"
+        },
+        "name_en": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name En",
+          "type": "string"
+        },
+        "name_zh": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name Zh"
+        },
+        "reason": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "type_of_data_set": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Type Of Data Set",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "intended_role",
+        "identity",
+        "type_of_data_set",
+        "name_en",
+        "disposition",
+        "reason"
+      ],
+      "title": "ProviderCandidate",
+      "type": "object"
+    },
+    "RecallSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "data_source": {
+          "const": "tg",
+          "enum": [
+            "tg"
+          ],
+          "title": "Data Source",
+          "type": "string"
+        },
+        "dataset_kind": {
+          "enum": [
+            "flow",
+            "process",
+            "lifecycle_model"
+          ],
+          "title": "Dataset Kind",
+          "type": "string"
+        },
+        "query": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        },
+        "record_count": {
+          "minimum": 0,
+          "title": "Record Count",
+          "type": "integer"
+        },
+        "snapshot_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Sha256",
+          "type": "string"
+        },
+        "state_scope": {
+          "const": "open",
+          "enum": [
+            "open"
+          ],
+          "title": "State Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_kind",
+        "query",
+        "state_scope",
+        "data_source",
+        "record_count",
+        "snapshot_sha256"
+      ],
+      "title": "RecallSnapshot",
+      "type": "object"
+    },
+    "ReferenceClosureAudit": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "minimum": 1,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "missing_unit_group_uuids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Unit Group Uuids",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "attempts"
+      ],
+      "title": "ReferenceClosureAudit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "acceptance_gate": {
+      "enum": [
+        "blocked",
+        "ready"
+      ],
+      "title": "Acceptance Gate",
+      "type": "string"
+    },
+    "audit_date": {
+      "format": "date",
+      "title": "Audit Date",
+      "type": "string"
+    },
+    "candidates": {
+      "items": {
+        "$ref": "nebula.provider-candidate-manifest.v1.schema.json#/$defs/ProviderCandidate"
+      },
+      "title": "Candidates",
+      "type": "array"
+    },
+    "case_pack_id": {
+      "const": "petrochemical-refinery-reference",
+      "enum": [
+        "petrochemical-refinery-reference"
+      ],
+      "title": "Case Pack Id",
+      "type": "string"
+    },
+    "raw_payload_committed": {
+      "const": false,
+      "enum": [
+        false
+      ],
+      "title": "Raw Payload Committed",
+      "type": "boolean"
+    },
+    "recall_snapshots": {
+      "items": {
+        "$ref": "nebula.provider-candidate-manifest.v1.schema.json#/$defs/RecallSnapshot"
+      },
+      "minItems": 1,
+      "title": "Recall Snapshots",
+      "type": "array"
+    },
+    "reference_closure": {
+      "$ref": "nebula.provider-candidate-manifest.v1.schema.json#/$defs/ReferenceClosureAudit"
+    },
+    "schema_version": {
+      "const": "nebula.provider-candidate-manifest.v1",
+      "enum": [
+        "nebula.provider-candidate-manifest.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_pack_id",
+    "audit_date",
+    "raw_payload_committed",
+    "reference_closure",
+    "recall_snapshots",
+    "candidates",
+    "acceptance_gate"
+  ],
+  "title": "ProviderCandidateManifest",
+  "type": "object"
+}

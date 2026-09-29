@@ -1,0 +1,108 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "application_id": {
+      "title": "Application Id",
+      "type": "string"
+    },
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "baseline_scenario_id": {
+      "title": "Baseline Scenario Id",
+      "type": "string"
+    },
+    "capability_key": {
+      "const": "electricity.province-scenario.v1",
+      "enum": [
+        "electricity.province-scenario.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "electricity_activity": {
+      "title": "Electricity Activity",
+      "type": "object"
+    },
+    "factor_source": {
+      "title": "Factor Source",
+      "type": "object"
+    },
+    "issues": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "method_package": {
+      "title": "Method Package",
+      "type": "object"
+    },
+    "scenarios": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Scenarios",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "nebula_one.province-electricity-scenario.v1",
+      "enum": [
+        "nebula_one.province-electricity-scenario.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_binding": {
+      "title": "Source Binding",
+      "type": "object"
+    },
+    "source_period_energy_total": {
+      "title": "Source Period Energy Total",
+      "type": "object"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "passed_with_warnings"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "system_model_id": {
+      "title": "System Model Id",
+      "type": "string"
+    },
+    "value_semantics": {
+      "title": "Value Semantics",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "application_id",
+    "system_model_id",
+    "source_period_energy_total",
+    "source_binding",
+    "method_package",
+    "value_semantics",
+    "electricity_activity",
+    "factor_source",
+    "baseline_scenario_id",
+    "scenarios",
+    "issues",
+    "status",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "ProvinceElectricityOut",
+  "type": "object"
+}

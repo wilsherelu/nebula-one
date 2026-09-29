@@ -1,0 +1,17 @@
+.page-header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: var(--no-space-4); margin-bottom: var(--no-space-4); }
+.page-header__copy { min-width: 0; display: flex; align-items: baseline; gap: var(--no-space-3); }
+.page-header h1 { flex: 0 0 auto; margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+.page-header p { min-width: 0; margin: 0; color: var(--no-color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric-card { min-width: 0; padding: var(--no-space-4); border: 1px solid var(--no-color-border); border-radius: var(--no-radius-panel); background: var(--no-color-surface); box-shadow: var(--no-shadow-panel); }
+.metric-card__label { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric-card__value { margin-top: var(--no-space-2); font-size: 30px; line-height: 36px; font-weight: 650; color: var(--no-color-text); }
+.metric-card__foot { min-height: 18px; margin-top: var(--no-space-1); display: flex; justify-content: space-between; gap: var(--no-space-2); color: var(--no-color-text-tertiary); font-size: 12px; }
+.metric-card--positive .metric-card__delta { color: var(--no-color-success); }
+.metric-card--negative .metric-card__delta { color: var(--no-color-danger); }
+.copyable-value { display: inline-flex; align-items: center; gap: var(--no-space-1); min-width: 0; }
+@media (max-width: 768px) {
+  .page-header { align-items: stretch; flex-direction: column; padding-block: var(--no-space-3); }
+  .page-header__copy { align-items: flex-start; flex-direction: column; gap: 0; }
+  .page-header p { white-space: normal; }
+  .page-header__action .arco-btn { width: 100%; }
+}

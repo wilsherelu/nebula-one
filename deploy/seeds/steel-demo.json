@@ -1,0 +1,97 @@
+{
+  "schema_version": "nebula_one.seed_autoload.v1",
+  "steps": [
+    {
+      "kind": "register_method_package",
+      "path": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/methods/cbam-eu-iron-steel-bf-bof-direct-trial-1.0.1.json",
+      "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+      "version": "1.0.1",
+      "package_kind": "cbam_trial",
+      "content_sha256": "57a2910cbd5bd7969905e297494c1540dfa305b34d404a3107c1c119f8e56595"
+    },
+    {
+      "kind": "register_method_package",
+      "path": "src/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.1.json",
+      "package_id": "pcf.product.ef31.foreground",
+      "version": "1.0.1",
+      "package_kind": "product_carbon_footprint",
+      "content_sha256": "312ba6f7629cc619175646956e4392e822370081bb1a2a0cb5f262004488654f"
+    },
+    {
+      "kind": "ensure_application",
+      "key": "iron-steel-bf-bof-crude-steel-1.1.0",
+      "name": "钢铁高炉—转炉示例（标准种子 1.1.0）",
+      "application_type": "cbam",
+      "method_package_refs": ["pcf.product.ef31.foreground@1.0.1", "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1"]
+    },
+    {
+      "kind": "ensure_period",
+      "application_key": "iron-steel-bf-bof-crude-steel-1.1.0",
+      "key": "calendar-2026",
+      "name": "2026 年",
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "resolution": "year"
+    },
+    {
+      "kind": "ensure_open_tiangong_flows",
+      "seed": "nebula.iron-steel.bf-bof-crude-steel",
+      "version": "1.1.0",
+      "flows": [
+        {
+          "flow_uuid": "3d76981f-964a-4865-b588-0e067a2a1163",
+          "source_namespace": "tiangong_open_data",
+          "source_version": "01.01.003",
+          "asset_sha256": "16166e5a86f091a29d8c236d4eb6d6c2f48c280fe800d2eddc2d5a869cc3853e"
+        },
+        {
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "source_namespace": "tiangong_open_data",
+          "source_version": "03.00.004",
+          "asset_sha256": "ec747b3b9d4997f25999adefd9464bc8c592a50f2e116346a4eec31bfab28e08"
+        }
+      ]
+    },
+    {
+      "kind": "install_seed",
+      "seed": "iron-steel-bf-bof-crude-steel",
+      "version": "1.1.0",
+      "bundle_content_sha256": "0a2a553ae4ca42bbb221d7b16d55a631c12091caa37aa00cc6c4e1f2231ee07e",
+      "application_key": "iron-steel-bf-bof-crude-steel-1.1.0",
+      "boundary_key": "cbam",
+      "declarations": {"ST-07": "sold_or_transferred_as_crude_steel"}
+    },
+    {
+      "kind": "ensure_public_supply",
+      "path": "src/nebula_one/resources/public_supply/china-grid-co2-2023.v1.json",
+      "seed_id": "china-national-grid-co2-2023",
+      "version": "1.0.0",
+      "content_sha256": "45e2c29dd362ba236705829ce9a0fd98b668ee9239e40e0d4c7e0a52bc2960f0"
+    },
+    {
+      "kind": "ensure_template_editor_source",
+      "seed": "nebula.iron-steel.bf-bof-crude-steel",
+      "version": "1.1.0",
+      "bundle_content_sha256": "0a2a553ae4ca42bbb221d7b16d55a631c12091caa37aa00cc6c4e1f2231ee07e"
+    },
+    {
+      "kind": "ensure_demo_project",
+      "seed": "nebula.iron-steel.bf-bof-crude-steel",
+      "version": "1.1.0",
+      "bundle_content_sha256": "0a2a553ae4ca42bbb221d7b16d55a631c12091caa37aa00cc6c4e1f2231ee07e",
+      "key": "steel-bf-bof-2026",
+      "display_name": {
+        "zh": "钢铁示例",
+        "en": "Steel example"
+      }
+    },
+    {
+      "kind": "register_method_package",
+      "path": "src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.1.3.json",
+      "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+      "version": "1.1.3",
+      "package_kind": "cbam_trial",
+      "content_sha256": "be3d67af14f7fa7f0d3a5158e75959b604d6d39208e9a361c50bb626e64571fb"
+    }
+  ]
+}

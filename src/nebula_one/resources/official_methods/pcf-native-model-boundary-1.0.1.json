@@ -1,0 +1,38 @@
+{
+  "package_id": "pcf.iron-steel.native-model-boundary",
+  "version": "1.0.1",
+  "package_kind": "product_carbon_footprint",
+  "jurisdiction": null,
+  "valid_from": null,
+  "valid_to": null,
+  "manifest": {
+    "template_profile": {"id": "steel-bf-bof-inventory", "version": "1.1.2", "content_sha256": "df91eaf3c96638d1f20bbec40c544f046fe1107bb78282ba532da95fd2dbbe35"},
+    "required_entity_types": ["solved_system_snapshot"],
+    "required_data_fields": ["single exact product demand", "frozen merged native climate answer"],
+    "accepted_units": {"result": ["kg CO2-Eq"]},
+    "boundary_schema": {"claim_scope": "model_defined_partial_background", "complete_product_declaration": false},
+    "formula_graph": {
+      "source_contract": "provider.native-background-climate-total.response.v1",
+      "source_method": {
+        "id": "ecoinvent-ef31-climate-total-3.11",
+        "version": "1.0.0",
+        "content_sha256": "b3cb07ccb69f9e6efa6669c6dcc68912de82ae54ea6f1fa5974dbce1d1797633"
+      },
+      "lcia_method": "EF v3.1",
+      "total_indicator_key": "climate-change-total",
+      "result_unit": "kg CO2-Eq"
+    },
+    "classification_rules": {"domains": ["foreground", "native_background"]},
+    "default_value_rules": {"allowed": false},
+    "validation_rules": {"limitations": [
+      "The model defines the product boundary; this method does not certify lifecycle completeness.",
+      "The pinned source covers foreground and associated native background leaves only.",
+      "This is an example calculation, not a verified corporate product declaration."
+    ]},
+    "output_schema": {"schema_version": "nebula_one.pcf.product.v1"},
+    "report_mapping": {"total": "total_footprint", "domains": "component_results"},
+    "test_cases": ["exact native method and merged total", "split domains refuse a product total"],
+    "provenance": {"owner": "Nebula One open-source reference", "source": "resources/native_background_climate.json", "license": "Apache-2.0 for this authored method structure"},
+    "assurance_level": "demonstration"
+  }
+}

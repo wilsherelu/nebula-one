@@ -1,0 +1,318 @@
+{
+  "$defs": {
+    "ParameterBindingIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "enum": [
+            "draft",
+            "frozen"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "lifecycle_status"
+      ],
+      "title": "ParameterBindingIdentity",
+      "type": "object"
+    },
+    "ScaleFlowBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "operation": {
+          "const": "scale_flow",
+          "enum": [
+            "scale_flow"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "order": {
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "parameter_key": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Parameter Key",
+          "type": "string"
+        },
+        "parameter_unit_identity": {
+          "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/UnitIdentity"
+        },
+        "target": {
+          "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/ScaleFlowTarget"
+        }
+      },
+      "required": [
+        "binding_id",
+        "order",
+        "operation",
+        "parameter_key",
+        "parameter_unit_identity",
+        "target"
+      ],
+      "title": "ScaleFlowBinding",
+      "type": "object"
+    },
+    "ScaleFlowTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "flow_uuid": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Flow Uuid",
+          "type": "string"
+        },
+        "unit_group": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Unit Group",
+          "type": "string"
+        },
+        "unit_group_uuid": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Group Uuid"
+        },
+        "unit_group_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Group Version"
+        }
+      },
+      "required": [
+        "flow_uuid",
+        "unit_group"
+      ],
+      "title": "ScaleFlowTarget",
+      "type": "object"
+    },
+    "SetExchangeAmountBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "operation": {
+          "const": "set_exchange_amount",
+          "enum": [
+            "set_exchange_amount"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "order": {
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "parameter_key": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Parameter Key",
+          "type": "string"
+        },
+        "parameter_unit_identity": {
+          "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/UnitIdentity"
+        },
+        "target": {
+          "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/SetExchangeAmountTarget"
+        }
+      },
+      "required": [
+        "binding_id",
+        "order",
+        "operation",
+        "parameter_key",
+        "parameter_unit_identity",
+        "target"
+      ],
+      "title": "SetExchangeAmountBinding",
+      "type": "object"
+    },
+    "SetExchangeAmountTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "flow_uuid": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Flow Uuid",
+          "type": "string"
+        },
+        "port_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Port Id",
+          "type": "string"
+        },
+        "process_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Process Id",
+          "type": "string"
+        },
+        "unit_identity": {
+          "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/UnitIdentity"
+        }
+      },
+      "required": [
+        "process_id",
+        "port_id",
+        "flow_uuid",
+        "unit_identity"
+      ],
+      "title": "SetExchangeAmountTarget",
+      "type": "object"
+    },
+    "UnitIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "unit_group": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Unit Group",
+          "type": "string"
+        },
+        "unit_group_uuid": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Group Uuid"
+        },
+        "unit_group_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Group Version"
+        }
+      },
+      "required": [
+        "unit",
+        "unit_group"
+      ],
+      "title": "UnitIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "bindings": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "scale_flow": "nebula.parameter-binding.v1.schema.json#/$defs/ScaleFlowBinding",
+            "set_exchange_amount": "nebula.parameter-binding.v1.schema.json#/$defs/SetExchangeAmountBinding"
+          },
+          "propertyName": "operation"
+        },
+        "oneOf": [
+          {
+            "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/SetExchangeAmountBinding"
+          },
+          {
+            "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/ScaleFlowBinding"
+          }
+        ]
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Bindings",
+      "type": "array"
+    },
+    "parameter_binding": {
+      "$ref": "nebula.parameter-binding.v1.schema.json#/$defs/ParameterBindingIdentity"
+    },
+    "rule_version": {
+      "const": "model-operation.v1",
+      "enum": [
+        "model-operation.v1"
+      ],
+      "title": "Rule Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula.parameter-binding.v1",
+      "enum": [
+        "nebula.parameter-binding.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "parameter_binding",
+    "rule_version",
+    "bindings"
+  ],
+  "title": "ParameterBindingDocument",
+  "type": "object"
+}

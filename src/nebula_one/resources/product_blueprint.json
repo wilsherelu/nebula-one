@@ -1,0 +1,150 @@
+{
+  "schema_version": "nebula_one.product_blueprint.v2",
+  "product": {
+    "working_name": "Nebula One",
+    "layer": "sustainability application layer",
+    "foundation": "TIDAS data language and Nebula LCA modelling/calculation engine",
+    "principle": "Sustainability functions are composed by operating Flow, Process and System objects, freezing revisions, then applying calculation and method packages."
+  },
+  "core_objects": [
+    {
+      "key": "flow",
+      "meaning": "A typed material, energy, product, waste or elementary-flow port and its exchanges.",
+      "operations": ["add_port", "update_port", "remove_port", "connect", "update_exchange", "disconnect"]
+    },
+    {
+      "key": "process",
+      "meaning": "A transformation or activity node containing input, output and emission Flow ports.",
+      "operations": ["add", "update", "remove"]
+    },
+    {
+      "key": "system",
+      "meaning": "A bounded graph of Processes and Flows with functional unit and application context.",
+      "operations": ["set_functional_unit", "merge_context", "scale_flows"]
+    }
+  ],
+  "mechanism": [
+    "attach an exact Nebula LCA project and version",
+    "create an immutable base System revision",
+    "apply one explicit Flow, Process or System operation to a chosen parent revision",
+    "freeze graph and application-context hashes in a child revision",
+    "run composable analyses against the selected revision",
+    "optionally publish a confirmed revision as a new Nebula LCA model version"
+  ],
+  "operation_contracts": [
+    "system.set_functional_unit",
+    "system.merge_context",
+    "system.scale_flows",
+    "process.add",
+    "process.update",
+    "process.remove",
+    "flow.add_port",
+    "flow.update_port",
+    "flow.remove_port",
+    "flow.connect",
+    "flow.update_exchange",
+    "flow.disconnect"
+  ],
+  "runtime_objects": [
+    {
+      "key": "entity_and_binding",
+      "objects": ["Entity", "EntityModelBinding"],
+      "status": "implemented"
+    },
+    {
+      "key": "scope_and_time",
+      "objects": ["BoundaryDefinition", "Period"],
+      "status": "implemented"
+    },
+    {
+      "key": "observed_inventory",
+      "objects": ["EvidenceItem", "InventorySnapshot", "InventoryDataPoint"],
+      "status": "implemented"
+    },
+    {
+      "key": "scenario_runtime",
+      "objects": ["ParameterSet", "ParameterBinding", "ResolvedOperationSet", "Scenario", "AnalysisPlan", "Comparison"],
+      "status": "implemented"
+    },
+    {
+      "key": "solve_and_provenance",
+      "objects": ["SolvedSystemSnapshot", "ResultSet", "EvidencePack", "MethodPackage"],
+      "status": "implemented_contract"
+    }
+  ],
+  "analysis_layers": [
+    {
+      "key": "inventory_and_impact",
+      "current": ["inventory_snapshot.v1", "lcia.nebula.v1", "solve.nebula.v1", "method_package_manifest.v1", "pcf.product.v1"],
+      "planned": ["organizational_scope_inventory", "avoided_emissions"]
+    },
+    {
+      "key": "physical_flow",
+      "current": ["mfa.declared.v1", "mfa.solved.v1", "energy.carrier.solved.v1", "provider_solved_system.v1", "solved_system_snapshot.v1", "sankey.svg.v1"],
+      "planned": ["complete_energy_balance", "stock_and_cohort"]
+    },
+    {
+      "key": "change_and_comparison",
+      "current": ["immutable_revision_branching", "atomic_operation_batch", "parameter_sets", "parameter_binding.v1", "scenario_comparison", "energy.scenario-comparison.v1"],
+      "planned": ["sensitivity", "uncertainty", "optimization"]
+    },
+    {
+      "key": "space_and_governance",
+      "current": ["entity_hierarchy", "formal_boundary", "period", "evidence_pack"],
+      "planned": ["province_geometry_and_aggregation", "tenant_permissions", "versioned_report_templates"]
+    }
+  ],
+  "application_compositions": [
+    {
+      "key": "industrial_ecology_research",
+      "composition": ["system graph editing", "MFA and energy flow", "LCA and LCIA", "scenario and spatial comparison"]
+    },
+    {
+      "key": "product_footprint",
+      "composition": ["functional unit", "product system boundary", "LCI and LCIA", "versioned evidence and report package"]
+    },
+    {
+      "key": "enterprise_and_scope",
+      "composition": ["organization boundary", "process and energy inventory", "Scope classification package", "audit trail"]
+    },
+    {
+      "key": "park_and_region",
+      "composition": ["multi-organization system", "material and energy network", "spatial context", "baseline and transition scenarios"]
+    },
+    {
+      "key": "project_carbon",
+      "composition": ["project stages", "baseline revision", "construction and operation scenarios", "impact comparison"]
+    },
+    {
+      "key": "cbam_and_carbon_market",
+      "composition": ["installation and product boundary", "precursor and electricity flows", "versioned regulatory method package", "auditable reporting"]
+    }
+  ],
+  "release_boundary": {
+    "implemented": [
+      "exact model pin and base revision",
+      "Flow, Process and System operation catalog",
+      "immutable revision branching and operation receipts",
+      "revision-bound declared MFA and Nebula LCA LCIA",
+      "explicitly confirmed publication to a new Nebula LCA version",
+      "Entity, Period, BoundaryDefinition and EntityModelBinding",
+      "frozen InventorySnapshot and evidence-backed data points",
+      "ParameterSet, Scenario, AnalysisPlan and comparability checks",
+      "versioned MethodPackage manifest",
+      "SolvedSystemSnapshot ingestion contract, ResultSet and EvidencePack",
+      "provider v1 snapshot, exact catalog resolver and structured-demand solve",
+      "automatic provider solve persistence and SolvedSystemSnapshot freezing",
+      "solved-exchange MFA aggregation, conservation audit and traceable Sankey SVG",
+      "atomic and idempotent ModelOperation v1 batches",
+      "strict ParameterBinding v1 expansion with exact units and deterministic idempotency"
+    ],
+    "not_claimed": [
+      "general unit conversion",
+      "cross-unit and temporal-stock MFA",
+      "regulatory or compliance correctness",
+      "hardcoded Scope, ESG, CBAM or carbon-market mappings",
+      "production tenant, authorization or audit controls",
+      "PostgreSQL migrations and transactional outbox"
+    ]
+  }
+}

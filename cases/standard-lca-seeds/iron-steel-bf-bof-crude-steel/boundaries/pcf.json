@@ -1,0 +1,81 @@
+{
+  "schema_version": "nebula.standard-seed.boundary.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "application": "pcf",
+  "clause_refs": ["ST-02", "ST-06", "ST-08", "ST-10", "ST-12", "ST-18"],
+  "result_contract": {
+    "characterisation": "engine EF 3.1 on the exact foreground boundary elementary inventory",
+    "engine_scope_pin": "model/project-row.json allowed_lcia_scope = ef31_only",
+    "headline": "kg CO2-equivalent per kg crude steel",
+    "claim": "foreground boundary only, partial: not cradle-to-gate, not a product carbon footprint of the ISO 14067 kind, and not Scope 1 + 2 + 3",
+    "claim_level": "demonstration"
+  },
+  "segments": {
+    "foreground_elementary": {
+      "conclusion": "included",
+      "included_exchanges": [
+        "basic-oxygen-converter::co2-converter-decarburisation-out",
+        "basic-oxygen-converter::co2-converter-flux-out",
+        "blast-furnace::co2-bf-raceway-out",
+        "blast-furnace::co2-bf-reduction-out",
+        "ore-sintering::co2-sinter-breeze-out",
+        "ore-sintering::co2-sinter-carbonate-out"
+      ],
+      "note": "the same six sources the CBAM boundary counts, because CO2 is the only greenhouse gas the Annex I cell lists for crude steel (ST-02). The number this segment produces is an engine characterisation result on the same inventory, so it equals the CBAM direct term by construction and is reported in kg per kg rather than t per t; it is not a second, independent carbon footprint figure"
+    },
+    "indirect_electricity_emissions": {
+      "conclusion": "undecided",
+      "excluded_exchanges": [],
+      "reason": "a foreground carbon account for steel that ignores the 625 MJ of grid electricity would misrepresent the model, but no factor package in this repository selects this seed's electricity flow identity. The seed carries the hydrogen seed's energy-basis flow at nebula.standard-lca-seed/222665f3-76a4-5894-a34a-27107e793f08/1.0.0, re-derived from that seed's identity in model/flow-dependencies.json, while the province electricity package selects a tiangong_open_data flow identity. Reusing it here would be name matching across two different dataset identities, which model/flow-dependencies.json forbids, so the item stays undecided and the PCF is labelled incomplete.",
+      "next_step": "publish a versioned electricity factor package whose selector pins the shared seed flow identity, or replace the flow with a verified upstream identity, before any Scope 2 style statement is shown for this good"
+    },
+    "upstream_material_supply": {
+      "conclusion": "coverage_limit",
+      "reason": "iron ore concentrate, coke, PCI coal, limestone and scrap are terminal inputs of this model, so mining, coking, coal washing, lime burning and scrap collection and processing sit outside the modelled system. For steel those stages are a large share of a cradle-to-gate figure, which is the main reason this boundary must be read as a partial account.",
+      "clause_note": "the CBAM direct-only rule of ST-12 has no bearing on this segment: a carbon footprint is a voluntary claim with a wider scope than the regulatory numerator, so a missing background inventory is a coverage limit rather than an exclusion"
+    },
+    "other_greenhouse_gases": {
+      "conclusion": "coverage_limit",
+      "reason": "the model authors no methane or nitrous oxide exchange. ST-02 keeps the CBAM numerator to CO2 for this good, but a PCF reader would expect the fugitive CH4 of the furnace top gas and the N2O of the sinter strand flue gas treatment to be at least named; neither is authored, so the characterised inventory is CO2 only by construction rather than by a statement that the others are zero",
+      "gap_ref": "MG-S06"
+    }
+  },
+  "exclusions": [
+    {
+      "label": "purchase and maintenance of infrastructure and equipment",
+      "clause": "ST-07",
+      "kind": "regulatory_exclusion",
+      "note": "the sector neutral enumeration; an excluded entry that is not a clause-backed rule must block import rather than shrink the account"
+    },
+    {
+      "label": "processes outside the ST-06 crude steel system boundary",
+      "clause": "ST-06",
+      "kind": "scope_statement",
+      "note": "iron making before the sinter strand and finishing rolling after the caster are out of scope of this model, stated as a scope boundary and not as an emission reduction"
+    }
+  ],
+  "undecided": [
+    {
+      "item": "indirect electricity emissions",
+      "state": "undecided",
+      "clause": "ST-12",
+      "gap_ref": "GS-04",
+      "effect": "the PCF page must show the item as an open question with the identity reason above; it must not render as zero and must not be summed into the headline figure"
+    },
+    {
+      "item": "allocation of the two slags and of the casting crop",
+      "state": "undecided",
+      "clause": "ST-16",
+      "gap_ref": "MG-S10",
+      "effect": "blast furnace slag and converter slag leave the boundary as products of a route that is also a cement and road-building input, and ST-16 gives cut-off scrap zero embedded emissions. A PCF needs an allocation rule for the slags; until one is published with a source, the denominator stays at the slab and the slags are reported as unallocated co-products rather than as free mass"
+    }
+  ],
+  "basis_divergence_note": "the combustion and carbonate carbon in this model follows the published conversion constants of ST-08 (f = 3,664 t CO2 per t C and the 0,440 t CO2 per t CaCO3 row of Annex II section G), which differ from a pure atomic-mass computation by 0.0016 % and 0.065 % respectively. A PCF reader who recomputes from atomic weights sees slightly different figures; parameters/carbon-content.json records both readings and the difference is modeling gap MG-S07 rather than a silent choice.",
+  "refusal_conditions": [
+    "a result labelled cradle-to-gate, product carbon footprint, or Scope 1 + 2 + 3 while the upstream segment is a terminal boundary",
+    "a resolved indirect electricity number that came from a flow identity other than the one in this model",
+    "an allocation of the slags that is not backed by a published, versioned allocation rule",
+    "a PCF figure that differs from the CBAM direct term for the same model, since both read one inventory and one gas list"
+  ]
+}

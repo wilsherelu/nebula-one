@@ -1,0 +1,214 @@
+{
+  "$defs": {
+    "LicenseAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "asset_type": {
+          "enum": [
+            "source_document",
+            "data",
+            "external_reference",
+            "identifier_set"
+          ],
+          "title": "Asset Type",
+          "type": "string"
+        },
+        "audit_conclusion": {
+          "enum": [
+            "verified",
+            "blocked_missing_source",
+            "excluded_not_present"
+          ],
+          "title": "Audit Conclusion",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "open_redistributable",
+            "exact_reference_only",
+            "private_not_redistributable",
+            "demonstration_authored"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "files": {
+          "default": [],
+          "items": {
+            "$ref": "nebula.casepack-licenses.v1.schema.json#/$defs/LicenseFileEvidence"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "notes": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Notes",
+          "type": "string"
+        },
+        "redistribution_allowed": {
+          "title": "Redistribution Allowed",
+          "type": "boolean"
+        },
+        "rights_holder": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rights Holder"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "maxLength": 1024,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "asset_id",
+        "asset_type",
+        "redistribution_allowed",
+        "classification",
+        "audit_conclusion",
+        "notes"
+      ],
+      "title": "LicenseAsset",
+      "type": "object"
+    },
+    "LicenseFileEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "File Sha256",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "file_sha256"
+      ],
+      "title": "LicenseFileEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assets": {
+      "items": {
+        "$ref": "nebula.casepack-licenses.v1.schema.json#/$defs/LicenseAsset"
+      },
+      "minItems": 1,
+      "title": "Assets",
+      "type": "array"
+    },
+    "audit_status": {
+      "enum": [
+        "complete",
+        "complete_with_gaps"
+      ],
+      "title": "Audit Status",
+      "type": "string"
+    },
+    "case_pack_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+      "title": "Case Pack Id",
+      "type": "string"
+    },
+    "classification_policy": {
+      "items": {
+        "enum": [
+          "open_redistributable",
+          "exact_reference_only",
+          "private_not_redistributable",
+          "demonstration_authored"
+        ],
+        "type": "string"
+      },
+      "title": "Classification Policy",
+      "type": "array"
+    },
+    "manifest_version": {
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+      "title": "Manifest Version",
+      "type": "string"
+    },
+    "publication_gate": {
+      "enum": [
+        "eligible",
+        "blocked"
+      ],
+      "title": "Publication Gate",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula.casepack-licenses.v1",
+      "enum": [
+        "nebula.casepack-licenses.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_pack_id",
+    "manifest_version",
+    "audit_status",
+    "publication_gate",
+    "classification_policy",
+    "assets"
+  ],
+  "title": "LicenseManifestDocument",
+  "type": "object"
+}

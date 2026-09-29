@@ -1,0 +1,134 @@
+name: ${COMPOSE_PROJECT_NAME:-nebula-one-rc}
+
+services:
+  nebula-lca-solver:
+    build:
+      context: ${NEBULA_LCA_SOURCE_DIR:?Set NEBULA_LCA_SOURCE_DIR to a compatible Nebula LCA checkout}/nebula-lca-solver
+      dockerfile_inline: |
+        FROM python:3.10-slim
+        ENV PYTHONUNBUFFERED=1 PYTHONUTF8=1
+        WORKDIR /app
+        COPY requirements.txt ./
+        RUN pip install --no-cache-dir -r requirements.txt
+        COPY app/ ./app/
+        COPY proto/ ./proto/
+        EXPOSE 8000
+        CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      NEBULA_LCA_EF31_DIR: /app/runtime/ef31
+      NEBULA_LCA_LEGACY_EF31_DIR: /app/data/EF3.1
+    volumes:
+      - nebula-lca-runtime:/app/runtime
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).status == 200 else sys.exit(1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    restart: unless-stopped
+
+  nebula-lca-api:
+    build:
+      context: ${NEBULA_LCA_SOURCE_DIR:?Set NEBULA_LCA_SOURCE_DIR to a compatible Nebula LCA checkout}
+      dockerfile_inline: |
+        FROM python:3.10-slim
+        ENV PYTHONUNBUFFERED=1 PYTHONUTF8=1
+        WORKDIR /app
+        COPY nebula-lca-api/requirements.txt ./
+        RUN pip install --no-cache-dir -r requirements.txt
+        COPY nebula-lca-api/app/ ./app/
+        COPY nebula-lca-api/data/Tiangong/ILCD_Unit_Groups.xlsx ./data/Tiangong/ILCD_Unit_Groups.xlsx
+        COPY nebula-lca-api/data/Tiangong/elementary_flows_sample.csv ./data/Tiangong/elementary_flows_sample.csv
+        COPY nebula-lca-api/data/Tiangong/intermediate_flows_sample.csv ./data/Tiangong/intermediate_flows_sample.csv
+        COPY nebula-lca-api/data/Tiangong/tiangong_processes.zip ./data/Tiangong/tiangong_processes.zip
+        COPY nebula-lca-api/data/Tiangong/tidas_reference_seed.json ./data/Tiangong/tidas_reference_seed.json
+        COPY nebula-lca-api/data/EF3.1/flow_index.csv ./data/EF3.1/flow_index.csv
+        COPY nebula-lca-api/data/EF3.1/indicator_index.csv ./data/EF3.1/indicator_index.csv
+        COPY nebula-lca-api/data/EF3.1/lcia_factors.csv ./data/EF3.1/lcia_factors.csv
+        COPY nebula-lca-api/data/flow_mappings/nebula-flow-mapping-v1/ ./data/flow_mappings/nebula-flow-mapping-v1/
+        COPY nebula-lca-api/data/provider_profiles/steel_tiangong_open_flows.v1.json ./data/provider_profiles/steel_tiangong_open_flows.v1.json
+        COPY nebula-lca-api/data/provider_profiles/steel_tiangong_open_references.v1.json ./data/provider_profiles/steel_tiangong_open_references.v1.json
+        COPY nebula-lca-solver/app/core/ /nebula-lca-solver/app/core/
+        RUN mkdir -p /app/data/runtime /app/import-cache /app/runtime
+        EXPOSE 18080
+        CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "18080"]
+    depends_on:
+      nebula-lca-solver:
+        condition: service_healthy
+    env_file:
+      - engine.env
+    environment:
+      DATABASE_URL: ${NEBULA_LCA_DATABASE_URL:-sqlite:////app/data/runtime/nebula-lca.db}
+      NEBULA_LCA_SOLVER_API_URL: http://nebula-lca-solver:8000
+      NEBULA_LCA_EF31_DIR: /app/data/EF3.1
+      NEBULA_LCA_RUNTIME_ROOT: /app/runtime
+      NEBULA_IMPORT_CACHE_DIR: /app/import-cache
+      NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: ${NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH:-/app/runtime/provider/flow-snapshot.json}
+      NEBULA_PROVIDER_TIDAS_REFERENCE_DEPENDENCY_SNAPSHOT_PATH: ${NEBULA_PROVIDER_TIDAS_REFERENCE_DEPENDENCY_SNAPSHOT_PATH:-/app/runtime/provider/reference-snapshot.json}
+      AUTO_BOOTSTRAP_REFERENCE_DATA_ON_STARTUP: "true"
+      AUTO_STARTUP_MAINTENANCE_ON_STARTUP: "true"
+      AUTO_PRUNE_ON_STARTUP: "false"
+      AUTO_VACUUM_AFTER_PRUNE_ON_STARTUP: "false"
+    ports:
+      - "127.0.0.1:${NEBULA_LCA_API_PORT:-18081}:18080"
+    volumes:
+      - nebula-lca-data:/app/data/runtime
+      - nebula-lca-import-cache:/app/import-cache
+      - nebula-lca-runtime:/app/runtime
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:18080/health', timeout=5).status == 200 else sys.exit(1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  nebula-lca-editor:
+    build:
+      context: ${NEBULA_LCA_SOURCE_DIR:?Set NEBULA_LCA_SOURCE_DIR to a compatible Nebula LCA checkout}/nebula-lca-web
+      dockerfile: Dockerfile
+      args:
+        VITE_NEBULA_ONE_RETURN_ORIGIN: http://127.0.0.1:${NEBULA_ONE_PORT:-18088}
+    depends_on:
+      nebula-lca-api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${NEBULA_LCA_EDITOR_PORT:-18082}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-Y", "off", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  nebula-one:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      nebula-lca-api:
+        condition: service_healthy
+      nebula-lca-editor:
+        condition: service_healthy
+    environment:
+      NEBULA_ONE_DATABASE_URL: ${NEBULA_ONE_DATABASE_URL:-sqlite:////app/runtime/nebula-one.db}
+      NEBULA_LCA_BASE_URL: http://nebula-lca-api:18080
+      NEBULA_LCA_EDITOR_URL: http://127.0.0.1:${NEBULA_LCA_EDITOR_PORT:-18082}
+      NEBULA_LCA_TIMEOUT_SECONDS: "60"
+    ports:
+      - "127.0.0.1:${NEBULA_ONE_PORT:-18088}:8088"
+    volumes:
+      - nebula-one-data:/app/runtime
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8088/api/v1/engine', timeout=10).status == 200 else sys.exit(1)"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  nebula-lca-data:
+  nebula-lca-import-cache:
+  nebula-lca-runtime:
+  nebula-one-data:

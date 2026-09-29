@@ -1,0 +1,58 @@
+{
+  "schema_version": "nebula_one.restored-method-packages.v1",
+  "title": "Superseded method packages this repository must still be able to register",
+  "purpose": "A model-processing rule package stays on disk after it is superseded, so a project imported from the template revision it was reviewed against can still be derived and replayed. Those rules cite method packages by exact content hash, and a citation that cannot be resolved leaves the old project's purpose uncomputable. This directory holds the complete registration payload for exactly such a cited package, so a fresh acceptance installation can register it through the same API any other package uses.",
+  "what_this_is_not": "Nothing here is a release, a re-validation or a re-label of a current package. Each entry's bytes are pinned to the hash the archived rules already cite: renaming another version to fill a gap would silently change what a frozen answer was computed under, which is the failure this archive exists to avoid.",
+  "license": "Apache-2.0",
+  "third_party_content": "the archived package quotes rows, column headers and method sentences of Commission Implementing Regulation (EU) 2025/2547, reused under Commission Decision 2011/833/EU as the owning seed's license records; it embeds no copy of any EUR-Lex document",
+  "entries": [
+    {
+      "file": "method-packages/cbam-eu-iron-steel-bf-bof-direct-trial-1.1.0.json",
+      "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+      "version": "1.1.0",
+      "package_kind": "cbam_trial",
+      "jurisdiction": "EU",
+      "content_sha256": "be8f5a090b8547963e55b7999f2365a91a1df594c9023122c12b786f5013df24",
+      "cited_by": [
+        {
+          "rules_package": "steel-bf-bof.model-processing@1.0.0",
+          "rules_content_sha256": "bcb758aac114c354eda3565c671a39995b2d90116c5f96da4dcfd8f0803d0ee9",
+          "rules_file": "src/nebula_one/resources/model_processing/steel-bf-bof-1.0.0.json",
+          "applicable_template": {
+            "id": "steel-bf-bof-inventory",
+            "version": "1.1.1",
+            "content_sha256": "70dbcd24365b886c68748664297a661c99f70f28bbac2be6ff3bef33d34f3205"
+          },
+          "citations": 3,
+          "citation_paths": [
+            "purposes.cbam.process_selection.method_package",
+            "purposes.cbam.background_disposition.evidence.method_package",
+            "purposes.cbam.elementary_flows.evidence.method_package"
+          ]
+        }
+      ],
+      "supersedes": {
+        "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+        "version": "1.0.1",
+        "content_sha256": "57a2910cbd5bd7969905e297494c1540dfa305b34d404a3107c1c119f8e56595",
+        "note": "the archived package's own provenance block records this parent and its hash, so the lineage is inside the pinned bytes rather than asserted here"
+      },
+      "provenance_of_the_file": {
+        "status": "recovered_artifact_not_a_git_asset",
+        "searched": "every JSON blob in this repository's history (2100 objects) was hashed; the earliest CBAM steel package Git ever tracked is 1.0.1, and no object reproduces the hash the archived rules cite",
+        "found_in": "a registered row of an isolated acceptance One database under runtime/, which is local-only and not distributed with the repository",
+        "found_in_rows": [
+          "runtime/r4b-2026-09-24/one-db/nebula-one-r4b.db",
+          "runtime/r4b-source-2026-09-24/one-db/nebula-one-r4b-source.db",
+          "runtime/r4b2-2026-09-24/one-db/nebula-one-r4b2.db",
+          "runtime/steel-workspace-20260922/nebula-one.db"
+        ],
+        "read_mode": "sqlite read-only URI (mode=ro); no database was opened for writing and none was modified",
+        "verification": "the seven registration fields were taken verbatim from the stored row and canonical_json_sha256 over them reproduces the hash the archived rules pin, so the file is the complete original package and not a reconstruction from scattered evidence",
+        "retrieved_at": "2026-09-25",
+        "consequence": "an installation that never registered 1.1.0 cannot derive the CBAM purpose of a project imported from template 1.1.1 until this file is registered; the refusal names the missing package identity exactly, so the gap stays actionable rather than looking like a model error"
+      },
+      "register_through": "POST /api/v1/method-packages, or the seed autoload step kind 'register_method_package' pointing at the file above with this content_sha256"
+    }
+  ]
+}

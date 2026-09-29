@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "DemandItem": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "exclusiveMinimum": 0.0,
+          "title": "Amount",
+          "type": "number"
+        },
+        "flow_source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Flow Source Namespace",
+          "type": "string"
+        },
+        "reference_exchange_id": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Exchange Id"
+        },
+        "reference_flow_uuid": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Reference Flow Uuid",
+          "type": "string"
+        },
+        "reference_flow_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Reference Flow Version",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "unit_group_source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Unit Group Source Namespace",
+          "type": "string"
+        },
+        "unit_group_uuid": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Unit Group Uuid",
+          "type": "string"
+        },
+        "unit_group_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit Group Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "flow_source_namespace",
+        "reference_flow_uuid",
+        "reference_flow_version",
+        "amount",
+        "unit",
+        "unit_group_source_namespace",
+        "unit_group_uuid",
+        "unit_group_version"
+      ],
+      "title": "DemandItem",
+      "type": "object"
+    },
+    "VersionedIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title"
+      ],
+      "title": "VersionedIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "demand_definition": {
+      "$ref": "nebula.demand-definition.v1.schema.json#/$defs/VersionedIdentity"
+    },
+    "demand_type": {
+      "enum": [
+        "single_reference_product",
+        "scaled_reference_product",
+        "annual_production",
+        "portfolio_demand",
+        "project_lifetime_demand"
+      ],
+      "title": "Demand Type",
+      "type": "string"
+    },
+    "demands": {
+      "items": {
+        "$ref": "nebula.demand-definition.v1.schema.json#/$defs/DemandItem"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Demands",
+      "type": "array"
+    },
+    "execution_status": {
+      "enum": [
+        "supported",
+        "planned"
+      ],
+      "title": "Execution Status",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula.demand-definition.v1",
+      "enum": [
+        "nebula.demand-definition.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "demand_definition",
+    "demand_type",
+    "execution_status",
+    "demands"
+  ],
+  "title": "DemandDefinitionDocument",
+  "type": "object"
+}

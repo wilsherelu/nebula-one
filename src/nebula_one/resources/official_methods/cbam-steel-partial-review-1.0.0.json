@@ -1,0 +1,31 @@
+{
+  "package_id": "cbam.eu.iron-steel.bf-bof-partial-review",
+  "version": "1.0.0",
+  "package_kind": "cbam_partial_review",
+  "jurisdiction": "EU",
+  "valid_from": null,
+  "valid_to": null,
+  "manifest": {
+    "template_profile": {"id": "steel-bf-bof-inventory", "version": "1.1.2", "content_sha256": "df91eaf3c96638d1f20bbec40c544f046fe1107bb78282ba532da95fd2dbbe35"},
+    "required_entity_types": ["solved_system_snapshot", "frozen_cbam_boundary", "reporting_period"],
+    "required_data_fields": ["exact direct component", "sintering electricity activity", "Article 4(9) joint-process evidence", "eligible electricity factor package"],
+    "accepted_units": {"electricity_activity": ["MJ"], "normalized_activity": ["MWh/t product"], "result": ["t CO2e/t product"]},
+    "boundary_schema": {"good_cn_code": "7207", "good_is_annex_ii_direct_only": true, "complexity": "internal_precursor_requires_installation_evidence", "complete_cbam_total": false},
+    "formula_graph": {
+      "calculation": "direct_component_plus_non_annex_ii_precursor_indirect_pending",
+      "source_direct_method": {"reference": "cbam.eu.iron-steel.bf-bof-direct-trial@1.1.1", "content_sha256": "fa4eb13171aedbf297a33838ca3ccd2aa4df1759a1534334eaace13c2216ea13"},
+      "indirect_activity": {"consumer_exchange_id": "ore-sintering::grid-electricity-in", "process_id": "ore-sintering", "flow_uuid": "3d76981f-964a-4865-b588-0e067a2a1163", "source_unit": "MJ", "mj_per_mwh": 3600, "applies_to": "non_annex_ii_sinter_precursor"},
+      "excluded_final_good_electricity_exchange_ids": ["continuous-casting::grid-electricity-in"],
+      "indirect_term": "sinter_electricity_MWh_per_t_product times eligible_f_el_tCO2_per_MWh",
+      "result_unit": "t CO2e/t product"
+    },
+    "classification_rules": {"factor_boundary": "CBAM_applicable_electricity_not_LCA_lifecycle_GWP", "precursor_transfer": "internal_emissions_count_once_only_if_article_4_9_conditions_evidenced", "waste_gas": "external_supply_or_separate_power_heat_not_supported_without_attribution", "cleaning_emissions": "not_modelled_requires_declaration"},
+    "default_value_rules": {"allowed": false, "available_in_law_but_not_connected": ["EU 2025/2621", "EU 2026/1740"]},
+    "validation_rules": {"limitations": ["The direct component comes from the historical reviewed boundary and is not a complete CBAM total.", "The sintering electricity activity is measured from the solved model but has no eligible legal electricity factor.", "Same-graph transfers do not establish the Article 4(9) same-installation, no-sale and no-other-use conditions.", "External precursor, waste-gas transfer and flue-gas-cleaning evidence remain open; no conservative-upper-bound claim is made."]},
+    "output_schema": {"schema_version": "nebula_one.cbam.partial-review.v1"},
+    "report_mapping": {"direct": "components.direct", "sinter_electricity": "components.sinter_precursor_indirect", "total": "specific_embedded_emissions"},
+    "test_cases": ["sinter electricity changes pending activity", "casting electricity does not change pending activity", "background supplier change does not supply a legal electricity factor", "missing factor leaves total unavailable"],
+    "provenance": {"owner": "Nebula One open-source reference", "legal_source": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism/cbam-legislation-and-guidance_en", "method_guidance": "https://taxation-customs.ec.europa.eu/document/download/29b9eec7-1a4b-4eb6-ab85-96a0c9e35fd0_en", "license": "Apache-2.0 for authored method structure"},
+    "assurance_level": "partial_review"
+  }
+}

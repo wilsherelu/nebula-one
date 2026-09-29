@@ -1,0 +1,57 @@
+{
+  "schema_version": "nebula_one.application_profiles.v1",
+  "profiles": [
+    {
+      "key": "system_analysis",
+      "name": "General system analysis",
+      "description": "Cross-domain analysis of one exact Nebula LCA system model.",
+      "executable_capabilities": ["mfa.declared.v1", "mfa.solved.v1", "energy.carrier.solved.v1", "energy.scenario-comparison.v1", "lcia.nebula.v1", "solve.nebula.v1", "pcf.product.v1", "organization.ghg-inventory.v1"],
+      "extension_requirements": []
+    },
+    {
+      "key": "zero_carbon_park",
+      "name": "Zero-carbon park",
+      "description": "Park-level material, energy, carbon and scenario orchestration.",
+      "executable_capabilities": ["mfa.declared.v1", "mfa.solved.v1", "energy.carrier.solved.v1", "energy.scenario-comparison.v1", "lcia.nebula.v1", "solve.nebula.v1"],
+      "extension_requirements": [
+        "organizational_boundary.v1",
+        "energy_flow.v1",
+        "spatial_inventory.v1"
+      ]
+    },
+    {
+      "key": "enterprise_esg",
+      "name": "Enterprise ESG",
+      "description": "Evidence-backed environmental metrics from enterprise system models.",
+      "executable_capabilities": ["lcia.nebula.v1", "solve.nebula.v1", "pcf.product.v1", "organization.ghg-inventory.v1"],
+      "extension_requirements": [
+        "scope_inventory.v1",
+        "esg_indicator_mapping.v1",
+        "audit_reporting.v1"
+      ]
+    },
+    {
+      "key": "project_carbon",
+      "name": "Project carbon assessment",
+      "description": "Baseline, construction, operation and scenario assessment for projects.",
+      "executable_capabilities": ["lcia.nebula.v1", "solve.nebula.v1"],
+      "extension_requirements": [
+        "project_boundary.v1",
+        "baseline_scenario.v1",
+        "avoided_emissions.v1"
+      ]
+    },
+    {
+      "key": "cbam",
+      "name": "CBAM-oriented assessment",
+      "description": "A future compliance-oriented application profile based on versioned regulatory method packages.",
+      "executable_capabilities": ["lcia.nebula.v1", "solve.nebula.v1"],
+      "extension_requirements": [
+        "cbam_ruleset.versioned",
+        "embedded_emissions.v1",
+        "precursor_and_electricity.v1",
+        "cbam_reporting.v1"
+      ]
+    }
+  ]
+}

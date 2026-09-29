@@ -1,0 +1,13 @@
+# Local steel demonstration. Open TianGong identity snapshots are bundled with the engine.
+# Reference catalogs, LCIA vectors, and commercial background data stay operator supplied.
+services:
+  nebula-lca-api:
+    environment:
+      NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: /app/data/provider_profiles/steel_tiangong_open_flows.v1.json
+      NEBULA_PROVIDER_TIDAS_REFERENCE_DEPENDENCY_SNAPSHOT_PATH: /app/data/provider_profiles/steel_tiangong_open_references.v1.json
+  nebula-one:
+    command: ["sh", "-c", "python -m nebula_one.seeds.prepare_steel_catalog && python -m nebula_one"]
+    environment:
+      NEBULA_ONE_SEED_AUTOLOAD_FILE: /app/config/steel-demo.json
+    volumes:
+      - ./seeds/steel-demo.json:/app/config/steel-demo.json:ro

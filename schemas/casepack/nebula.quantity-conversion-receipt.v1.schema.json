@@ -1,0 +1,711 @@
+{
+  "$defs": {
+    "ConversionFormula": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "const": "mass_to_energy.heating_value",
+          "enum": [
+            "mass_to_energy.heating_value"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "expression": {
+          "const": "energy_MJ = mass_kg * heating_value_MJ_per_kg",
+          "enum": [
+            "energy_MJ = mass_kg * heating_value_MJ_per_kg"
+          ],
+          "title": "Expression",
+          "type": "string"
+        },
+        "property_dimension": {
+          "const": "energy_per_mass",
+          "enum": [
+            "energy_per_mass"
+          ],
+          "title": "Property Dimension",
+          "type": "string"
+        },
+        "source_dimension": {
+          "const": "mass",
+          "enum": [
+            "mass"
+          ],
+          "title": "Source Dimension",
+          "type": "string"
+        },
+        "target_dimension": {
+          "const": "energy",
+          "enum": [
+            "energy"
+          ],
+          "title": "Target Dimension",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "enum": [
+            "1.0.0"
+          ],
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "version",
+        "expression",
+        "source_dimension",
+        "property_dimension",
+        "target_dimension",
+        "content_sha256"
+      ],
+      "title": "ConversionFormula",
+      "type": "object"
+    },
+    "ConvertedQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "unit": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalUnitDefinition"
+        }
+      },
+      "required": [
+        "amount",
+        "unit"
+      ],
+      "title": "ConvertedQuantity",
+      "type": "object"
+    },
+    "ExactFlowIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "flow_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Flow Content Sha256",
+          "type": "string"
+        },
+        "flow_snapshot_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Flow Snapshot Sha256",
+          "type": "string"
+        },
+        "flow_uuid": {
+          "format": "uuid",
+          "title": "Flow Uuid",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "flow_uuid",
+        "version",
+        "flow_content_sha256",
+        "flow_snapshot_sha256"
+      ],
+      "title": "ExactFlowIdentity",
+      "type": "object"
+    },
+    "ExactReferenceIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "uuid": {
+          "format": "uuid",
+          "title": "Uuid",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "uuid",
+        "version",
+        "content_sha256"
+      ],
+      "title": "ExactReferenceIdentity",
+      "type": "object"
+    },
+    "PhysicalPropertyBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "energy_convention": {
+          "enum": [
+            "lower_heating_value",
+            "higher_heating_value",
+            "not_applicable"
+          ],
+          "title": "Energy Convention",
+          "type": "string"
+        },
+        "material_condition": {
+          "enum": [
+            "as_received",
+            "dry",
+            "dry_ash_free",
+            "not_applicable"
+          ],
+          "title": "Material Condition",
+          "type": "string"
+        },
+        "reference_pressure_pa": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Pressure Pa"
+        },
+        "reference_temperature_k": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Temperature K"
+        }
+      },
+      "required": [
+        "material_condition",
+        "energy_convention"
+      ],
+      "title": "PhysicalPropertyBasis",
+      "type": "object"
+    },
+    "PhysicalPropertyEvidenceReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Citation",
+          "type": "string"
+        },
+        "license": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "License",
+          "type": "string"
+        },
+        "receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Receipt Sha256",
+          "type": "string"
+        },
+        "review_status": {
+          "enum": [
+            "software_verification_only",
+            "reviewed",
+            "approved"
+          ],
+          "title": "Review Status",
+          "type": "string"
+        },
+        "source_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Content Sha256",
+          "type": "string"
+        },
+        "source_hash_method": {
+          "const": "canonical_json_sha256",
+          "enum": [
+            "canonical_json_sha256"
+          ],
+          "title": "Source Hash Method",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "published_source",
+            "measured_source",
+            "demonstration_authored"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "source_record_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Record Id",
+          "type": "string"
+        },
+        "source_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Source Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "source_record_id",
+        "source_version",
+        "source_kind",
+        "citation",
+        "license",
+        "source_hash_method",
+        "source_content_sha256",
+        "review_status",
+        "receipt_sha256"
+      ],
+      "title": "PhysicalPropertyEvidenceReceipt",
+      "type": "object"
+    },
+    "PhysicalPropertyRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalPropertyBasis"
+        },
+        "evidence": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalPropertyEvidenceReceipt"
+        },
+        "geography": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Geography",
+          "type": "string"
+        },
+        "property_code": {
+          "enum": [
+            "lower_heating_value",
+            "higher_heating_value",
+            "density",
+            "moisture_content",
+            "dry_matter_fraction",
+            "carbon_content",
+            "sulfur_content",
+            "recoverable_fraction",
+            "specific_enthalpy"
+          ],
+          "title": "Property Code",
+          "type": "string"
+        },
+        "record_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "subject_flow": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/ExactFlowIdentity"
+        },
+        "uncertainty": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalPropertyUncertainty"
+        },
+        "unit": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalUnitDefinition"
+        },
+        "usage_gate": {
+          "enum": [
+            "software_verification_only",
+            "research",
+            "approved"
+          ],
+          "title": "Usage Gate",
+          "type": "string"
+        },
+        "valid_from": {
+          "format": "date",
+          "title": "Valid From",
+          "type": "string"
+        },
+        "valid_to": {
+          "format": "date",
+          "title": "Valid To",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "record_id",
+        "subject_flow",
+        "property_code",
+        "value",
+        "unit",
+        "basis",
+        "geography",
+        "valid_from",
+        "valid_to",
+        "evidence",
+        "uncertainty",
+        "usage_gate",
+        "record_sha256"
+      ],
+      "title": "PhysicalPropertyRecord",
+      "type": "object"
+    },
+    "PhysicalPropertySetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_sha256"
+      ],
+      "title": "PhysicalPropertySetRef",
+      "type": "object"
+    },
+    "PhysicalPropertyUncertainty": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "none",
+            "range",
+            "standard_uncertainty"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        },
+        "standard_uncertainty": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Standard Uncertainty"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "PhysicalPropertyUncertainty",
+      "type": "object"
+    },
+    "PhysicalUnitDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "quantity_dimension": {
+          "enum": [
+            "mass",
+            "energy",
+            "energy_per_mass",
+            "mass_per_volume",
+            "mass_fraction"
+          ],
+          "title": "Quantity Dimension",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "symbol": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Symbol",
+          "type": "string"
+        },
+        "unit_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Unit Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "unit_id",
+        "version",
+        "symbol",
+        "quantity_dimension",
+        "content_sha256"
+      ],
+      "title": "PhysicalUnitDefinition",
+      "type": "object"
+    },
+    "SolvedExchangeQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "direction": {
+          "enum": [
+            "input",
+            "output"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "exchange_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Exchange Id",
+          "type": "string"
+        },
+        "flow_property": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/ExactReferenceIdentity"
+        },
+        "process_uuid": {
+          "format": "uuid",
+          "title": "Process Uuid",
+          "type": "string"
+        },
+        "solved_snapshot_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Solved Snapshot Content Sha256",
+          "type": "string"
+        },
+        "solved_snapshot_id": {
+          "format": "uuid",
+          "title": "Solved Snapshot Id",
+          "type": "string"
+        },
+        "subject_flow": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/ExactFlowIdentity"
+        },
+        "unit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "unit_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Unit Content Sha256",
+          "type": "string"
+        },
+        "unit_group": {
+          "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/ExactReferenceIdentity"
+        }
+      },
+      "required": [
+        "solved_snapshot_id",
+        "solved_snapshot_content_sha256",
+        "process_uuid",
+        "exchange_id",
+        "subject_flow",
+        "direction",
+        "amount",
+        "unit",
+        "flow_property",
+        "unit_group",
+        "unit_content_sha256"
+      ],
+      "title": "SolvedExchangeQuantity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "conversion_date": {
+      "format": "date",
+      "title": "Conversion Date",
+      "type": "string"
+    },
+    "conversion_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+      "title": "Conversion Id",
+      "type": "string"
+    },
+    "conversion_type": {
+      "const": "mass_to_energy",
+      "enum": [
+        "mass_to_energy"
+      ],
+      "title": "Conversion Type",
+      "type": "string"
+    },
+    "execution_purpose": {
+      "enum": [
+        "software_verification",
+        "research",
+        "approved"
+      ],
+      "title": "Execution Purpose",
+      "type": "string"
+    },
+    "formula": {
+      "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/ConversionFormula"
+    },
+    "property_record": {
+      "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalPropertyRecord"
+    },
+    "property_set_ref": {
+      "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalPropertySetRef"
+    },
+    "requested_basis": {
+      "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/PhysicalPropertyBasis"
+    },
+    "result": {
+      "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/ConvertedQuantity"
+    },
+    "schema_version": {
+      "const": "nebula.quantity-conversion-receipt.v1",
+      "enum": [
+        "nebula.quantity-conversion-receipt.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_quantity": {
+      "$ref": "nebula.quantity-conversion-receipt.v1.schema.json#/$defs/SolvedExchangeQuantity"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "conversion_id",
+    "conversion_type",
+    "execution_purpose",
+    "conversion_date",
+    "source_quantity",
+    "property_set_ref",
+    "property_record",
+    "requested_basis",
+    "formula",
+    "result",
+    "warnings",
+    "content_sha256"
+  ],
+  "title": "QuantityConversionReceipt",
+  "type": "object"
+}

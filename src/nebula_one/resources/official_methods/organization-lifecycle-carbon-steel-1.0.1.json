@@ -1,0 +1,37 @@
+{
+  "package_id": "nebula.organization-lifecycle-carbon.steel-model",
+  "version": "1.0.1",
+  "package_kind": "organization_lifecycle_carbon",
+  "jurisdiction": null,
+  "valid_from": null,
+  "valid_to": null,
+  "manifest": {
+    "template_profile": {"id": "steel-bf-bof-inventory", "version": "1.1.2", "content_sha256": "df91eaf3c96638d1f20bbec40c544f046fe1107bb78282ba532da95fd2dbbe35"},
+    "required_entity_types": ["application", "system_revision", "solved_system_snapshot", "reporting_period"],
+    "required_data_fields": ["controlled processes", "model input basis", "period product output", "separate evidence for other upstream activities"],
+    "accepted_units": {"climate": ["kg CO2-Eq"], "product": ["kg"]},
+    "boundary_schema": {"definition": "Nebula LCA-consistent organizational carbon method", "complete_lifecycle_coverage": false, "ghg_protocol_scopes": false},
+    "formula_graph": {"scope_1": "characterized GHG contribution of controlled foreground times input-basis scale", "lc_scope_2": "native background domain times scale only when every mapped path is externally purchased electricity, steam, heat or cooling", "lc_scope_3": "other declared external value-chain activity times a pinned compatible lifecycle factor"},
+    "classification_rules": {
+      "controlled_process_mode": "all_solved_foreground_processes",
+      "energy_purchase_exchange_ids": ["continuous-casting::grid-electricity-in"],
+      "energy_purchase_types": {"continuous-casting::grid-electricity-in": "purchased_electricity"},
+      "allowed_lc_scope_2_types": ["purchased_electricity", "purchased_steam", "purchased_heat", "purchased_cooling"],
+      "other_value_chain_categories": {
+        "purchased_iron_ore": {"name": "采购铁矿石上游", "direction": "input", "eligible_consumer_exchange_ids": ["ore-sintering::iron-ore-in"], "factor_boundary": "supplier_cradle_to_gate_excluding_modelled_operations"},
+        "purchased_coke_upstream": {"name": "直接外购焦炭上游", "direction": "input", "eligible_consumer_exchange_ids": ["blast-furnace::coke-in", "ore-sintering::coke-breeze-in"], "factor_boundary": "upstream_fuel_to_delivery_excluding_onsite_use"},
+        "purchased_coal_upstream": {"name": "直接外购煤炭上游", "direction": "input", "eligible_consumer_exchange_ids": ["blast-furnace::pci-coal-in"], "factor_boundary": "upstream_fuel_to_delivery_excluding_onsite_use"},
+        "natural_gas_upstream": {"name": "直接外购天然气上游", "direction": "input", "eligible_consumer_exchange_ids": ["blast-furnace::natural-gas-in"], "factor_boundary": "upstream_fuel_to_delivery_excluding_onsite_use"},
+        "external_waste_treatment": {"name": "外部废物处理", "direction": "output", "eligible_consumer_exchange_ids": [], "factor_boundary": "external_treatment_excluding_modelled_operations"},
+        "downstream_use": {"name": "下游使用", "direction": "output", "eligible_consumer_exchange_ids": [], "factor_boundary": "downstream_use_excluding_modelled_operations"}
+      }
+    },
+    "default_value_rules": {"allowed": false},
+    "validation_rules": {"limitations": ["This is a Nebula authored LCA-consistent organizational grouping, not GHG Protocol Scope 1-3 reporting or an ILCD-endorsed classification.", "Only purchased electricity, steam, heat and cooling may enter LC-Scope 2; directly purchased fuel upstream belongs to LC-Scope 3.", "The native background total enters LC-Scope 2 only when every mapped supplier path is a declared secondary-energy purchase.", "Missing other value-chain activities remain missing; a public proxy cannot establish a complete organizational total."]},
+    "output_schema": {"schema_version": "nebula_one.organization-lifecycle-carbon.v1"},
+    "report_mapping": {"on_site": "groups.on_site_direct", "energy": "groups.purchased_energy_lifecycle", "other": "groups.other_value_chain"},
+    "test_cases": ["all mapped background paths belong to energy", "non-energy background path requires decomposition", "annual totals are not scaled again", "one input does not use both native background and supplier factor"],
+    "provenance": {"owner": "Nebula One open-source reference", "license": "Apache-2.0 for authored classification and formulas"},
+    "assurance_level": "demonstration"
+  }
+}

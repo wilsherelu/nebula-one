@@ -1,0 +1,50 @@
+/* Operational lists share the type and interaction scale in UI_BASELINE.md. */
+.catalog-page .page-header { min-height: var(--no-control-height); }
+.catalog-surface { min-width: 0; background: var(--no-color-surface); border: 1px solid var(--no-color-border); border-radius: var(--no-radius-panel); overflow: hidden; }
+.catalog-pack { display: flex; align-items: center; gap: var(--no-space-3); min-height: var(--no-table-row-height); padding: var(--no-space-3) var(--no-space-4); }
+.catalog-pack > label { color: var(--no-color-text-secondary); flex-shrink: 0; font-size: var(--no-font-helper); }
+.catalog-pack > strong { min-width: 0; font-size: var(--no-font-body); font-weight: 600; }
+.catalog-pack .arco-tag { flex-shrink: 0; }
+.catalog-pack .arco-select { width: min(420px, 65%); }
+.catalog-shortcuts { display: flex; align-items: center; flex-wrap: wrap; gap: var(--no-space-1) var(--no-space-2); padding: 0 var(--no-space-4) var(--no-space-3); border-bottom: 1px solid var(--no-color-border); }
+.catalog-shortcuts > .helper-text { margin-right: var(--no-space-1); }
+.catalog-shortcuts .arco-btn { color: var(--no-color-text-secondary); }
+.catalog-shortcuts .arco-btn:hover, .catalog-shortcuts .arco-btn[aria-pressed="true"] { color: var(--no-color-primary); background: var(--no-color-primary-soft); }
+.catalog-shortcuts .arco-icon { margin-left: var(--no-space-2); color: var(--no-color-primary); }
+.catalog-toolbar { min-height: var(--no-table-row-height); display: flex; align-items: center; justify-content: space-between; gap: var(--no-space-4); padding: var(--no-space-3) var(--no-space-4); }
+.catalog-toolbar__count { flex-shrink: 0; font-size: var(--no-font-body); font-weight: 600; }
+.catalog-toolbar__count .helper-text { margin-left: var(--no-space-2); font-weight: 400; }
+.catalog-toolbar > .arco-input-group-wrapper { width: min(280px, 50%); }
+.catalog-toolbar .arco-input { min-height: var(--no-control-height-small); }
+.catalog-table .arco-table-th { background: var(--no-color-surface-muted); color: var(--no-color-text-secondary); font-size: var(--no-font-helper); font-weight: 500; }
+.catalog-table .arco-table-td { height: var(--no-table-row-height); font-size: var(--no-font-body); }
+.catalog-table .arco-table-th, .catalog-table .arco-table-td { padding: var(--no-space-2) var(--no-space-4); white-space: nowrap; }
+.catalog-table .arco-table-tr:last-child .arco-table-td { border-bottom: 0; }
+.catalog-table__selected > .arco-table-td { background: var(--no-color-surface-muted); }
+.catalog-record-name { display: block; width: 100%; padding: 0; border: 0; color: var(--no-color-text); background: transparent; text-align: left; font-size: var(--no-font-body); font-weight: 500; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.catalog-record-name:hover { color: var(--no-color-primary); }
+.catalog-record-name:disabled { cursor: not-allowed; }
+.catalog-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--no-space-1); }
+.catalog-row-actions > .arco-btn:first-child { color: var(--no-color-text-secondary); }
+.catalog-study-title { margin: 0 0 var(--no-space-4); font-size: var(--no-font-body); line-height: 22px; }
+.catalog-study-facts { display: flex; flex-wrap: wrap; gap: var(--no-space-6); margin: 0 0 var(--no-space-6); }
+.catalog-study-facts dt { color: var(--no-color-text-secondary); font-size: var(--no-font-helper); }
+.catalog-study-facts dd { margin: var(--no-space-1) 0 0; font-variant-numeric: tabular-nums; }
+.catalog-models { border: 0; padding-inline: var(--no-space-4); }
+.audit-drawer .arco-drawer-title > span { display: flex; align-items: center; gap: var(--no-space-3); min-width: 0; }
+.audit-drawer .arco-drawer-title .helper-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+@media (max-width: 768px) {
+  .catalog-page .page-header { flex-direction: row; align-items: center; padding: 0; }
+  .catalog-page .page-header__action { width: auto; }
+  .catalog-page .page-header p { display: none; }
+  .catalog-pack { flex-wrap: wrap; gap: var(--no-space-2); }
+  .catalog-pack > strong { flex: 1; }
+  .catalog-pack .arco-select { flex: 1; width: auto; min-width: 0; }
+  .catalog-shortcuts { gap: var(--no-space-1); }
+  .catalog-shortcuts > .helper-text { display: none; }
+  .catalog-toolbar { gap: var(--no-space-2); }
+  .catalog-toolbar > .arco-input-group-wrapper { width: min(240px, 60%); }
+}
+@media (max-width: 480px) {
+  .catalog-record-name { max-width: calc(100vw - 228px); }
+}

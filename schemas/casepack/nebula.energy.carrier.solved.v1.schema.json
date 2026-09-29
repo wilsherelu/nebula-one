@@ -1,0 +1,573 @@
+{
+  "$defs": {
+    "ConvertedEnergySource": {
+      "additionalProperties": false,
+      "properties": {
+        "conversion_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Conversion Content Sha256",
+          "type": "string"
+        },
+        "conversion_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Conversion Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "quantity_conversion",
+          "enum": [
+            "quantity_conversion"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_exchange_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Exchange Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "conversion_id",
+        "conversion_content_sha256",
+        "source_exchange_id"
+      ],
+      "title": "ConvertedEnergySource",
+      "type": "object"
+    },
+    "ConvertedEnergyUnitIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "definition": {
+          "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/PhysicalUnitDefinition"
+        },
+        "identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Identity Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "const": "conversion_canonical",
+          "enum": [
+            "conversion_canonical"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "definition",
+        "identity_sha256"
+      ],
+      "title": "ConvertedEnergyUnitIdentity",
+      "type": "object"
+    },
+    "DirectEnergySource": {
+      "additionalProperties": false,
+      "properties": {
+        "exchange_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Exchange Id",
+          "type": "string"
+        },
+        "flow_receipt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Flow Receipt Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "const": "direct_solved_exchange",
+          "enum": [
+            "direct_solved_exchange"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "process_uuid": {
+          "format": "uuid",
+          "title": "Process Uuid",
+          "type": "string"
+        },
+        "solved_snapshot_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Solved Snapshot Content Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "solved_snapshot_content_sha256",
+        "process_uuid",
+        "exchange_id",
+        "flow_receipt_sha256"
+      ],
+      "title": "DirectEnergySource",
+      "type": "object"
+    },
+    "EnergyBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "energy_convention": {
+          "enum": [
+            "declared_energy",
+            "lower_heating_value",
+            "higher_heating_value"
+          ],
+          "title": "Energy Convention",
+          "type": "string"
+        },
+        "material_condition": {
+          "enum": [
+            "not_applicable",
+            "as_received",
+            "dry",
+            "dry_ash_free"
+          ],
+          "title": "Material Condition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "energy_convention",
+        "material_condition"
+      ],
+      "title": "EnergyBasis",
+      "type": "object"
+    },
+    "EnergyCarrierEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "basis": {
+          "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/EnergyBasis"
+        },
+        "carrier_flow": {
+          "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/ExactFlowIdentity"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "entry_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/DirectEnergySource"
+            },
+            {
+              "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/ConvertedEnergySource"
+            }
+          ],
+          "title": "Source"
+        },
+        "unit_identity": {
+          "anyOf": [
+            {
+              "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/ProviderEnergyUnitIdentity"
+            },
+            {
+              "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/ConvertedEnergyUnitIdentity"
+            }
+          ],
+          "title": "Unit Identity"
+        },
+        "unit_symbol": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit Symbol",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entry_id",
+        "carrier_flow",
+        "amount",
+        "unit_symbol",
+        "unit_identity",
+        "basis",
+        "source",
+        "content_sha256"
+      ],
+      "title": "EnergyCarrierEntry",
+      "type": "object"
+    },
+    "EnergyCarrierIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "const": "warning",
+          "enum": [
+            "warning"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "title": "EnergyCarrierIssue",
+      "type": "object"
+    },
+    "EnergyCarrierSeries": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/EnergyBasis"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/EnergyCarrierEntry"
+          },
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "series_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Series Id",
+          "type": "string"
+        },
+        "total_amount": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Total Amount"
+        },
+        "unit_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Unit Identity Sha256",
+          "type": "string"
+        },
+        "unit_symbol": {
+          "const": "MJ",
+          "enum": [
+            "MJ"
+          ],
+          "title": "Unit Symbol",
+          "type": "string"
+        }
+      },
+      "required": [
+        "series_id",
+        "unit_symbol",
+        "unit_identity_sha256",
+        "basis",
+        "entries",
+        "total_amount",
+        "content_sha256"
+      ],
+      "title": "EnergyCarrierSeries",
+      "type": "object"
+    },
+    "EnergySolvedSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "solve_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Solve Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content_sha256",
+        "solve_hash"
+      ],
+      "title": "EnergySolvedSnapshotRef",
+      "type": "object"
+    },
+    "ExactFlowIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "flow_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Flow Content Sha256",
+          "type": "string"
+        },
+        "flow_snapshot_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Flow Snapshot Sha256",
+          "type": "string"
+        },
+        "flow_uuid": {
+          "format": "uuid",
+          "title": "Flow Uuid",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "flow_uuid",
+        "version",
+        "flow_content_sha256",
+        "flow_snapshot_sha256"
+      ],
+      "title": "ExactFlowIdentity",
+      "type": "object"
+    },
+    "ExactReferenceIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "uuid": {
+          "format": "uuid",
+          "title": "Uuid",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "uuid",
+        "version",
+        "content_sha256"
+      ],
+      "title": "ExactReferenceIdentity",
+      "type": "object"
+    },
+    "PhysicalUnitDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "quantity_dimension": {
+          "enum": [
+            "mass",
+            "energy",
+            "energy_per_mass",
+            "mass_per_volume",
+            "mass_fraction"
+          ],
+          "title": "Quantity Dimension",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "symbol": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Symbol",
+          "type": "string"
+        },
+        "unit_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Unit Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_namespace",
+        "unit_id",
+        "version",
+        "symbol",
+        "quantity_dimension",
+        "content_sha256"
+      ],
+      "title": "PhysicalUnitDefinition",
+      "type": "object"
+    },
+    "ProviderEnergyUnitIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "flow_property": {
+          "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/ExactReferenceIdentity"
+        },
+        "identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Identity Sha256",
+          "type": "string"
+        },
+        "kind": {
+          "const": "provider_exact",
+          "enum": [
+            "provider_exact"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_namespace": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Namespace",
+          "type": "string"
+        },
+        "symbol": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Symbol",
+          "type": "string"
+        },
+        "unit_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Unit Content Sha256",
+          "type": "string"
+        },
+        "unit_group": {
+          "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/ExactReferenceIdentity"
+        }
+      },
+      "required": [
+        "kind",
+        "source_namespace",
+        "symbol",
+        "flow_property",
+        "unit_group",
+        "unit_content_sha256",
+        "identity_sha256"
+      ],
+      "title": "ProviderEnergyUnitIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "issues": {
+      "items": {
+        "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/EnergyCarrierIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "nebula.energy.carrier.solved.v1",
+      "enum": [
+        "nebula.energy.carrier.solved.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "series": {
+      "items": {
+        "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/EnergyCarrierSeries"
+      },
+      "minItems": 1,
+      "title": "Series",
+      "type": "array"
+    },
+    "solved_snapshot_ref": {
+      "$ref": "nebula.energy.carrier.solved.v1.schema.json#/$defs/EnergySolvedSnapshotRef"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "passed_with_warnings"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "solved_snapshot_ref",
+    "series",
+    "issues",
+    "status",
+    "content_sha256"
+  ],
+  "title": "EnergyCarrierSolved",
+  "type": "object"
+}

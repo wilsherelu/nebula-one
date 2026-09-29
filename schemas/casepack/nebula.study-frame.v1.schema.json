@@ -1,0 +1,150 @@
+{
+  "$defs": {
+    "StudyFrameIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "enum": [
+            "draft",
+            "frozen"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "lifecycle_status"
+      ],
+      "title": "StudyFrameIdentity",
+      "type": "object"
+    },
+    "VersionedDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "id",
+        "version"
+      ],
+      "title": "VersionedDocumentRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "base_revision_ref": {
+      "title": "Base Revision Ref",
+      "type": "string"
+    },
+    "calculation_boundary_ref": {
+      "title": "Calculation Boundary Ref",
+      "type": "string"
+    },
+    "data_release_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Data Release Ref"
+    },
+    "demand_definition_ref": {
+      "$ref": "nebula.study-frame.v1.schema.json#/$defs/VersionedDocumentRef"
+    },
+    "entity_scope_ref": {
+      "title": "Entity Scope Ref",
+      "type": "string"
+    },
+    "inventory_snapshot_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inventory Snapshot Ref"
+    },
+    "provider_contract_version": {
+      "const": "provider.v1",
+      "enum": [
+        "provider.v1"
+      ],
+      "title": "Provider Contract Version",
+      "type": "string"
+    },
+    "reporting_boundary_ref": {
+      "title": "Reporting Boundary Ref",
+      "type": "string"
+    },
+    "reporting_period_ref": {
+      "$ref": "nebula.study-frame.v1.schema.json#/$defs/VersionedDocumentRef"
+    },
+    "schema_version": {
+      "const": "nebula.study-frame.v1",
+      "enum": [
+        "nebula.study-frame.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "study_frame": {
+      "$ref": "nebula.study-frame.v1.schema.json#/$defs/StudyFrameIdentity"
+    }
+  },
+  "required": [
+    "schema_version",
+    "study_frame",
+    "base_revision_ref",
+    "calculation_boundary_ref",
+    "reporting_boundary_ref",
+    "demand_definition_ref",
+    "reporting_period_ref",
+    "entity_scope_ref",
+    "provider_contract_version"
+  ],
+  "title": "StudyFrameDocument",
+  "type": "object"
+}

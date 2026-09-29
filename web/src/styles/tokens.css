@@ -1,0 +1,46 @@
+:root {
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #172b4d;
+  background: #f5f7fa;
+  font-synthesis: none;
+  --no-color-primary: #0d83ff;
+  --no-color-primary-soft: #e6f2ff;
+  --no-color-success: #18855c;
+  --no-color-success-soft: #e8f6f0;
+  --no-color-warning: #a86d08;
+  --no-color-warning-soft: #fff4dc;
+  --no-color-danger: #c83c48;
+  --no-color-danger-soft: #fff0f1;
+  --no-color-text: #172b4d;
+  --no-color-text-secondary: #5e718d;
+  --no-color-text-tertiary: #8290a6;
+  --no-color-border: #e4e8ef;
+  --no-color-surface: #ffffff;
+  --no-color-surface-muted: #f8fafc;
+  --no-shadow-panel: none;
+  --no-radius-control: 8px;
+  --no-radius-panel: 8px;
+  --no-space-1: 4px;
+  --no-space-2: 8px;
+  --no-space-3: 12px;
+  --no-space-4: 16px;
+  --no-space-5: 20px;
+  --no-space-6: 24px;
+  --no-space-8: 32px;
+  --no-control-height: 40px;
+  --no-control-height-small: 32px;
+  --no-table-row-height: 56px;
+  --no-sidebar-width: 200px;
+  --no-font-title: 20px;
+  --no-font-body: 14px;
+  --no-font-helper: 12px;
+  --no-font-metric: 30px;
+  --no-content-max: 1440px;
+}
+
+/* Arco defines its palette on body; override at the same scope. */
+body {
+  --primary-6: 13, 131, 255;
+  --primary-5: 56, 153, 255;
+  --primary-7: 11, 102, 197;
+}

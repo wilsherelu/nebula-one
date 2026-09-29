@@ -1,0 +1,16 @@
+{
+  "schema_version": "nebula_one.release_catalog.v1",
+  "seed_templates": [
+    {
+      "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+      "version": "1.1.0",
+      "bundle_content_sha256": "0a2a553ae4ca42bbb221d7b16d55a631c12091caa37aa00cc6c4e1f2231ee07e",
+      "title": "高炉—转炉钢铁",
+      "display_name": {
+        "zh": "高炉—转炉钢铁",
+        "en": "Blast furnace – BOF steel"
+      }
+    }
+  ],
+  "casepacks": []
+}

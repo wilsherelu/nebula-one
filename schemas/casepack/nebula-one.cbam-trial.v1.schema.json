@@ -1,0 +1,87 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "activity_level": {
+      "title": "Activity Level",
+      "type": "object"
+    },
+    "attributed_emissions": {
+      "title": "Attributed Emissions",
+      "type": "object"
+    },
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "capability_key": {
+      "const": "cbam.trial.v1",
+      "enum": [
+        "cbam.trial.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "claim_boundary": {
+      "title": "Claim Boundary",
+      "type": "object"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "goods": {
+      "title": "Goods",
+      "type": "object"
+    },
+    "method_package": {
+      "title": "Method Package",
+      "type": "object"
+    },
+    "reporting_period": {
+      "title": "Reporting Period",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "nebula_one.cbam.trial.v1",
+      "enum": [
+        "nebula_one.cbam.trial.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_snapshot": {
+      "title": "Source Snapshot",
+      "type": "object"
+    },
+    "specific_embedded_emissions": {
+      "title": "Specific Embedded Emissions",
+      "type": "object"
+    },
+    "status": {
+      "const": "trial_passed",
+      "enum": [
+        "trial_passed"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "method_package",
+    "source_snapshot",
+    "reporting_period",
+    "goods",
+    "activity_level",
+    "attributed_emissions",
+    "specific_embedded_emissions",
+    "status",
+    "audit",
+    "claim_boundary",
+    "content_sha256"
+  ],
+  "title": "CbamTrialOut",
+  "type": "object"
+}

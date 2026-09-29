@@ -1,0 +1,275 @@
+{
+  "$defs": {
+    "PhysicalPropertyBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "energy_convention": {
+          "enum": [
+            "lower_heating_value",
+            "higher_heating_value",
+            "not_applicable"
+          ],
+          "title": "Energy Convention",
+          "type": "string"
+        },
+        "material_condition": {
+          "enum": [
+            "as_received",
+            "dry",
+            "dry_ash_free",
+            "not_applicable"
+          ],
+          "title": "Material Condition",
+          "type": "string"
+        },
+        "reference_pressure_pa": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Pressure Pa"
+        },
+        "reference_temperature_k": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Temperature K"
+        }
+      },
+      "required": [
+        "material_condition",
+        "energy_convention"
+      ],
+      "title": "PhysicalPropertyBasis",
+      "type": "object"
+    },
+    "PublishedPropertyQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "enum": [
+            "TJ/Gg",
+            "MJ/kg"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "title": "PublishedPropertyQuantity",
+      "type": "object"
+    },
+    "PublishedPropertySourceDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "document_url": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Document Url",
+          "type": "string"
+        },
+        "license": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "License",
+          "type": "string"
+        },
+        "license_url": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "License Url",
+          "type": "string"
+        },
+        "locator": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "publisher": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Publisher",
+          "type": "string"
+        },
+        "retrieved_on": {
+          "format": "date",
+          "title": "Retrieved On",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_id",
+        "version",
+        "title",
+        "publisher",
+        "document_url",
+        "document_sha256",
+        "retrieved_on",
+        "locator",
+        "license",
+        "license_url"
+      ],
+      "title": "PublishedPropertySourceDocument",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "applicability_note": {
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Applicability Note",
+      "type": "string"
+    },
+    "basis": {
+      "$ref": "nebula.published-physical-property-source.v1.schema.json#/$defs/PhysicalPropertyBasis"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "normalization_formula": {
+      "const": "energy_per_mass.tj_per_gg_to_mj_per_kg@1.0.0",
+      "enum": [
+        "energy_per_mass.tj_per_gg_to_mj_per_kg@1.0.0"
+      ],
+      "title": "Normalization Formula",
+      "type": "string"
+    },
+    "normalized_quantity": {
+      "$ref": "nebula.published-physical-property-source.v1.schema.json#/$defs/PublishedPropertyQuantity"
+    },
+    "original_quantity": {
+      "$ref": "nebula.published-physical-property-source.v1.schema.json#/$defs/PublishedPropertyQuantity"
+    },
+    "property_code": {
+      "enum": [
+        "lower_heating_value",
+        "higher_heating_value"
+      ],
+      "title": "Property Code",
+      "type": "string"
+    },
+    "review_status": {
+      "enum": [
+        "reviewed",
+        "approved"
+      ],
+      "title": "Review Status",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula.published-physical-property-source.v1",
+      "enum": [
+        "nebula.published-physical-property-source.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_document": {
+      "$ref": "nebula.published-physical-property-source.v1.schema.json#/$defs/PublishedPropertySourceDocument"
+    },
+    "source_fuel_type": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Source Fuel Type",
+      "type": "string"
+    },
+    "source_kind": {
+      "const": "published_source",
+      "enum": [
+        "published_source"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "source_namespace": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Source Namespace",
+      "type": "string"
+    },
+    "source_record_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+      "title": "Source Record Id",
+      "type": "string"
+    },
+    "source_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Source Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_namespace",
+    "source_record_id",
+    "source_version",
+    "source_kind",
+    "source_fuel_type",
+    "property_code",
+    "original_quantity",
+    "normalized_quantity",
+    "normalization_formula",
+    "basis",
+    "applicability_note",
+    "source_document",
+    "review_status",
+    "content_sha256"
+  ],
+  "title": "PublishedPhysicalPropertySourceRecord",
+  "type": "object"
+}

@@ -1,0 +1,74 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "capability_key": {
+      "const": "spatial.energy-flow.v1",
+      "enum": [
+        "spatial.energy-flow.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "facilities": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Facilities",
+      "type": "array"
+    },
+    "park": {
+      "title": "Park",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "nebula_one.spatial.energy-flow.v1",
+      "enum": [
+        "nebula_one.spatial.energy-flow.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "series": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Series",
+      "type": "array"
+    },
+    "source_energy_flow": {
+      "title": "Source Energy Flow",
+      "type": "object"
+    },
+    "source_snapshot": {
+      "title": "Source Snapshot",
+      "type": "object"
+    },
+    "source_spatial_result": {
+      "title": "Source Spatial Result",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "source_snapshot",
+    "source_energy_flow",
+    "source_spatial_result",
+    "park",
+    "facilities",
+    "series",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "SpatialEnergyFlowOut",
+  "type": "object"
+}

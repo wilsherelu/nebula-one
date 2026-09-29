@@ -1,0 +1,301 @@
+{
+  "$defs": {
+    "EntityProcessBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "graph_node_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Graph Node Id",
+          "type": "string"
+        },
+        "process_uuid": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Process Uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "graph_node_id",
+        "process_uuid",
+        "entity_id"
+      ],
+      "title": "EntityProcessBinding",
+      "type": "object"
+    },
+    "EntityRegistryEntity": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "entity_type": {
+          "enum": [
+            "park",
+            "facility"
+          ],
+          "title": "Entity Type",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "parent_entity_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Entity Id"
+        },
+        "spatial_unit": {
+          "$ref": "nebula.entity-registry.v2.schema.json#/$defs/SpatialUnit"
+        }
+      },
+      "required": [
+        "entity_id",
+        "entity_type",
+        "name",
+        "spatial_unit"
+      ],
+      "title": "EntityRegistryEntity",
+      "type": "object"
+    },
+    "EntityRegistryIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_level": {
+          "enum": [
+            "demonstration",
+            "measured"
+          ],
+          "title": "Claim Level",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "claim_level"
+      ],
+      "title": "EntityRegistryIdentity",
+      "type": "object"
+    },
+    "ParkBoundaryTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Boundary Id",
+          "type": "string"
+        },
+        "consolidation_policy": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Consolidation Policy",
+          "type": "object"
+        },
+        "included_entity_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Included Entity Ids",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "park_entity_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Park Entity Id",
+          "type": "string"
+        },
+        "reporting_period_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Reporting Period Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "boundary_id",
+        "name",
+        "park_entity_id",
+        "included_entity_ids",
+        "reporting_period_id",
+        "consolidation_policy"
+      ],
+      "title": "ParkBoundaryTemplate",
+      "type": "object"
+    },
+    "SpatialGeometry": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinates": {
+          "items": {},
+          "title": "Coordinates",
+          "type": "array"
+        },
+        "crs": {
+          "const": "EPSG:4326",
+          "enum": [
+            "EPSG:4326"
+          ],
+          "title": "Crs",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "Point",
+            "Polygon",
+            "MultiPolygon"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "coordinates",
+        "crs"
+      ],
+      "title": "SpatialGeometry",
+      "type": "object"
+    },
+    "SpatialUnit": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_level": {
+          "enum": [
+            "demonstration",
+            "measured"
+          ],
+          "title": "Claim Level",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "geometry": {
+          "$ref": "nebula.entity-registry.v2.schema.json#/$defs/SpatialGeometry"
+        },
+        "schema_version": {
+          "const": "nebula.spatial-unit.v1",
+          "enum": [
+            "nebula.spatial-unit.v1"
+          ],
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "spatial_level": {
+          "enum": [
+            "park",
+            "facility"
+          ],
+          "title": "Spatial Level",
+          "type": "string"
+        },
+        "spatial_unit_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Spatial Unit Id",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "spatial_unit_id",
+        "version",
+        "spatial_level",
+        "geometry",
+        "claim_level",
+        "content_sha256"
+      ],
+      "title": "SpatialUnit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "entities": {
+      "items": {
+        "$ref": "nebula.entity-registry.v2.schema.json#/$defs/EntityRegistryEntity"
+      },
+      "minItems": 2,
+      "title": "Entities",
+      "type": "array"
+    },
+    "park_boundaries": {
+      "items": {
+        "$ref": "nebula.entity-registry.v2.schema.json#/$defs/ParkBoundaryTemplate"
+      },
+      "minItems": 1,
+      "title": "Park Boundaries",
+      "type": "array"
+    },
+    "process_bindings": {
+      "items": {
+        "$ref": "nebula.entity-registry.v2.schema.json#/$defs/EntityProcessBinding"
+      },
+      "minItems": 1,
+      "title": "Process Bindings",
+      "type": "array"
+    },
+    "registry": {
+      "$ref": "nebula.entity-registry.v2.schema.json#/$defs/EntityRegistryIdentity"
+    },
+    "schema_version": {
+      "const": "nebula.entity-registry.v2",
+      "enum": [
+        "nebula.entity-registry.v2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "registry",
+    "entities",
+    "process_bindings",
+    "park_boundaries"
+  ],
+  "title": "EntityRegistryDocument",
+  "type": "object"
+}

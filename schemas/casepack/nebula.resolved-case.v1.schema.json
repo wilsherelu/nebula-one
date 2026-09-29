@@ -1,0 +1,177 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "application_case_id": {
+      "title": "Application Case Id",
+      "type": "string"
+    },
+    "application_case_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Application Case Sha256",
+      "type": "string"
+    },
+    "application_case_version": {
+      "title": "Application Case Version",
+      "type": "string"
+    },
+    "blocked_capabilities": {
+      "items": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "title": "Blocked Capabilities",
+      "type": "array"
+    },
+    "capabilities": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "case_pack_id": {
+      "title": "Case Pack Id",
+      "type": "string"
+    },
+    "case_pack_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Case Pack Sha256",
+      "type": "string"
+    },
+    "case_pack_version": {
+      "title": "Case Pack Version",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "demand": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Demand",
+      "type": "array"
+    },
+    "demand_definition_id": {
+      "title": "Demand Definition Id",
+      "type": "string"
+    },
+    "demand_definition_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Demand Definition Sha256",
+      "type": "string"
+    },
+    "demand_definition_version": {
+      "title": "Demand Definition Version",
+      "type": "string"
+    },
+    "demand_type": {
+      "title": "Demand Type",
+      "type": "string"
+    },
+    "engine": {
+      "title": "Engine",
+      "type": "object"
+    },
+    "method_packages": {
+      "items": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "title": "Method Packages",
+      "type": "array"
+    },
+    "parameter_binding": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Parameter Binding"
+    },
+    "parameter_sets": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Parameter Sets",
+      "type": "array"
+    },
+    "reporting_period_id": {
+      "title": "Reporting Period Id",
+      "type": "string"
+    },
+    "reporting_period_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Reporting Period Sha256",
+      "type": "string"
+    },
+    "reporting_period_version": {
+      "title": "Reporting Period Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nebula.resolved-case.v1",
+      "enum": [
+        "nebula.resolved-case.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "shared_releases": {
+      "title": "Shared Releases",
+      "type": "object"
+    },
+    "study_frame_id": {
+      "title": "Study Frame Id",
+      "type": "string"
+    },
+    "study_frame_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Study Frame Sha256",
+      "type": "string"
+    },
+    "study_frame_version": {
+      "title": "Study Frame Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_pack_id",
+    "case_pack_version",
+    "case_pack_sha256",
+    "application_case_id",
+    "application_case_version",
+    "application_case_sha256",
+    "study_frame_id",
+    "study_frame_version",
+    "study_frame_sha256",
+    "demand_definition_id",
+    "demand_definition_version",
+    "demand_definition_sha256",
+    "demand_type",
+    "demand",
+    "reporting_period_id",
+    "reporting_period_version",
+    "reporting_period_sha256",
+    "parameter_binding",
+    "parameter_sets",
+    "capabilities",
+    "blocked_capabilities",
+    "method_packages",
+    "engine",
+    "shared_releases",
+    "content_sha256"
+  ],
+  "title": "ResolvedCase",
+  "type": "object"
+}

@@ -1,0 +1,87 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "application_id": {
+      "title": "Application Id",
+      "type": "string"
+    },
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "baseline_period_id": {
+      "title": "Baseline Period Id",
+      "type": "string"
+    },
+    "capability_key": {
+      "const": "energy.period-trend.v1",
+      "enum": [
+        "energy.period-trend.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "issues": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "metrics": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Metrics",
+      "type": "array"
+    },
+    "observations": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "nebula_one.period-energy-trend.v1",
+      "enum": [
+        "nebula_one.period-energy-trend.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "system_model_id": {
+      "title": "System Model Id",
+      "type": "string"
+    },
+    "value_semantics": {
+      "title": "Value Semantics",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "application_id",
+    "system_model_id",
+    "value_semantics",
+    "baseline_period_id",
+    "observations",
+    "metrics",
+    "issues",
+    "status",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "PeriodEnergyTrendOut",
+  "type": "object"
+}

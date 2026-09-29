@@ -1,0 +1,387 @@
+{
+  "$defs": {
+    "CasePackIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_level": {
+          "enum": [
+            "demonstration",
+            "research_reference",
+            "business_assurance"
+          ],
+          "title": "Claim Level",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "enum": [
+            "draft",
+            "executable"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "lifecycle_status",
+        "claim_level"
+      ],
+      "title": "CasePackIdentity",
+      "type": "object"
+    },
+    "CasePackShowcase": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "modules": {
+          "items": {
+            "$ref": "nebula.casepack.v1.schema.json#/$defs/CasePackShowcaseModule"
+          },
+          "minItems": 1,
+          "title": "Modules",
+          "type": "array"
+        },
+        "title": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "modules"
+      ],
+      "title": "CasePackShowcase",
+      "type": "object"
+    },
+    "CasePackShowcaseModule": {
+      "additionalProperties": false,
+      "properties": {
+        "application_case_id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Application Case Id",
+          "type": "string"
+        },
+        "capability_keys": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Capability Keys",
+          "type": "array"
+        },
+        "description": {
+          "maxLength": 320,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "key": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Key",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "title",
+        "description",
+        "application_case_id",
+        "capability_keys"
+      ],
+      "title": "CasePackShowcaseModule",
+      "type": "object"
+    },
+    "EnginePin": {
+      "additionalProperties": false,
+      "properties": {
+        "api_contract": {
+          "const": "provider.v1",
+          "enum": [
+            "provider.v1"
+          ],
+          "title": "Api Contract",
+          "type": "string"
+        },
+        "expected_graph_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Graph Sha256",
+          "type": "string"
+        },
+        "project_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Project Id",
+          "type": "string"
+        },
+        "provider": {
+          "const": "nebula-lca",
+          "enum": [
+            "nebula-lca"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "version": {
+          "exclusiveMinimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "provider",
+        "api_contract",
+        "project_id",
+        "version",
+        "expected_graph_sha256"
+      ],
+      "title": "EnginePin",
+      "type": "object"
+    },
+    "InlineEnginePin": {
+      "additionalProperties": false,
+      "properties": {
+        "api_contract": {
+          "const": "provider.v1",
+          "enum": [
+            "provider.v1"
+          ],
+          "title": "Api Contract",
+          "type": "string"
+        },
+        "expected_graph_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Graph Sha256",
+          "type": "string"
+        },
+        "provider": {
+          "const": "nebula-lca",
+          "enum": [
+            "nebula-lca"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "snapshot_path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Snapshot Path",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_version": {
+          "exclusiveMinimum": 0,
+          "title": "Source Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "provider",
+        "api_contract",
+        "snapshot_path",
+        "source_id",
+        "source_version",
+        "expected_graph_sha256"
+      ],
+      "title": "InlineEnginePin",
+      "type": "object"
+    },
+    "LicenseManifestRef": {
+      "additionalProperties": false,
+      "properties": {
+        "manifest": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Manifest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "manifest"
+      ],
+      "title": "LicenseManifestRef",
+      "type": "object"
+    },
+    "SharedReleases": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_registry": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entity Registry"
+        },
+        "evidence_index": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Index"
+        },
+        "foreground_data": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Foreground Data"
+        }
+      },
+      "title": "SharedReleases",
+      "type": "object"
+    },
+    "VersionedDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "id",
+        "version"
+      ],
+      "title": "VersionedDocumentRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "application_case_refs": {
+      "items": {
+        "$ref": "nebula.casepack.v1.schema.json#/$defs/VersionedDocumentRef"
+      },
+      "minItems": 1,
+      "title": "Application Case Refs",
+      "type": "array"
+    },
+    "case_pack": {
+      "$ref": "nebula.casepack.v1.schema.json#/$defs/CasePackIdentity"
+    },
+    "engine": {
+      "anyOf": [
+        {
+          "$ref": "nebula.casepack.v1.schema.json#/$defs/EnginePin"
+        },
+        {
+          "$ref": "nebula.casepack.v1.schema.json#/$defs/InlineEnginePin"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Engine"
+    },
+    "licenses": {
+      "$ref": "nebula.casepack.v1.schema.json#/$defs/LicenseManifestRef"
+    },
+    "schema_version": {
+      "const": "nebula.casepack.v1",
+      "enum": [
+        "nebula.casepack.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "shared_releases": {
+      "$ref": "nebula.casepack.v1.schema.json#/$defs/SharedReleases"
+    },
+    "showcase": {
+      "anyOf": [
+        {
+          "$ref": "nebula.casepack.v1.schema.json#/$defs/CasePackShowcase"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "supporting_file_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Supporting File Refs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_pack",
+    "engine",
+    "shared_releases",
+    "licenses",
+    "application_case_refs"
+  ],
+  "title": "CasePackDocument",
+  "type": "object"
+}

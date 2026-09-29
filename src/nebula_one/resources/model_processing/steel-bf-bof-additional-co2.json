@@ -1,0 +1,106 @@
+{
+  "schema_version": "nebula_one.model-processing-rules.v1",
+  "package_id": "steel-bf-bof.model-processing",
+  "version": "1.0.4",
+  "license": "Apache-2.0",
+  "content": {
+    "applicable_template": {
+      "id": "steel-bf-bof-inventory",
+      "version": "1.1.2",
+      "content_sha256": "df91eaf3c96638d1f20bbec40c544f046fe1107bb78282ba532da95fd2dbbe35"
+    },
+    "purposes": {
+      "lca": {
+        "process_selection": {
+          "mode": "all_model_processes"
+        },
+        "background_disposition": {
+          "mode": "retain_saved_pins"
+        },
+        "cross_boundary_connections": {
+          "mode": "keep_internal_edges",
+          "boundary_exchanges": []
+        },
+        "elementary_flows": {
+          "mode": "not_applicable"
+        },
+        "precursors": {
+          "mode": "not_applicable"
+        }
+      },
+      "cbam": {
+        "process_selection": {
+          "mode": "method_package_boundary",
+          "method_package": {
+            "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+            "version": "1.1.3",
+            "content_sha256": "be3d67af14f7fa7f0d3a5158e75959b604d6d39208e9a361c50bb626e64571fb"
+          },
+          "process_uuids_path": "boundary_schema.production_process_boundary.in_boundary_process_uuids"
+        },
+        "background_disposition": {
+          "mode": "unlink_all_background_links",
+          "evidence": {
+            "method_package": {
+              "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+              "version": "1.1.3",
+              "content_sha256": "be3d67af14f7fa7f0d3a5158e75959b604d6d39208e9a361c50bb626e64571fb"
+            },
+            "manifest_path": "boundary_schema.annex_ii_direct_only",
+            "required_value": true,
+            "clause": "ANNEX II direct emissions only, so an embedded supply chain is not part of this calculation model"
+          }
+        },
+        "cross_boundary_connections": {
+          "mode": "reject_undeclared",
+          "boundary_exchanges": []
+        },
+        "elementary_flows": {
+          "mode": "identity_selector_rules",
+          "evidence": {
+            "method_package": {
+              "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+              "version": "1.1.3",
+              "content_sha256": "be3d67af14f7fa7f0d3a5158e75959b604d6d39208e9a361c50bb626e64571fb"
+            },
+            "manifest_path": "classification_rules.direct_emissions",
+            "applicable_gases_path": "boundary_schema.greenhouse_gases"
+          }
+        },
+        "precursors": {
+          "mode": "reference_only"
+        }
+      }
+    },
+    "reviewed_returned_selector": {
+      "selector_manifest_path": "classification_rules.additional_direct_emission_selectors",
+      "identity": {
+        "compartment": "Emissions to air, unspecified",
+        "direction": "output",
+        "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+        "flow_property_version": "03.00.003",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "source_namespace": "tiangong_open_data",
+        "unit": "kg",
+        "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+        "unit_group_version": "03.00.003",
+        "version": "03.00.004",
+        "process_uuid": "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+        "greenhouse_gas": "CO2"
+      },
+      "in_boundary_process_uuids": [
+        "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+        "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+        "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+        "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+        "ea66dbd3-03e1-5ff8-a1d0-9662604392c0"
+      ]
+    },
+    "reviewed_source_method_package": {
+      "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+      "version": "1.1.1",
+      "content_sha256": "fa4eb13171aedbf297a33838ca3ccd2aa4df1759a1534334eaace13c2216ea13"
+    }
+  },
+  "content_sha256": "b5b043e80a1876ee5ffb0a10b4fa976f83e436a4d3a77381271273384baa6480"
+}

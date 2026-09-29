@@ -1,0 +1,204 @@
+{
+  "schema_version": "nebula.standard-seed.manifest.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "version": "1.1.0",
+  "title": "Standard crude steel seed, blast furnace route into a basic oxygen converter",
+  "claim_level": "demonstration",
+  "not_a_filing_value": "this seed verifies the software chain for a direct-emissions-only good of CN 7207. It is not an installation measurement, not a certified corporate emission and not a CBAM declaration. Its numerator nets the route's secondary gases inside the boundary, so it reads as a conservative upper bound for a plant that sells gas out (modeling gap MG-S11).",
+  "license": {
+    "model_and_metadata": "Apache-2.0",
+    "third_party_content": [
+      {
+        "content": "quoted rows, column headers and method sentences of Implementing Regulation (EU) 2025/2547, including its Annex I goods list cells, Annex II method text and Annex IV sector-specific parameter rows",
+        "basis": "EUR-Lex legal-document reuse under Commission Decision 2011/833/EU",
+        "basis_url": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html?locale=en"
+      }
+    ],
+    "source_document_redistribution": "the seed stores citations, locators, retrieval dates and content hashes; it does not embed a copy of any EUR-Lex document"
+  },
+  "engine_compatibility": {
+    "api_contract": "provider.v1",
+    "bundle_schema": "nebula.project.bundle.v1",
+    "import_endpoint": "POST /api/native-project-bundles/import?conflict_policy=fail",
+    "min_engine_commit": "8b151025d1ac5affaabc04427039895f6e96df60",
+    "verified_engine_commit": "8b151025d1ac5affaabc04427039895f6e96df60",
+    "note": "documentation only: no code path reads this block. The commit named here is the one the hydrogen and ammonia seeds were installed against, and it is inherited by this seed as the expected engine of its own acceptance run, not as a verified receipt. This version has no install receipt at all until the isolated-stack acceptance of the steel slice writes one, and nothing in this manifest may be presented as verified before that."
+  },
+  "identity": {
+    "namespace": "aa413a24-3706-5bdd-b257-c0c1f967af14",
+    "derivation": "docs/STANDARD_LCA_SEED_PACKAGE_V1.md section 3",
+    "project_id": "852aa1f8-ca2a-5ecd-86d1-ace69b5f6170",
+    "model_version_id": "c91adce4-17c0-5649-8b13-a2c67e5270b7",
+    "revision": 1,
+    "process_uuids": {
+      "ore-sintering": "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+      "blast-furnace": "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+      "basic-oxygen-converter": "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+      "secondary-metallurgy-and-degassing": "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+      "continuous-casting": "ea66dbd3-03e1-5ff8-a1d0-9662604392c0"
+    },
+    "owned_flow_uuids": {
+      "iron-ore": "fdba4f91-bbc9-5ea8-86d9-2ecb831afe09",
+      "limestone-flux": "ca40b889-cf9a-5aac-89c6-45f820da3b65",
+      "coke-breeze": "89e07856-8713-57ff-b4a8-104b0119975c",
+      "sintered-ore": "f4c2a1b3-c84d-5582-88f7-30cf0626045c",
+      "metallurgical-coke": "1b8ac953-3db1-5fef-8fa7-7112ed40aeb3",
+      "pci-bituminous-coal": "abf85061-0371-5ab5-9426-942df477cd84",
+      "steel-scrap": "74d988a9-b09d-5549-9672-64234caa6f0a",
+      "blast-furnace-hot-metal": "df1c5ffd-830d-52f4-b600-9a28e8c73013",
+      "bf-process-slag": "e4019f2f-542c-59f4-afbd-cee42dd4915f",
+      "converter-liquid-steel": "af57ba56-81ba-58f9-a753-c50d578dc816",
+      "converter-slag": "320a0821-db11-57c9-a1fb-a5f964b998aa",
+      "secondary-metallurgy-treated-steel": "a5d9b9da-dd04-5a82-968a-ec0b131c3f33",
+      "crude-steel-slab": "e31064bf-4268-5617-b79d-8b7f326d966e",
+      "continuous-casting-crop": "f44cc9da-b3a8-583e-963d-4ac456a4cd49"
+    },
+    "identity_check": "the builder recomputes every value above with uuid5 and refuses to emit a bundle when a stored value differs. Three flow identities of this model are not published here at all: fossil carbon dioxide is the engine catalog elementary flow, and natural gas and grid electricity are the hydrogen seed's own catalog rows, which model/flow-dependencies.json pins as verify_present prerequisites rather than re-minting under this seed's namespace."
+  },
+  "content_pins": {
+    "algorithm": "sha256 over canonical JSON (sort_keys, compact separators, ensure_ascii false, UTF-8) of the referenced authorable file",
+    "graph_sha256": "69336d77bb968fc9666cf5a26e2d349b27d09c4b4d8ef26367e269773113febc",
+    "roles_sha256": "f205a87e6d0aa0971578e84a8199f45d41b2c7bca596f9dd5947e82f08afd0fe",
+    "flow_dependencies_sha256": "fcf9f28bef78c4d87fe953cfdeb8a4302340334f3fb8f9537a74144824d467bc",
+    "owned_flows_sha256": "fac62b13fa53e18fda2dd6d267c70a23c62bd2cc191685fb6910e657aef0bfcf",
+    "project_row_sha256": "72b180568e48ce298bee1ed9e4c59fe870b152ce649f674c57cec2d319faa4c1",
+    "parameters_sha256": "bb193b06d53614e77e44b2cc9238083d82043624cafc4eeef1fe9b864e6c6acd",
+    "boundaries_sha256": "69a7c5492ea6541398b2937ea447682b31b28ea94c1b48e52a2678f538662b0b",
+    "acceptance_sha256": "7cb2352165f53148a9b9919f3504f4983a6352a8e2c3fb7cb7cbd589589668b2",
+    "clause_mapping_sha256": "78a7a0d1ee83d73f56959bf05ccb28a2c782b5255131bafecbf49bd1edcbaa59",
+    "bundle_content_sha256": "0a2a553ae4ca42bbb221d7b16d55a631c12091caa37aa00cc6c4e1f2231ee07e",
+    "pin_procedure": "python scripts/build_standard_seed_bundle.py --seed iron-steel-bf-bof-crude-steel --write-pins recomputes these fields, and a plain run must then exit 0. The released CBAM package is re-checked field by field against this ledger by that run, so a drift in any of the gates the package depends on - the counted/excluded/not-applicable bucket split in boundaries/cbam.json, the Annex I membership tri-state of the checked inputs, and the acceptance numbers the package restates - blocks the build rather than surfacing only at solve time. A pinned value that does not match the computed one blocks the install at the validated stage."
+  },
+  "seed_profile": {
+    "parameter_files": {
+      "carbon": "parameters/carbon-content.json",
+      "standards": "parameters/annex-ii-point-g-standard-factors.json",
+      "activities": "parameters/activity-data-slots.json",
+      "declaration": "parameters/sector-specific-declaration-parameters.json"
+    },
+    "boundary_files": [
+      "cbam",
+      "pcf",
+      "mfa"
+    ],
+    "arithmetic_checks": [
+      "mass_balance",
+      "result_expectations"
+    ],
+    "contract": "the builder takes its authored files and its arithmetic gates from this block; a check names the parameter roles it needs, an authored file no check reads is refused, and the clause citation pattern is derived from the ids in eu-clause-mapping.json rather than hardcoded. This seed binds mass_balance and result_expectations and none of the hydrogen-literal combustion checks, because a BF-BOF numerator is derived by the Annex II mass balance method rather than from a fuel duty times an emission factor, and no factor of that shape is authored here.",
+    "carbon_note": "parameters/carbon-content.json is where the two published ratios live - f = 3,664 t CO2/t C from the Annex II mass balance method and 0,440 t CO2/t CaCO3 from Annex II point G Table 3 - each with its verbatim quote, canonical offset and the atomic cross-check that shows which one the seed applies. They are cited, not copied into a boundary, an operator or code.",
+    "declaration_note": "parameters/sector-specific-declaration-parameters.json records the Annex IV sector-specific rows of the crude steel column as citation-only prerequisites. No arithmetic check reads it on purpose: a declaration field the seed turns into a number without a retrieved value would be a fabricated factor."
+  },
+  "files": {
+    "authorable": [
+      "seed.json",
+      "eu-clause-mapping.json",
+      "eu-clause-mapping.md",
+      "model/roles.json",
+      "model/graph.json",
+      "model/flow-dependencies.json",
+      "model/owned-flows.json",
+      "model/project-row.json",
+      "parameters/carbon-content.json",
+      "parameters/annex-ii-point-g-standard-factors.json",
+      "parameters/activity-data-slots.json",
+      "parameters/sector-specific-declaration-parameters.json",
+      "boundaries/cbam.json",
+      "boundaries/pcf.json",
+      "boundaries/mfa.json",
+      "methods/cbam-eu-iron-steel-bf-bof-direct-trial-1.0.1.json",
+      "acceptance/expected-values.json"
+    ],
+    "generated": [
+      "build/nebula-seed-bundle.json",
+      "build/iron-steel-bf-bof-crude-steel-1.1.0.nebula.zip"
+    ],
+    "package_note": "one method package is released for this seed: the CBAM trial package, whose algorithm is versioned from the ledger. MFA and PCF have no seed-level package kind in this repository: the mass balance and the foreground footprint read boundaries/mfa.json and boundaries/pcf.json directly, and the product carbon footprint binds the repository-wide pcf.product.ef31.foreground@1.0.0 per request rather than copying it in here, because a second file with the same package_id@version is one identity registered twice and the registry's unique constraint on (package_id, version) refuses the insert."
+  },
+  "bundle_entries": {
+    "manifest.json": "generated bundle manifest, schema nebula.project.bundle.v1",
+    "project.json": "model/project-row.json copied verbatim",
+    "versions.json": "one ModelVersion row built from model/graph.json",
+    "runs.json": [],
+    "catalog/flows.json": "model/owned-flows.json rows, fourteen in total",
+    "catalog/flow_versions.json": [],
+    "catalog/unit_groups.json": [],
+    "catalog/unit_definitions.json": [],
+    "dependencies.json": "the verify_present rows from model/flow-dependencies.json, which the engine records as EXTERNAL_DEPENDENCY_NOT_BUNDLED issues and never inserts"
+  },
+  "flow_dependency_summary": {
+    "bundled_owned": 14,
+    "verify_present": [
+      "fossil carbon dioxide elementary flow",
+      "natural gas, the hydrogen seed's own catalog row",
+      "grid electricity, the hydrogen seed's own catalog row",
+      "Units of mass group",
+      "Units of energy group"
+    ],
+    "blocked": [],
+    "re_probe_required_before_install": "the observed rows in model/flow-dependencies.json are inherited readings from the hydrogen seed's catalog probe on the acceptance engine, so the installer must re-measure them against the acceptance engine and store both readings in the install receipt before this seed may claim an identity"
+  },
+  "method_package_refs": [
+    {
+      "content_sha256": "57a2910cbd5bd7969905e297494c1540dfa305b34d404a3107c1c119f8e56595",
+      "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+      "package_kind": "cbam_trial",
+      "path": "methods/cbam-eu-iron-steel-bf-bof-direct-trial-1.0.1.json",
+      "version": "1.0.1"
+    }
+  ],
+  "method_package_refs_contract": "one entry per released method package an application of this seed binds, in the package_id@version form the runtime registry keys on. SeedBuild.check_method_packages gates it: the file must parse and validate as a MethodPackageCreate, its own identity fields must equal the ones declared here, and content_sha256 must equal the canonical hash the registry stores for it. A methods/*.json file that no entry names is refused, and so is a second package of CBAM kind. The CBAM package of this direct-only good is re-checked field by field against the boundary ledger, the graph ports and the acceptance ledger: the production process boundary, the six counted direct emission rules with their eleven identity fields each, the product rule on the cast slab, the Annex I membership tri-state of the eight checked inputs, the end-use declaration the boundary still waits for, and the authored total the validation rule restates. That restatement is in kilograms at this seed's own activity level, not the per-tonne reading, because the runtime compares the field with the solved kg sum of the counted exchanges: the gate multiplies the ledger's authored_sum by the authored kilogram amount of the reference product port, so a 1000 kg slab asks for 1940.739734 kg while a 1 kg functional unit would ask for the same digits as the specific value. Publishing a package does not change any engine-side byte; adding a boundary file does, because boundaries are pinned.",
+  "applications": {
+    "mfa": "boundaries/mfa.json",
+    "pcf": "boundaries/pcf.json",
+    "cbam": "boundaries/cbam.json"
+  },
+  "install_policy": {
+    "conflict_policy": "fail",
+    "validate_only_supported": true,
+    "prerequisite": "nebula.hydrogen.natural-gas-smr 1.3.0 with bundle_content_sha256 acfa0630535f7af5d78412d0f7186bbbaf99cd81f3dd0847f7cb049fe1325b67 must already be installed, because this seed's natural gas and grid electricity ports are that seed's catalog rows and are pinned as verify_present rather than re-minted",
+    "idempotency_key": "sha256(canonical({engine_identity, seed_id, seed_version, bundle_content_sha256}))",
+    "state_machine": [
+      "absent",
+      "validated",
+      "staged",
+      "imported",
+      "verified",
+      "bound",
+      "ready"
+    ],
+    "identity_remapped_is_failure": true,
+    "graph_hashes_preserved_false_is_failure": true,
+    "read_back_required_before_pin": "SystemModel and SystemRevision pins are written only after the verified stage passes",
+    "binding_requires_a_declaration": "the cbam binding refuses until the caller supplies declared_end_use for clause ST-07, because 3.15.1 keeps only primary hot-rolling and rough shaping inside the Crude steel category and the model cannot observe which one an installation did"
+  },
+  "known_gaps": {
+    "legal_verification": [
+      "GS-01",
+      "GS-02",
+      "GS-03",
+      "GS-04",
+      "GS-05"
+    ],
+    "modeling": [
+      "MG-S01",
+      "MG-S02",
+      "MG-S03",
+      "MG-S04",
+      "MG-S05",
+      "MG-S06",
+      "MG-S07",
+      "MG-S08",
+      "MG-S09",
+      "MG-S10",
+      "MG-S11"
+    ],
+    "repository_defects": [
+      "D-S1",
+      "D-S2",
+      "D-S3",
+      "D-S4"
+    ],
+    "resolution": "none of these is presented as resolved by shipping the content of this slice. What this slice closes is the build gate over a third good of a third sector: the same candidate-universe, mass-balance, membership-tri-state and package-identity gates that the hydrogen and ammonia seeds bind, with no new check and no new code path in the builder. What remains open is the isolated-stack acceptance that must prove them, the upstream catalog identities that are still this seed's own rows rather than a measured TIDAS row (GS-04), and the exported-gas and purchased-precursor strands that are excluded by clause rather than by convenience (MG-S11, MG-S08)."
+  }
+}

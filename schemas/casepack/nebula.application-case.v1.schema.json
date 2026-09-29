@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "AnalysisPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "method_package_refs": {
+          "default": [],
+          "items": {
+            "$ref": "nebula.application-case.v1.schema.json#/$defs/VersionedDocumentRef"
+          },
+          "title": "Method Package Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "capabilities"
+      ],
+      "title": "AnalysisPlan",
+      "type": "object"
+    },
+    "ApplicationCaseIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "case_type": {
+          "enum": [
+            "golden",
+            "integration",
+            "assurance"
+          ],
+          "title": "Case Type",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "enum": [
+            "draft",
+            "executable"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "case_type",
+        "lifecycle_status"
+      ],
+      "title": "ApplicationCaseIdentity",
+      "type": "object"
+    },
+    "ScenarioBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "parameter_binding_ref": {
+          "anyOf": [
+            {
+              "$ref": "nebula.application-case.v1.schema.json#/$defs/VersionedDocumentRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parameter_set_refs": {
+          "default": [],
+          "items": {
+            "$ref": "nebula.application-case.v1.schema.json#/$defs/VersionedDocumentRef"
+          },
+          "title": "Parameter Set Refs",
+          "type": "array"
+        }
+      },
+      "title": "ScenarioBinding",
+      "type": "object"
+    },
+    "StudyFrameDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision_ref": {
+          "title": "Base Revision Ref",
+          "type": "string"
+        },
+        "calculation_boundary_ref": {
+          "title": "Calculation Boundary Ref",
+          "type": "string"
+        },
+        "data_release_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Release Ref"
+        },
+        "demand_definition_ref": {
+          "$ref": "nebula.application-case.v1.schema.json#/$defs/VersionedDocumentRef"
+        },
+        "entity_scope_ref": {
+          "title": "Entity Scope Ref",
+          "type": "string"
+        },
+        "inventory_snapshot_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inventory Snapshot Ref"
+        },
+        "provider_contract_version": {
+          "const": "provider.v1",
+          "enum": [
+            "provider.v1"
+          ],
+          "title": "Provider Contract Version",
+          "type": "string"
+        },
+        "reporting_boundary_ref": {
+          "title": "Reporting Boundary Ref",
+          "type": "string"
+        },
+        "reporting_period_ref": {
+          "$ref": "nebula.application-case.v1.schema.json#/$defs/VersionedDocumentRef"
+        },
+        "schema_version": {
+          "const": "nebula.study-frame.v1",
+          "enum": [
+            "nebula.study-frame.v1"
+          ],
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "study_frame": {
+          "$ref": "nebula.application-case.v1.schema.json#/$defs/StudyFrameIdentity"
+        }
+      },
+      "required": [
+        "schema_version",
+        "study_frame",
+        "base_revision_ref",
+        "calculation_boundary_ref",
+        "reporting_boundary_ref",
+        "demand_definition_ref",
+        "reporting_period_ref",
+        "entity_scope_ref",
+        "provider_contract_version"
+      ],
+      "title": "StudyFrameDocument",
+      "type": "object"
+    },
+    "StudyFrameIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "enum": [
+            "draft",
+            "frozen"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "lifecycle_status"
+      ],
+      "title": "StudyFrameIdentity",
+      "type": "object"
+    },
+    "VersionedDocumentRef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "id",
+        "version"
+      ],
+      "title": "VersionedDocumentRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_plan": {
+      "$ref": "nebula.application-case.v1.schema.json#/$defs/AnalysisPlan"
+    },
+    "application_case": {
+      "$ref": "nebula.application-case.v1.schema.json#/$defs/ApplicationCaseIdentity"
+    },
+    "scenario": {
+      "$ref": "nebula.application-case.v1.schema.json#/$defs/ScenarioBinding"
+    },
+    "schema_version": {
+      "const": "nebula.application-case.v1",
+      "enum": [
+        "nebula.application-case.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "study_frame": {
+      "$ref": "nebula.application-case.v1.schema.json#/$defs/StudyFrameDocument"
+    }
+  },
+  "required": [
+    "schema_version",
+    "application_case",
+    "study_frame",
+    "scenario",
+    "analysis_plan"
+  ],
+  "title": "ApplicationCaseDocument",
+  "type": "object"
+}

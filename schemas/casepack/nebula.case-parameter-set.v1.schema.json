@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "CaseParameterSetIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "const": "frozen",
+          "enum": [
+            "frozen"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "lifecycle_status"
+      ],
+      "title": "CaseParameterSetIdentity",
+      "type": "object"
+    },
+    "ParameterValue": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity_kind": {
+          "enum": [
+            "amount",
+            "scale_factor"
+          ],
+          "title": "Quantity Kind",
+          "type": "string"
+        },
+        "unit_identity": {
+          "$ref": "nebula.case-parameter-set.v1.schema.json#/$defs/UnitIdentity"
+        },
+        "value": {
+          "minimum": 0.0,
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "quantity_kind",
+        "unit_identity"
+      ],
+      "title": "ParameterValue",
+      "type": "object"
+    },
+    "UnitIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "unit_group": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Unit Group",
+          "type": "string"
+        },
+        "unit_group_uuid": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Group Uuid"
+        },
+        "unit_group_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Group Version"
+        }
+      },
+      "required": [
+        "unit",
+        "unit_group"
+      ],
+      "title": "UnitIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "metadata": {
+      "title": "Metadata",
+      "type": "object"
+    },
+    "parameter_set": {
+      "$ref": "nebula.case-parameter-set.v1.schema.json#/$defs/CaseParameterSetIdentity"
+    },
+    "schema_version": {
+      "const": "nebula.case-parameter-set.v1",
+      "enum": [
+        "nebula.case-parameter-set.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "values": {
+      "additionalProperties": {
+        "$ref": "nebula.case-parameter-set.v1.schema.json#/$defs/ParameterValue"
+      },
+      "minProperties": 1,
+      "title": "Values",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "parameter_set",
+    "content_sha256",
+    "values",
+    "metadata"
+  ],
+  "title": "CaseParameterSetDocument",
+  "type": "object"
+}

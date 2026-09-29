@@ -1,0 +1,71 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "baseline_scenario_id": {
+      "title": "Baseline Scenario Id",
+      "type": "string"
+    },
+    "capability_key": {
+      "const": "spatial.distribution.v1",
+      "enum": [
+        "spatial.distribution.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "destination": {
+      "title": "Destination",
+      "type": "object"
+    },
+    "method_package": {
+      "title": "Method Package",
+      "type": "object"
+    },
+    "scenarios": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Scenarios",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "nebula_one.spatial.distribution.v1",
+      "enum": [
+        "nebula_one.spatial.distribution.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_flow": {
+      "title": "Source Flow",
+      "type": "object"
+    },
+    "source_snapshot": {
+      "title": "Source Snapshot",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "source_snapshot",
+    "method_package",
+    "source_flow",
+    "destination",
+    "baseline_scenario_id",
+    "scenarios",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "SpatialDistributionOut",
+  "type": "object"
+}

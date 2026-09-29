@@ -1,0 +1,39 @@
+.app-shell { min-height: 100vh; background: #f5f7fa; }
+.app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 10; background: var(--no-color-surface); border-right: 1px solid var(--no-color-border); overflow: hidden; }
+.app-sidebar .arco-layout-sider-children { display: flex; flex-direction: column; }
+.brand-mark { height: 80px; padding: 0 var(--no-space-5); display: flex; align-items: center; gap: var(--no-space-3); color: var(--no-color-text); }
+.brand-mark__orb { width: 28px; height: 28px; border: 7px solid var(--no-color-primary); border-radius: 50%; flex-shrink: 0; }
+.brand-mark span:last-child { display: flex; flex-direction: column; line-height: 20px; }
+.brand-mark strong { font-size: 16px; }
+.brand-mark small { font-size: var(--no-font-helper); color: var(--no-color-text-secondary); }
+.app-sidebar .arco-menu { flex: 1; min-height: 0; overflow-y: auto; background: transparent; color: var(--no-color-text-secondary); }
+.app-sidebar .arco-menu-item { background: transparent; color: var(--no-color-text-secondary); }
+.app-sidebar .arco-menu-item.arco-menu-selected { background: var(--no-color-primary-soft); color: var(--no-color-primary); font-weight: 600; }
+.app-sidebar .arco-menu-item:hover { background: var(--no-color-surface-muted); }
+.sidebar-foot { padding: var(--no-space-5); font-size: var(--no-font-helper); color: var(--no-color-text-tertiary); border-top: 1px solid var(--no-color-border); }
+.app-sidebar .arco-menu-item { margin-inline: var(--no-space-2); border-radius: var(--no-radius-control); }
+.app-content { min-width: 0; margin-left: var(--no-sidebar-width); }
+@media (max-width: 768px) {
+  .sidebar-foot { display: none; }
+  .app-shell { display: block; }
+  .app-sidebar { position: sticky; width: 100% !important; height: 56px; display: flex; flex-direction: row; }
+  .app-sidebar .arco-layout-sider-children { flex-direction: row; width: 100%; align-items: center; overflow: hidden; }
+  .brand-mark { height: 56px; flex: 0 0 auto; padding-inline: var(--no-space-3); }
+  .brand-mark small { display: none; }
+  .brand-mark__orb { width: 22px; height: 22px; border-width: 5px; }
+  .app-sidebar .arco-menu { display: flex; flex-direction: row; overflow-x: auto; min-width: 0; }
+  .app-sidebar .arco-menu-inner { display: flex; padding: 0; overflow: visible; }
+  .app-sidebar .arco-menu-item { width: auto; white-space: nowrap; }
+  .app-sidebar .arco-menu-item-disabled,
+  .app-sidebar .arco-menu-disabled { display: none; }
+  .app-content { margin-left: 0; }
+}
+@media (max-width: 480px) {
+  .brand-mark { width: 44px; box-sizing: border-box; padding-inline: 10px; }
+  .brand-mark span:last-child { display: none; }
+  .app-sidebar .arco-menu { overflow-y: hidden; }
+  .app-sidebar .arco-menu-item { margin-inline: 2px; padding-inline: 8px; }
+  .app-sidebar .arco-menu-inner { width: 100%; justify-content: space-around; }
+  .app-sidebar .arco-menu-item { margin-inline: 0; padding-inline: 6px; }
+  .app-sidebar .arco-menu-item .arco-icon { margin-right: 4px; }
+}

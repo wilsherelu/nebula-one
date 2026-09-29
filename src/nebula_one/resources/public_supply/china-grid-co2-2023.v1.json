@@ -1,0 +1,86 @@
+{
+  "schema_version": "nebula_one.public-supply-seed.v1",
+  "seed_id": "china-national-grid-co2-2023",
+  "seed_version": "1.0.0",
+  "project_name": "2023 年全国电力平均 CO₂ 供应示例",
+  "project": {
+    "reference_product": "alternating current",
+    "functional_unit": "1 kWh",
+    "system_boundary": "One electricity supply process with a declared direct CO2 exchange",
+    "time_representativeness": "2023",
+    "geography": "CN",
+    "description": "Editable public example; 2023 national average electricity CO2 factor, not a complete electricity carbon footprint or an EU CBAM eligible factor.",
+    "source_policy": "open_mixed",
+    "allowed_lcia_scope": "ef31_only"
+  },
+  "factor": {
+    "value": 0.5306,
+    "unit": "kg CO2/kWh",
+    "period": "2023",
+    "geography": "CN",
+    "variance": null,
+    "source_title": "关于发布2023年电力二氧化碳排放因子的公告",
+    "source_url": "https://www.mee.gov.cn/xxgk2018/xxgk/xxgk01/202512/t20251231_1139517.html",
+    "claim_limit": "national_average_co2_only_not_complete_electricity_pcf_or_eu_cbam_factor"
+  },
+  "graph": {
+    "functionalUnit": "1 kWh alternating current",
+    "nodes": [
+      {
+        "id": "national-grid-co2-2023",
+        "node_kind": "unit_process",
+        "mode": "normalized",
+        "process_uuid": "ef6ded18-179f-5104-aaea-ec36a227bf52",
+        "name": "2023 national grid electricity CO2 example",
+        "location": "CN",
+        "reference_product": "alternating current",
+        "reference_product_flow_uuid": "3d76981f-964a-4865-b588-0e067a2a1163",
+        "reference_product_direction": "output",
+        "inputs": [],
+        "outputs": [
+          {
+            "id": "electricity-out",
+            "flowUuid": "3d76981f-964a-4865-b588-0e067a2a1163",
+            "flowSourceNamespace": "tiangong_open_data",
+            "flowVersion": "01.01.003",
+            "flowPropertyUuid": "93a60a56-a3c8-11da-a746-0800200c9a66",
+            "flowPropertyVersion": "03.00.003",
+            "unitGroupUuid": "93a60a57-a3c8-11da-a746-0800200c9a66",
+            "unitGroupVersion": "03.00.003",
+            "name": "alternating current",
+            "unit": "kWh",
+            "unitGroup": "Units of energy",
+            "amount": 1,
+            "type": "technosphere",
+            "direction": "output",
+            "isProduct": true
+          },
+          {
+            "id": "co2-out",
+            "flowUuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+            "flowSourceNamespace": "tiangong_open_data",
+            "flowVersion": "03.00.004",
+            "flowPropertyUuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+            "flowPropertyVersion": "03.00.003",
+            "unitGroupUuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+            "unitGroupVersion": "03.00.003",
+            "name": "carbon dioxide (fossil)",
+            "unit": "kg",
+            "unitGroup": "Units of mass",
+            "amount": 0.5306,
+            "type": "biosphere",
+            "direction": "output",
+            "isProduct": false
+          }
+        ]
+      }
+    ],
+    "exchanges": [],
+    "metadata": {
+      "source": "nebula-one-public-supply-seed",
+      "source_period": "2023",
+      "source_geography": "CN",
+      "claim_limit": "partial_user_editable_electricity_co2_supply"
+    }
+  }
+}

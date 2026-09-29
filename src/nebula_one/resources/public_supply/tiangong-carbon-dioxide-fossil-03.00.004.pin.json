@@ -1,0 +1,16 @@
+{
+  "schema_version": "nebula_one.open-flow-import-pin.v1",
+  "asset": "tiangong-carbon-dioxide-fossil-03.00.004.import.json",
+  "asset_sha256": "ec747b3b9d4997f25999adefd9464bc8c592a50f2e116346a4eec31bfab28e08",
+  "source_record_content_hash": "66cdcf9f109fabcebc23e98d5f4cc7610efae7ce514f549e03214ba2846d5e67",
+  "flow_snapshot_content_hash": "86be2befdb9df9d22cd49aa03d3c9b982cd7ad8bff855235d35a0110581160cc",
+  "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+  "source_namespace": "tiangong_open_data",
+  "source_version": "03.00.004",
+  "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+  "flow_property_version": "03.00.003",
+  "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+  "unit_group_version": "03.00.003",
+  "default_unit": "kg",
+  "unit_group": "Units of mass"
+}

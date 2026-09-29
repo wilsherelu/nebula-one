@@ -1,0 +1,78 @@
+{
+  "schema_version": "nebula.standard-seed.parameter-record.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "parameter_id": "crude-steel.bf-bof-declaration-parameters",
+  "clause_refs": ["ST-09"],
+  "claim_level": "demonstration",
+  "measured": false,
+  "purpose": "the four crude-steel sector-specific parameters the regulation asks a filing to declare, recorded as data fields with the offsets that define them. None of them is an emission factor and none of them enters the CBAM arithmetic of this seed; a model that silently fills them from a default would present an undeclared assumption as a reported figure.",
+  "legal_basis": {
+    "clause": "ST-09",
+    "quote_verbatim": "Crude steel — The main reducing agent of the precursor, if known. — Mass % of Mn, Cr, Ni, total of other alloy elements. — Tonnes scrap used for producing 1 t crude steel. — % of scrap that is pre-consumer scrap.",
+    "canonical_offset": 235268,
+    "source": "S3",
+    "canonical_text_sha256": "7e614b4d284afdde6d4e61b2bcad8fc1ffd1d8318e1c11c6b839cf7f31002680",
+    "retrieved_at": "2026-09-19",
+    "containing_table": {
+      "heading": "ANNEX IV … Sector specific parameters",
+      "heading_offsets": [216878, 234141],
+      "note": "the list sits under the sector-specific-parameters heading of Annex IV, which is a declaration list rather than a calculation rule, so the four items below are recorded as fields with evidence requirements and carry no value in this seed"
+    }
+  },
+  "sintered_ore_column": {
+    "clause": "ST-09",
+    "quote_verbatim": "Sintered Ore — N.a.",
+    "canonical_offset": 234898,
+    "reading": "the aggregated goods category this model produces internally carries no sector-specific declaration parameter at all, which is why the sintering process contributes nothing to the fields below and why the seed does not invent a sinter parameter to make the table look complete."
+  },
+  "fields": [
+    {
+      "field_id": "main_reducing_agent_of_the_precursor",
+      "clause": "ST-09",
+      "as_written": "The main reducing agent of the precursor, if known.",
+      "value": null,
+      "unit": "text",
+      "demonstration_reading": "for the BF-BOF route the precursor is hot metal and its main reducing agent is metallurgical coke; the model's blast-furnace carbon book in parameters/carbon-content.json is consistent with that reading",
+      "why_not_a_number_here": "the clause says 'if known', i.e. it is an installation knowledge statement about a specific furnace charge, not a quantity the seed may assert; the instance value comes from the installation's own charge record",
+      "installation_data_needed": "the reductant that dominates the burden reduction, with the charge record that establishes it"
+    },
+    {
+      "field_id": "alloy_element_mass_percent",
+      "clause": "ST-09",
+      "as_written": "Mass % of Mn, Cr, Ni, total of other alloy elements.",
+      "value": null,
+      "unit": "mass %",
+      "demonstration_reading": "the model's crude steel slab is a non-alloy primary form, so a declaration of these four fields would be a heat analysis certificate reading close to zero, not an assumed zero",
+      "why_not_a_number_here": "an alloy analysis is a material test result; the seed has no certificate and must not substitute the CN code's generality for a measured composition",
+      "installation_data_needed": "heat analysis certificate per declared shipment lot, for Mn, Cr, Ni and the total of other alloy elements"
+    },
+    {
+      "field_id": "tonnes_scrap_per_tonne_crude_steel",
+      "clause": "ST-09",
+      "as_written": "Tonnes scrap used for producing 1 t crude steel.",
+      "value": null,
+      "unit": "t scrap / t crude steel",
+      "demonstration_reading": "the model's own port amounts imply 150 kg scrap against 1000 kg slab, i.e. 0.150 t/t, but that is the demonstration charge of this graph and not a plant yardstick; the clause asks for the installation figure",
+      "why_not_a_number_here": "storing 0.150 here would make the graph's invented charge look like a declared parameter, which is exactly the kind of fallback this repository forbids",
+      "installation_data_needed": "scrap additions weighed at the converter or EAF charge, divided by the certified activity level of the same period",
+      "graph_consistency_note": "recorded as a consequence of model/graph.json only: the amounts that would be needed to reproduce the demonstration charge are in parameters/activity-data-slots.json, not in this field"
+    },
+    {
+      "field_id": "pre_consumer_scrap_share",
+      "clause": "ST-09",
+      "as_written": "% of scrap that is pre-consumer scrap.",
+      "value": null,
+      "unit": "%",
+      "demonstration_reading": "the model treats scrap as a single technosphere input; it does not split pre-consumer from post-consumer, and the clause's distinction therefore has no representation in the graph",
+      "why_not_a_number_here": "the split changes nothing in this route's direct CO2 arithmetic (the scrap carbon goes through the mass balance of ST-08 either way), so a value here would be an unevidenced classification claim",
+      "installation_data_needed": "purchasing and returns record that separates pre-consumer from post-consumer scrap for the same reporting period",
+      "modeling_gap_ref": "MG-S04"
+    }
+  ],
+  "absence_contract": {
+    "rule": "every value in this file is null on purpose. An instance that fills one of them must carry an evidence record naming the installation document; a missing value must be reported as missing, and must not be defaulted, because these four fields are declaration content rather than calculation input.",
+    "cbam_arithmetic": "not_consumed_by_any_code_path",
+    "runtime_consumption": "read by the boundary coverage report as a declared-but-empty field list, never by the CBAM formula graph"
+  }
+}

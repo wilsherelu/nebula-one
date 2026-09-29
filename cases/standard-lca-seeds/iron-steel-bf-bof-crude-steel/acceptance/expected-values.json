@@ -1,0 +1,369 @@
+{
+  "schema_version": "nebula.standard-seed.expected-values.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "derivation_provenance": {
+    "method": "every value below was produced by decimal arithmetic on the constants in parameters/ and on the declared composition and activity data in model/graph.json, before any builder or solver ran; the independent re-derivation lives in tmp/segment9h_30_steel_recipe.py and its literal dump in tmp/segment9h_31_steel_numbers.json",
+    "independence": "no value in this file was copied from a bundle, a builder print or an engine result; the comparison direction is always result-to-here",
+    "tolerance_default": {
+      "kind": "relative",
+      "value": "0.000001",
+      "reason": "authored amounts carry six decimal places"
+    },
+    "arithmetic_environment": "Python decimal module, precision 25 significant digits, no floating point",
+    "published_ratios": "carbon to CO2 is the published f = 3,664 t CO2/t C of Annex II's mass balance method (parameters/carbon-content.json#published_constants/f_CO2_over_C, @105374), so a carbon mass is multiplied by that literal rather than by the atomic ratio 44.009/12.011 = 3.664057946882024810590292. Carbonate decomposition uses the published 0,440 t CO2/t CaCO3 of Annex II point G Table 3 rather than the atomic 0.4397118478108826409288012. Both slacks are named as MFA residual terms rather than absorbed"
+  },
+  "cbam": {
+    "functional_unit_result": {
+      "name": "specific_embedded_emissions",
+      "expected": "1.940739734343950632674687",
+      "authored_sum": "1.940739734",
+      "unit": "t CO2 / t crude steel",
+      "two_readings_rule": "expected is the sum of the derived component values while authored_sum is the sum of the six decimal amounts the model stores. They differ by 3.43950632674687e-10, which is the rounding of the two blast furnace terms alone, so an engine result must sit within the stated tolerance of expected and must equal authored_sum exactly when the stored amounts are added as stored.",
+      "value_equality_note": "kg CO2 per kg crude steel and t CO2 per t crude steel are the same number, so the kg to tonne conversion of ST-01 must not scale this result; it divides the numerator and the denominator by the same 1000",
+      "numerator_at_declared_activity_level": {
+        "expected_kg": "1940.739734",
+        "unit": "kg CO2",
+        "activity_level_kg": "1000.0",
+        "derivation": "the six authored component amounts added as stored: 193.4592 + 74.448 + 524.748873 + 976.902701 + 152.56896 + 18.612, which is the numerator the model carries before the per-tonne reading divides it by the 1000 kg slab of ST-16",
+        "reading": "the method package cross-checks the solved numerator in kg against this field, not against the per-tonne value, because the solver returns the exchanges of a 1000 kg activity in kg"
+      },
+      "derivation": "0.1934592 + 0.074448 + 0.5247488732823072871420975 + 0.9769027010616433455325893 + 0.15256896 + 0.018612",
+      "activity_level": {
+        "exchange_id": "continuous-casting::crude-steel-slab-out",
+        "amount": "1000.0",
+        "unit": "kg crude steel",
+        "clause": "ST-16",
+        "rule": "the denominator is the cast slab that leaves the production process, not the sum of the five process outputs; the 20 kg casting crop is excluded from it by ST-16 and appears in the mass account only"
+      },
+      "emission_components": [
+        {
+          "component": "direct_co2",
+          "exchange_ids": [
+            "ore-sintering::co2-sinter-breeze-out",
+            "ore-sintering::co2-sinter-carbonate-out",
+            "blast-furnace::co2-bf-reduction-out",
+            "blast-furnace::co2-bf-raceway-out",
+            "basic-oxygen-converter::co2-converter-decarburisation-out",
+            "basic-oxygen-converter::co2-converter-flux-out"
+          ],
+          "authored": "1.940739734",
+          "expected": "1.940739734343950632674687",
+          "unit": "t CO2 / t crude steel",
+          "derivation": "(193.4592 + 74.448 + 524.7488732823072871420975 + 976.9027010616433455325893 + 152.56896 + 18.612) kg CO2 / 1000 kg crude steel",
+          "terms": [
+            {
+              "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+              "authored": "0.1934592",
+              "expected": "0.1934592",
+              "emission_kind": "combustion",
+              "derivation": "carbon of 60 kg coke breeze at 88 % C = 52.800 kg C, times the published 3,664 t CO2/t C, over 1000 kg of slab"
+            },
+            {
+              "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+              "authored": "0.074448",
+              "expected": "0.074448",
+              "emission_kind": "process",
+              "derivation": "169.200 kg CaCO3 in 180 kg of sinter lime at 94 %, times the published 0,440 t CO2/t CaCO3"
+            },
+            {
+              "exchange_id": "blast-furnace::co2-bf-reduction-out",
+              "authored": "0.524748873",
+              "expected": "0.5247488732823072871420975",
+              "emission_kind": "process",
+              "derivation": "carbon that carries the ore lattice oxygen out as CO2: the sinter lattice oxygen of 386.760677 kg minus the 5.229291 kg that bonds the iron oxidised into the furnace slag = 381.531386 kg O, divided by (f - 1) = 2.664 and times f, giving 143.217487 kg C and 524.748873 kg CO2"
+            },
+            {
+              "exchange_id": "blast-furnace::co2-bf-raceway-out",
+              "authored": "0.976902701",
+              "expected": "0.9769027010616433455325893",
+              "emission_kind": "combustion",
+              "derivation": "the rest of the furnace carbon budget: coke 344.000 kg C + PCI 101.400 kg C + methane 5.989403 kg C - the 41.550 kg C that stays in the hot metal = 409.839403 kg C in the top-gas carbon, minus the 143.217487 kg C of the reduction term above, giving 266.621916 kg C times f"
+            },
+            {
+              "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+              "authored": "0.15256896",
+              "expected": "0.15256896",
+              "emission_kind": "process",
+              "derivation": "carbon burnt by the lance: hot metal 41.550 kg C + scrap 0.600 kg C - the 0.510 kg C that stays in the treated steel of ST-16 = 41.640 kg C, times the published 3,664 t CO2/t C"
+            },
+            {
+              "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+              "authored": "0.018612",
+              "expected": "0.018612",
+              "emission_kind": "process",
+              "derivation": "42.300 kg CaCO3 in 45 kg of converter flux at 94 %, times the published 0,440 t CO2/t CaCO3"
+            }
+          ],
+          "carbon_budget": {
+            "coke_breeze_c_kg": "52.8",
+            "coke_c_kg": "344.0",
+            "pci_c_kg": "101.4",
+            "natural_gas_c_kg": "5.989403",
+            "hot_metal_c_kg": "41.55",
+            "scrap_c_kg": "0.6",
+            "treated_steel_c_kg": "0.51",
+            "slab_c_kg": "0.5",
+            "crop_c_kg": "0.01",
+            "furnace_top_gas_c_kg": "409.839403",
+            "reduction_split_c_kg": "143.217487",
+            "raceway_split_c_kg": "266.621916",
+            "converter_burnt_c_kg": "41.64",
+            "note": "the injected gas carbon is the methane carbon of 8 kg of CH4 on the 12.011/16.043 basis, and the treated steel keeps both the slab carbon and the cutting-loss carbon because ST-16 takes the crop out of the activity level but not out of the converter bath"
+          }
+        }
+      ],
+      "absent_components": [
+        {
+          "component": "precursor_mass",
+          "state": "absent_by_clause",
+          "clause": "ST-13, ST-14",
+          "reason": "none of the eight boundary-crossing material and energy inputs of this model is a good on the Annex I list once the 7204 scrap exception and the in-house sinter and hot metal of ST-15 are read, so the precursor bucket is empty and the good is simple; an empty bucket must not appear as a zero-weight component row"
+        },
+        {
+          "component": "indirect_electricity",
+          "state": "absent_by_clause",
+          "clause": "ST-12",
+          "reason": "Annex II makes electricity indirect emissions non-attributable for this aggregated goods category, so a component row here would restate a term the law excludes; the 600 MJ and 25 MJ of grid electricity stay visible as activity data and as excluded candidates in boundaries/cbam.json"
+        }
+      ]
+    },
+    "role_attribution": {
+      "rule": "the CBAM result must remain decomposable per production process, because a total that is right for the wrong reason cannot be audited",
+      "expected_per_process": [
+        {
+          "process_uuid": "f15f2c1c-e99e-54c4-baf4-7f848ffab883",
+          "role_id": "ore-sintering",
+          "co2_kg": "267.9072"
+        },
+        {
+          "process_uuid": "d7bc7d93-ccac-57b5-bb6b-2727f1a9472a",
+          "role_id": "blast-furnace",
+          "co2_kg": "1501.651574"
+        },
+        {
+          "process_uuid": "469f6a3a-8da7-508e-be52-3917dd0f72e1",
+          "role_id": "basic-oxygen-converter",
+          "co2_kg": "171.18096"
+        },
+        {
+          "process_uuid": "e076e5bb-5acb-5726-abef-79841ed9b03f",
+          "role_id": "secondary-metallurgy-and-degassing",
+          "co2_kg": "0",
+          "note": "this process carries no emission port of its own in the first version, which is modeling gap MG-S09 rather than a claim that it emits nothing"
+        },
+        {
+          "process_uuid": "9305c055-654e-5b8a-8f52-5eb492d4f715",
+          "role_id": "continuous-casting",
+          "co2_kg": "0",
+          "note": "same reading as secondary metallurgy: its 25 MJ of electricity is excluded by ST-12, so its direct term is empty by clause"
+        }
+      ],
+      "sum_check": "267.9072 + 1501.651574 + 171.18096 = 1940.739734 kg CO2, which is the numerator of the functional unit result"
+    },
+    "coverage_detector": {
+      "purpose": "prove that the three strands of the route can no longer be dropped silently, which is the failure mode of the pre-repair steel snapshots",
+      "expected_if_sintering_strand_missing": "1.672832534 t CO2/t, i.e. the total minus 0.2679072",
+      "expected_if_converter_flux_missing": "1.922127734 t CO2/t, i.e. the total minus 0.018612",
+      "rule": "a result equal to either figure must fail acceptance with the missing process or exchange named, and a coverage report that omits a counted exchange without a clause reference must fail before calculation",
+      "historical_comparison": "no regenerated result from cases/petrochemical-refinery-reference may present the blast furnace strand alone as complete coverage of CN 7207"
+    }
+  },
+  "pcf": {
+    "foreground_boundary_co2": {
+      "expected": "1.940739734343950632674687",
+      "authored_sum": "1.940739734",
+      "unit": "kg CO2-equivalent / kg crude steel",
+      "derivation": "sum of the same six characterised exchanges over the same 1000 kg activity level",
+      "must_not_be_labelled": [
+        "cradle-to-gate",
+        "complete product carbon footprint",
+        "Scope 1 + 2 + 3"
+      ],
+      "coverage": "partial by clause, not partial by omission: boundaries/pcf.json states which background strands are absent (upstream ore, coke and scrap production, the grid emission factor of the 625 MJ, and the unported air and lance oxygen of MG-S09), so a figure from this seed is a foreground-boundary value and is reported as such",
+      "relation_to_cbam": "the foreground boundary term is the same number as the CBAM direct component, and the build gate proves it rather than describing it, because it compares pcf.foreground_boundary_co2 with the direct term of the ledger"
+    }
+  },
+  "mfa": {
+    "mass_in": "2463.0",
+    "mass_out": "3426.258899",
+    "residual_out_minus_in": "963.258899",
+    "residual_explanation": {
+      "unported_blast_oxygen_for_the_sintering_breeze_carbon": "140.6592",
+      "published_carbonate_factor_versus_the_atomic_residue_in_the_sinter": "0.048755",
+      "unported_blast_oxygen_for_the_furnace_raceway_carbon": "710.280785",
+      "unported_blast_oxygen_for_the_methane_hydrogen": "15.956118",
+      "unauthored_flue_water_of_the_injected_natural_gas": "-17.966714",
+      "unported_lance_oxygen_for_the_converter_carbon": "110.92896",
+      "unported_lance_oxygen_bound_in_the_converter_slag_iron_oxide": "3.339607",
+      "published_carbonate_factor_versus_the_atomic_residue_in_the_converter_slag": "0.012189",
+      "sum": "963.258900",
+      "closure_delta": "0.000001",
+      "reading": "the model takes in less mass than it appears to output because the blast air, the lance oxygen and the ore lattice oxygen it consumes are not authored as input ports, and because the published carbonate factor is slightly larger than the atomic residue that stays in the slag. Each of those is a named term with a gap reference; none of them is a balancing plug, and a residual that vanishes without these terms is a wrong result rather than an improved balance."
+    },
+    "internal_transfers_must_cancel": [
+      {
+        "edge_id": "edge-sinter-to-furnace",
+        "exchange_id": "ore-sintering::sinter-out",
+        "amount": "1602.800755",
+        "unit": "kg"
+      },
+      {
+        "edge_id": "edge-hot-metal-to-converter",
+        "exchange_id": "blast-furnace::hot-metal-out",
+        "amount": "923.297",
+        "unit": "kg"
+      },
+      {
+        "edge_id": "edge-liquid-steel",
+        "exchange_id": "basic-oxygen-converter::liquid-steel-out",
+        "amount": "1020.0",
+        "unit": "kg"
+      },
+      {
+        "edge_id": "edge-treated-steel",
+        "exchange_id": "secondary-metallurgy-and-degassing::treated-steel-out",
+        "amount": "1020.0",
+        "unit": "kg"
+      }
+    ],
+    "energy_is_never_mass": {
+      "ports": [
+        "ore-sintering::grid-electricity-in",
+        "continuous-casting::grid-electricity-in"
+      ],
+      "amounts": [
+        "600",
+        "25"
+      ],
+      "unit": "MJ",
+      "rule": "an MJ amount must not appear inside either kg sum, and must not be reported as a mass residual"
+    },
+    "elementary_flow_count": {
+      "expected": 6,
+      "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+      "rule": "six fossil CO2 exchanges, two per emission-bearing process; a seventh whose carbon origin is coke, breeze, PCI coal, injected gas or flux already counted must be rejected as a double count"
+    }
+  },
+  "mass_and_atom_checks": [
+    {
+      "name": "sinter_is_hematite_plus_gangue_plus_additions",
+      "expected": "1490 kg ore = 900 kg Fe + 386.760677 kg lattice oxygen (3 x 15.999 / 2 / 55.845 per kg Fe) + 203.239323 kg gangue; the sinter retains the lattice oxygen it keeps and loses only the CO2 of its breeze and carbonate",
+      "tolerance": "0"
+    },
+    {
+      "name": "furnace_iron_splits",
+      "expected": "900 kg Fe of the sinter = 881.747 kg Fe in hot metal + 18.253 kg Fe oxidised into the furnace slag",
+      "tolerance": "0"
+    },
+    {
+      "name": "furnace_carbon_budget",
+      "expected": "the furnace carbon in (coke + PCI + methane) minus the carbon of the hot metal splits exactly between the reduction term and the raceway term",
+      "tolerance": "0"
+    },
+    {
+      "name": "converter_iron_and_carbon_closure",
+      "expected": "hot metal iron + scrap iron = liquid steel iron + iron oxidised into converter slag, and hot metal carbon + scrap carbon = liquid steel carbon + burnt carbon",
+      "tolerance": "0"
+    },
+    {
+      "name": "casting_treatment_mass",
+      "expected": "1020 kg treated steel = 1000 kg slab + 20 kg cutting crop, and secondary metallurgy and casting each close at 1020 kg in and 1020 kg out",
+      "tolerance": "0"
+    },
+    {
+      "name": "no_route_mixing",
+      "expected": "no node of this graph is an electric arc furnace and no port carries electrode or DRI mass, because ST-06 separates the two routes and section 3 of this seed ships the blast furnace branch only",
+      "forbidden": "a scrap input larger than the converter's cooling allowance, or an electricity demand that could belong to an EAF"
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "N1_missing_mandatory_sub_process",
+      "input": "delete the ore-sintering node",
+      "expected": "import refused, naming the sub process that ST-06 requires for this route",
+      "clause": "ST-06",
+      "must_test_ref": "missing mandatory role blocks import and names the missing role"
+    },
+    {
+      "case_id": "N2_blanket_exclusion",
+      "input": "set an excluded_processes entry to background energy supply",
+      "expected": "import refused: the clause that excludes infrastructure and equipment purchase does not cover the emissions of a process inside the boundary",
+      "clause": "ST-12"
+    },
+    {
+      "case_id": "N3_electricity_as_direct",
+      "input": "flag continuous-casting::grid-electricity-in as a direct emission",
+      "expected": "the build gate refuses with CBAM_COUNTED_PORT_NOT_ELEMENTARY before any bundle exists",
+      "clause": "ST-08"
+    },
+    {
+      "case_id": "N4_double_count_lattice_oxygen",
+      "input": "add a seventh CO2 exchange for the raceway carbon already counted through the reduction term",
+      "expected": "rejected as a second attribution of carbon inside the same furnace carbon budget",
+      "clause": "ST-08",
+      "must_test_ref": "cross-process duplicate attribution rejected"
+    },
+    {
+      "case_id": "N5_undeclared_end_use",
+      "input": "run the CBAM trial without declared_end_use",
+      "expected": "no number, the ST-07 undecided item is shown as what is missing",
+      "clause": "ST-07"
+    },
+    {
+      "case_id": "N6_further_rolling_declared",
+      "input": "declare further_rolling_or_forging as the end use",
+      "expected": "refused as a good of another aggregated category, not reported as a zero or as crude steel; note that the refusal sentence this slice inherits names hydrogen rather than steel, which is defect D-S4",
+      "clause": "ST-07"
+    },
+    {
+      "case_id": "N7_unit_basis_conflict",
+      "input": "keep the activity in kg while the method denominator is t product without a quantity_conversion",
+      "expected": "fail closed",
+      "clause": "ST-01"
+    },
+    {
+      "case_id": "N8_content_denominator_for_steel",
+      "input": "author a mass floor basis of content_of_n_complement, or any other content complement denominator, for this CN code",
+      "expected": "refused: section 6 of the contract document shows that the content complement reading is the fertiliser branch of Annex III, and this boundary states applies false for it",
+      "clause": "ST-12"
+    },
+    {
+      "case_id": "N9_scrap_as_listed_precursor",
+      "input": "mark steel_scrap as listed_precursor with a source pin",
+      "expected": "the build gate refuses the membership row and the package then has no source to point at, because 7204 is the exclusion of ST-14 rather than a listed good",
+      "clause": "ST-14"
+    },
+    {
+      "case_id": "N10_same_version_different_bytes",
+      "input": "change one coefficient and rebuild without bumping the seed version",
+      "expected": "install refused on bundle_content_sha256 mismatch against the pinned seed.json value; nothing is written",
+      "must_test_ref": "same version different content conflict rejected"
+    },
+    {
+      "case_id": "N11_factor_without_provenance",
+      "input": "replace parameters/annex-ii-point-g-standard-factors.json with a bare numeric literal and no published_source block",
+      "expected": "validated stage fails: parameter evidence missing",
+      "clause": "ST-08"
+    },
+    {
+      "case_id": "N12_biosphere_port_without_exact_identity",
+      "input": "null out a fossil carbon dioxide output port's flowSourceNamespace or flowVersion, or make graph.metadata.elementary_flow_refs disagree with that port",
+      "expected": "the builder refuses with ELEMENTARY_PORT_IDENTITY_MISSING or ELEMENTARY_REF_MISMATCH before any bundle exists",
+      "clause": "docs/STANDARD_LCA_SEED_PACKAGE_V1.md section 5.1"
+    },
+    {
+      "case_id": "N13_unclassified_new_port",
+      "input": "add an output port to the converter without a disposition in boundaries/cbam.json",
+      "expected": "CBAM_CANDIDATE_PORT_UNCLASSIFIED at build time, and an installed boundary whose coverage report omits a port is refused at binding",
+      "clause": "ST-08"
+    }
+  ],
+  "explicit_non_assertions": [
+    "these values are not an installation measurement and not a filing value; they are a self-consistent BF-BOF recipe at a declared composition, authored to exercise the boundary",
+    "a match between an engine result and this file proves the arithmetic and the boundary wiring, not regulatory compliance",
+    "the default-value route of ST-15 is not exercised here because its numbers were never retrieved, which is gap GS-01 and modeling gap MG-S05",
+    "exported blast furnace, coke oven and converter gas are not modelled, so the numerator must be read as a conservative upper bound for a plant that sells gas out, which is modeling gap MG-S11",
+    "no acceptance criterion here depends on resolving modeling gaps MG-S01 to MG-S11; they are reported alongside the result"
+  ]
+}

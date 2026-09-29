@@ -1,0 +1,461 @@
+{
+  "schema_version": "nebula.standard-seed.boundary.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "seed_version": "1.1.0",
+  "application": "cbam_trial",
+  "clause_refs": [
+    "ST-01",
+    "ST-02",
+    "ST-04",
+    "ST-05",
+    "ST-06",
+    "ST-07",
+    "ST-08",
+    "ST-10",
+    "ST-12",
+    "ST-13",
+    "ST-14",
+    "ST-15",
+    "ST-16",
+    "ST-17",
+    "ST-18",
+    "ST-19"
+  ],
+  "goods_identity": {
+    "cn_code": "7207",
+    "aggregated_goods_category": "Crude steel",
+    "greenhouse_gases": [
+      "CO2"
+    ],
+    "identity_clause": "ST-01, ST-02",
+    "gas_list_basis": "the crude steel rows of Annex I and of Annex I table 1 of the implementing regulation state carbon dioxide only, so a counted N2O or CH4 exchange for this good is a refusal, not an extra term",
+    "production_route": "blast_furnace_basic_oxygen_converter",
+    "route_boundary_clause": "ST-06",
+    "goods_complexity": "simple",
+    "complexity_derivation": "ST-13 makes a precursor an input material that is on the Annex I list of goods. None of the eight boundary-crossing material and energy inputs of this model is on that list - iron ore, sinter is only the agglomerated 2601 12 00 row when it is sold or transferred, and here it is made inside the same monitored process (ST-15); scrap is the 7204 exception of ST-14; coke, coal, gas and limestone are not goods of Annex I at all - so the precursor bucket is empty and the good is simple"
+  },
+  "functional_unit": {
+    "clause": "ST-01",
+    "regulatory_unit": "t crude steel",
+    "model_unit": "kg crude steel",
+    "kg_per_tonne": "1000",
+    "conversion_contract": "quantity_conversion, never a literal inside an operator",
+    "denominator_owner": "continuous-casting::crude-steel-slab-out",
+    "mass_floor_basis": {
+      "applies": false,
+      "clause": "ST-12",
+      "note": "a mass floor derived from a content complement is the ammonia reading of Annex III point B, which exists because ammonia is declared per unit of nitrogen. Crude steel is a direct-emissions-only good with a plain tonne-of-product functional unit (ST-01), so no content-complement denominator may be reached for this CN code, and no nitrogen or alloy denominator exists for it."
+    }
+  },
+  "reporting_period": {
+    "clause": "ST-16",
+    "supported": "complete calendar years from 2026",
+    "activity_level_rule": "ST-16: the activity level is the total mass of goods leaving the production process in the reporting period, which for this boundary is the continuously cast slab, not the sum of the five processes' outputs",
+    "derogation": "the actual-production-period option needs an evidence level that is not researched, gap GS-01"
+  },
+  "applicability": [
+    {
+      "clause": "ST-05",
+      "status": "available_not_taken",
+      "statement": "Article 4 allows a joint production process covering precursors and complex goods, and the crude steel wording repeats it: where the installation does not sell or transfer pig iron, a joint production process including crude steel may be established. This seed takes that permission as a monitoring-boundary decision, not as a licence to merge processes: the graph keeps the five processes of ST-06 separate and the CBAM boundary declares all of them in_boundary_process_uuids, so the numerator is still attributable per process. The merged reading - one graph node for the whole route - is modeling gap MG-S02 and is not shipped.",
+      "must_test_ref": "a result stays decomposable per production process and no process of the boundary disappears from the coverage report"
+    },
+    {
+      "clause": "ST-12",
+      "status": "runtime_contract",
+      "statement": "Article 7(1) with Annex II lists iron and steel among the goods for which only direct emissions shall be calculated and taken into account. Consequence in code, not in prose: the method package calculation is the direct-only formula, the package declares no emission_components block, the run has no indirect bucket and no precursor bucket, and the kg per tonne conversion is the only scaling. Any regenerated result that adds embedded electricity for this good must fail.",
+      "related_gaps": [
+        "MG-S06"
+      ]
+    },
+    {
+      "clause": "ST-07",
+      "status": "not_applicable_with_basis",
+      "statement": "only primary hot-rolling and rough shaping to CN 7207, 7218 and 7224 stay inside this goods category, so the model stops at the continuously cast slab plus a primary forming slot. Finished rolling is the iron or steel products category, which is a different good with its own boundary wording; that boundary is not built here and is recorded as MG-S01 rather than approximated.",
+      "must_test_ref": "a model that declares the BF-BOF route while charging a finishing-mill process into this numerator fails validation"
+    },
+    {
+      "clause": "ST-19",
+      "status": "not_applicable_with_basis",
+      "statement": "the electrode and electrode-paste emission source belongs to the electric arc furnace boundary wording, so this route declares no electrode port at all. The electric arc furnace and the DRI route are separate seeds (MG-S08); a model that adds an electrode input while declaring the BF-BOF route must fail validation rather than dilute this route's boundary.",
+      "must_test_ref": "an electrode port on a BF-BOF route model is refused with the route named"
+    },
+    {
+      "clause": "ST-09",
+      "status": "declared_elsewhere_not_computed",
+      "statement": "the four crude-steel sector specific parameters are declaration fields, and this seed carries them as named-but-empty fields in parameters/sector-specific-declaration-parameters.json. They do not enter the CBAM arithmetic, and an empty one of them must be reported as missing rather than filled from a default."
+    }
+  ],
+  "segments": {
+    "direct_emissions": {
+      "conclusion": "included",
+      "clause": "ST-02, ST-06, ST-08, ST-12",
+      "included_exchanges": [
+        {
+          "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+          "role": "ore-sintering/sinter_agglomeration",
+          "emission_kind": "combustion",
+          "clause": "ST-03, ST-08, ST-18",
+          "basis": "ST-03 puts sinter production inside the sintered-ore category and its monitoring covers the solid fuel of the mix; the breeze carbon becomes CO2 by combustion, which ST-18 distinguishes from the carbonate term below",
+          "parameter_refs": [
+            "parameters/carbon-content.json",
+            "parameters/annex-ii-point-g-standard-factors.json"
+          ]
+        },
+        {
+          "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+          "role": "ore-sintering/sinter_carbonate_decomposition",
+          "emission_kind": "process",
+          "clause": "ST-03, ST-18",
+          "basis": "ST-18 names the decomposition of carbonates, including those used for flue gas cleaning, a process emission, so the flux carbonate carbon is counted here and never on a combustion factor",
+          "parameter_refs": [
+            "parameters/carbon-content.json",
+            "parameters/annex-ii-point-g-standard-factors.json",
+            "parameters/activity-data-slots.json"
+          ]
+        },
+        {
+          "exchange_id": "blast-furnace::co2-bf-reduction-out",
+          "role": "blast-furnace/burden_reduction",
+          "emission_kind": "process",
+          "clause": "ST-04, ST-08, ST-18",
+          "basis": "ST-18(a) makes the chemical reduction of metal compounds in ores and concentrates a process emission; this is the carbon that takes lattice oxygen from the iron oxide and leaves as CO2",
+          "parameter_refs": [
+            "parameters/carbon-content.json"
+          ]
+        },
+        {
+          "exchange_id": "blast-furnace::co2-bf-raceway-out",
+          "role": "blast-furnace/raceway_combustion",
+          "emission_kind": "combustion",
+          "clause": "ST-08, ST-10, ST-18",
+          "basis": "ST-10 names all processes linked to the production of iron from fuels and reducing agents including coke, coal and natural gas; the coke, PCI coal and injected gas carbon that is not consumed by reduction and not left in the hot metal burns in the raceway",
+          "parameter_refs": [
+            "parameters/carbon-content.json",
+            "parameters/activity-data-slots.json"
+          ]
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+          "role": "basic-oxygen-converter/converter_carbon_mass_balance",
+          "emission_kind": "process",
+          "clause": "ST-06, ST-08",
+          "basis": "ST-08 requires the carbon entering in hot metal, scrap, alloys and remaining in product or slag to be taken by the mass balance method of point B.3.2; this exchange is that balance's output term",
+          "parameter_refs": [
+            "parameters/carbon-content.json"
+          ]
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+          "role": "basic-oxygen-converter/converter_flux_decomposition",
+          "emission_kind": "process",
+          "clause": "ST-06, ST-18",
+          "basis": "the converter flux carbonate is inside the ST-06 process list as an auxiliary activity of the basic oxygen steelmaking step, and ST-18 classifies its decomposition as a process emission",
+          "parameter_refs": [
+            "parameters/carbon-content.json",
+            "parameters/activity-data-slots.json"
+          ]
+        }
+      ],
+      "no_double_count": "the six exchanges above are the only fossil carbon dioxide sources of this boundary. The furnace gas and converter gas that carry carbon between processes are internal to the monitored boundary and are not a seventh source; a plant that exports those gas streams leaves with carbon that this model does not subtract, which is MG-S11."
+    },
+    "indirect_electricity_emissions": {
+      "conclusion": "excluded_with_clause_basis",
+      "clause": "ST-12",
+      "excluded_exchanges": [
+        {
+          "exchange_id": "ore-sintering::grid-electricity-in",
+          "clause": "ST-12",
+          "basis": "Annex II lists iron and steel among the goods for which only direct emissions are calculated and taken into account, so consumed electricity is outside the CBAM numerator for this good",
+          "note": "the flow stays in the graph as an activity for MFA and for the PCF question; excluded here means excluded from the CBAM numerator with this clause reference recorded, not deleted",
+          "activity": "ore-sintering/auxiliary_electricity"
+        },
+        {
+          "exchange_id": "continuous-casting::grid-electricity-in",
+          "clause": "ST-12",
+          "basis": "same direct-only reading as the sinter strand's electricity",
+          "note": "the caster's electricity is the most likely place an implementation would smuggle an EF 3.1 number into a CBAM total; it is excluded by clause, not by absence",
+          "activity": "continuous-casting/auxiliary_electricity"
+        }
+      ],
+      "no_double_count": "an EF 3.1 indirect result may not be reused as a CBAM value for this good, and the package has no indirect bucket for it to land in"
+    },
+    "material_and_fuel_inputs": {
+      "conclusion": "excluded_with_clause_basis",
+      "clause": "ST-08, ST-10, ST-13, ST-14, ST-18",
+      "excluded_exchanges": [
+        {
+          "exchange_id": "ore-sintering::iron-ore-in",
+          "clause": "ST-13, ST-18",
+          "basis": "unagglomerated concentrate is not an Annex I good, so it is not a precursor under ST-13; its iron oxide reduction is a process emission counted where the carbon takes the oxygen, at the furnace reduction exchange",
+          "activity": "ore-sintering/ore_burden"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::scrap-in",
+          "clause": "ST-08, ST-14",
+          "same_source_group": "converter-carbon-pool",
+          "counted_instead": "basic-oxygen-converter::co2-converter-decarburisation-out",
+          "basis": "7204 ferrous waste and scrap is the exception carved out of the Annex I iron and steel cell, so scrap is not a listed good and not a precursor; its carbon enters the converter mass balance of ST-08 together with the hot metal carbon and leaves through the decarburisation exchange named here, together with the carbon remaining in liquid steel and slag",
+          "activity": "basic-oxygen-converter/scrap_charge"
+        },
+        {
+          "exchange_id": "ore-sintering::coke-breeze-in",
+          "clause": "ST-03, ST-08, ST-10",
+          "same_source_group": "sinter-breeze-carbon",
+          "counted_instead": "ore-sintering::co2-sinter-breeze-out",
+          "basis": "one emission source, two possible readings: the breeze mass with its carbon share, or the CO2 exchange it produces. The CO2 exchange is chosen for this source and the fuel input is excluded with this reference, so the two readings cannot both enter the numerator",
+          "activity": "ore-sintering/solid_fuel"
+        },
+        {
+          "exchange_id": "blast-furnace::coke-in",
+          "clause": "ST-08, ST-10",
+          "same_source_group": "furnace-carbon-pool",
+          "counted_instead": "blast-furnace::co2-bf-raceway-out",
+          "basis": "coke is not an Annex I good; its carbon is split by the furnace carbon book of parameters/carbon-content.json between the raceway combustion exchange named here, the burden reduction exchange, and the carbon that stays dissolved in the hot metal and is then burnt at the converter. The single counted_instead value states which exchange carries the majority of this port's carbon, and the book is the record of the split",
+          "activity": "blast-furnace/coke_burden"
+        },
+        {
+          "exchange_id": "blast-furnace::pci-coal-in",
+          "clause": "ST-08, ST-10",
+          "same_source_group": "furnace-carbon-pool",
+          "counted_instead": "blast-furnace::co2-bf-raceway-out",
+          "basis": "same furnace carbon pool reading as the coke: coal is not a listed good and its carbon is counted once, through the two furnace CO2 exchanges and the hot metal carbon",
+          "activity": "blast-furnace/pulverised_coal_injection"
+        },
+        {
+          "exchange_id": "blast-furnace::natural-gas-in",
+          "clause": "ST-08, ST-10",
+          "same_source_group": "furnace-carbon-pool",
+          "counted_instead": "blast-furnace::co2-bf-raceway-out",
+          "basis": "the injected gas is counted through its carbon, and its hydrogen leaves the boundary as flue water that this model does not author, which is why the MFA residual carries a named negative term for it",
+          "activity": "blast-furnace/injected_gas"
+        },
+        {
+          "exchange_id": "ore-sintering::limestone-in",
+          "clause": "ST-03, ST-18",
+          "same_source_group": "sinter-carbonate",
+          "counted_instead": "ore-sintering::co2-sinter-carbonate-out",
+          "basis": "a flux is not an emission at its input port; the carbonate carbon is counted at the decomposition exchange, which ST-18 classifies as a process emission",
+          "activity": "ore-sintering/carbonate_flux"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::limestone-in",
+          "clause": "ST-06, ST-18",
+          "same_source_group": "converter-carbonate-flux",
+          "counted_instead": "basic-oxygen-converter::co2-converter-flux-out",
+          "basis": "same reading on the converter side: the flux mass is an activity, its carbonate carbon is the counted exchange",
+          "activity": "basic-oxygen-converter/converter_flux"
+        }
+      ],
+      "no_double_count": "each entry that names a same_source_group also names counted_instead, the one exchange that carries that source, and only that exchange appears in segments.direct_emissions.included_exchanges. The three furnace entries share the furnace carbon pool group and name the raceway exchange as the majority carrier, so the split of that pool is asserted in parameters/carbon-content.json rather than left to a reader's inference. The scrap charge shares the converter carbon pool with the hot metal carbon of ST-08 and names the decarburisation exchange, because naming a pool without naming its carrier would let the runtime not tell an exclusion from a lost emission."
+    },
+    "precursors": {
+      "conclusion": "excluded_with_clause_basis",
+      "clause": "ST-13, ST-15, ST-17",
+      "statement": "the precursor bucket of this good is empty, and that is a derivation rather than an omission",
+      "internal_listed_goods": "sintered ore (2601 12 00) and liquid pig iron (7201) are Annex I goods and would be precursors if they were bought or transferred between processes: ST-15 says that where the precursors are covered by the same production process, only the quantity of additional precursor obtained from other installations or other production processes has to be determined. This seed monitors all five processes as one production process boundary, so neither quantity exists and their direct emissions are counted once inside the numerator instead",
+      "checked_inputs": [
+        {
+          "flow_role": "iron_ore",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2601 11 00",
+          "basis": "the Annex I iron and steel cell starts at 2601 12 00 agglomerated ores and concentrates; the unagglomerated 2601 11 00 heading occurs nowhere in the cached Annex I text"
+        },
+        {
+          "flow_role": "steel_scrap",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-14",
+          "cn_code": "7204",
+          "basis": "7204 ferrous waste and scrap is one of the entries the Annex I cell excludes, and the implementing regulation's table 1 gives it no aggregated goods category; its carbon is handled by the ST-08 mass balance instead"
+        },
+        {
+          "flow_role": "coke_breeze",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2704 00 00",
+          "basis": "the heading 2704 does not occur in the cached Annex I text; a fuel that is not a listed good is not a precursor"
+        },
+        {
+          "flow_role": "metallurgical_coke",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2704 00 00",
+          "basis": "same heading test as the sinter breeze"
+        },
+        {
+          "flow_role": "pci_bituminous_coal",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2701 11 00",
+          "basis": "the heading 2701 does not occur in the cached Annex I text"
+        },
+        {
+          "flow_role": "natural_gas",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2711 21 00",
+          "basis": "the heading 2711 does not occur in the cached Annex I text; the hydrogen seed records the same measurement for the same flow"
+        },
+        {
+          "flow_role": "limestone_flux",
+          "membership": "not_listed",
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2521",
+          "basis": "flux stone is not a good of Annex I; its carbonate carbon is a process emission of ST-18 counted inside this boundary"
+        },
+        {
+          "flow_role": "grid_electricity",
+          "membership": "listed_governed_elsewhere",
+          "annex_i_listed": true,
+          "clause": "ST-13",
+          "governing_clause": "ST-12",
+          "cn_code": "2716 00 00",
+          "basis": "electricity is on the Annex I list, so a boolean listed-or-not flag would put it in the precursor bucket; for this good it is governed instead by the Annex II direct-only rule, which keeps it out of both the precursor bucket and the indirect bucket"
+        }
+      ],
+      "limitation": "membership was tested against the CN heading strings of the candidate codes in the two cached texts, not against a versioned Annex I goods set object, which is gap GS-05; ST-13 therefore holds for this seed by that narrower evidence",
+      "would_be_precursors": "a purchased FeMn, FeCr or FeNi (7202 1, 7202 4, 7202 6 of ST-17), bought pig iron, sold sinter or DRI would each be a listed good entering as an input, which turns this good complex and requires the source seed's published specific embedded emissions. No such seed is released in this repository, so the first version ships without those ports; the withdrawal is MG-S08 rather than a silent omission."
+    }
+  },
+  "not_applicable": [
+    {
+      "exchange_id": "continuous-casting::crude-steel-slab-out",
+      "clause": "ST-01, ST-16",
+      "disposition": "reference_product_output_is_the_denominator",
+      "reason": "the reference product output carries the functional unit, so it belongs to the denominator of the specific embedded emissions and never to the numerator"
+    },
+    {
+      "exchange_id": "ore-sintering::sinter-out",
+      "clause": "ST-15",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "blast-furnace::sinter-in",
+      "reason": "both endpoints are processes of the one monitored crude steel production process, so the sinter made and used inside the boundary is not an additional precursor of ST-15; its direct emissions are counted at the sinter exchanges"
+    },
+    {
+      "exchange_id": "blast-furnace::sinter-in",
+      "clause": "ST-15",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "ore-sintering::sinter-out",
+      "reason": "consumer side of the same internal transfer, recorded so the pair is visible rather than inferred"
+    },
+    {
+      "exchange_id": "blast-furnace::hot-metal-out",
+      "clause": "ST-04, ST-05",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "basic-oxygen-converter::hot-metal-in",
+      "reason": "ST-04 names liquid pig iron as the flow that separates the pig iron process from the crude steel process, and this boundary contains both sides, so the dividing stream is internal; its carbon is counted again at the converter through the ST-08 mass balance, which is why it must not also be counted as a precursor"
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::hot-metal-in",
+      "clause": "ST-04",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "blast-furnace::hot-metal-out",
+      "reason": "consumer side of the dividing stream named by ST-04"
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::liquid-steel-out",
+      "clause": "ST-06",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "secondary-metallurgy-and-degassing::liquid-steel-in",
+      "reason": "secondary metallurgy, vacuum degassing and casting are all inside the ST-06 process list, so the transfer between them is internal"
+    },
+    {
+      "exchange_id": "secondary-metallurgy-and-degassing::liquid-steel-in",
+      "clause": "ST-06",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "basic-oxygen-converter::liquid-steel-out",
+      "reason": "consumer side of the same internal transfer"
+    },
+    {
+      "exchange_id": "secondary-metallurgy-and-degassing::treated-steel-out",
+      "clause": "ST-06",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "continuous-casting::treated-steel-in",
+      "reason": "the treated steel charged to the caster stays inside the boundary"
+    },
+    {
+      "exchange_id": "continuous-casting::treated-steel-in",
+      "clause": "ST-06",
+      "disposition": "internal_transfer_netted_inside_the_boundary",
+      "counterpart": "secondary-metallurgy-and-degassing::treated-steel-out",
+      "reason": "consumer side of the same internal transfer"
+    },
+    {
+      "exchange_id": "blast-furnace::bf-slag-out",
+      "clause": "ST-08",
+      "disposition": "not_applicable_with_basis",
+      "reason": "a slag is an output stream of the mass balance: carbon remaining in slags is taken into account by ST-08 through the negative activity data of point B.3.2, so the slag port itself carries no emission exchange and must not be dropped from the account. Its mass is on the MFA output side."
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::converter-slag-out",
+      "clause": "ST-08",
+      "disposition": "not_applicable_with_basis",
+      "reason": "same mass-balance reading as the furnace slag, and the oxygen its iron oxide holds is one of the named MFA residual terms"
+    },
+    {
+      "exchange_id": "continuous-casting::casting-crop-out",
+      "clause": "ST-16",
+      "disposition": "not_applicable_with_basis",
+      "reason": "ST-16 excludes off-spec products, by-products, waste and scrap from the activity level and assigns them zero embedded emissions when they enter another production process, so the cutting loss is neither added to the numerator nor to the denominator; it is kept as an output port so the mass account stays honest, which is MG-S10"
+    }
+  ],
+  "undecided": [
+    {
+      "item": "how the declared crude steel leaves the installation",
+      "clause": "ST-07",
+      "state": "undecided",
+      "effect": "3.15.1 keeps only primary hot-rolling and rough shaping by forging inside the aggregated goods category Crude steel, so a quantity that goes on to further rolling or forging belongs to iron or steel products and this boundary is the wrong one to file it under; an undeclared quantity refuses a CBAM result instead of defaulting to the Crude steel reading",
+      "runtime_input_required": "declared_end_use in {sold_or_transferred_as_crude_steel, primary_hot_rolling_or_rough_forging, further_rolling_or_forging}"
+    },
+    {
+      "item": "the default values a filing would use for a quantity with incomplete data",
+      "clause": "ST-15",
+      "state": "undecided",
+      "gap_ref": "MG-S05",
+      "effect": "ST-15 sends incomplete or inconclusive external precursor data to the default values of Annex IV of the regulation, and the cached texts state that rule without carrying the numbers. This project computes actual values only, so a missing activity datum refuses a CBAM result rather than substituting a default; the missing dataset is a legal verification gap, GS-01"
+    },
+    {
+      "item": "flue gas cleaning exchanges of the sinter strand, the furnace and the converter",
+      "clause": "ST-18",
+      "state": "undecided",
+      "gap_ref": "MG-S09",
+      "effect": "the cleaning slots exist in the role list so the mandatory role check passes, but no reagent or carbonate-decomposition exchange is authored for them, so a coverage report must list them as open items rather than as counted"
+    },
+    {
+      "item": "exported blast furnace, coke oven and converter gas",
+      "clause": "ST-10",
+      "state": "undecided",
+      "gap_ref": "MG-S11",
+      "effect": "ST-10 names the waste gases as part of the fuel system; this model nets them inside the boundary and charges all of their carbon to the numerator, which overstates a plant that sells gas out. An export port with its carbon share is the fix, and until it exists the numerator is read as a conservative upper bound rather than as an installation value"
+    }
+  ],
+  "candidate_universe_rule": "every port of every role in model/roles.json must appear in exactly one of included_exchanges, excluded_exchanges, undecided or not_applicable with a reason; a missing entry is an import error, not a zero",
+  "coverage_report": {
+    "schema": "nebula_one.cbam.boundary-coverage.v1",
+    "must_show": [
+      "counted",
+      "excluded_with_clause",
+      "undecided",
+      "clause_reference_per_item"
+    ]
+  },
+  "refusal_conditions": [
+    "a counted greenhouse gas other than CO2 for this good",
+    "an electricity exchange attributed as a direct emission or as a precursor",
+    "a mandatory ST-06 sub role absent from the model",
+    "a process of the declared production process boundary missing from the coverage report",
+    "an excluded_processes entry that is not a clause-backed rule",
+    "a port of model/roles.json that appears in two disposition buckets or in none",
+    "a purchased listed good treated as an ordinary material input instead of a precursor",
+    "a kg activity with a t denominator, or any content-complement denominator for this CN code",
+    "an electrode port or an electric arc furnace process on a model that declares the BF-BOF route"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "capability_key": {
+      "const": "spatial.aggregate.v1",
+      "enum": [
+        "spatial.aggregate.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "facilities": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Facilities",
+      "type": "array"
+    },
+    "park": {
+      "title": "Park",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "nebula_one.spatial.aggregate.v1",
+      "enum": [
+        "nebula_one.spatial.aggregate.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "series": {
+      "items": {
+        "type": "object"
+      },
+      "title": "Series",
+      "type": "array"
+    },
+    "source_snapshot": {
+      "title": "Source Snapshot",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "source_snapshot",
+    "park",
+    "facilities",
+    "series",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "SpatialAggregateOut",
+  "type": "object"
+}

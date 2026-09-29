@@ -1,0 +1,336 @@
+{
+  "$defs": {
+    "EnergyBasis": {
+      "additionalProperties": false,
+      "properties": {
+        "energy_convention": {
+          "enum": [
+            "declared_energy",
+            "lower_heating_value",
+            "higher_heating_value"
+          ],
+          "title": "Energy Convention",
+          "type": "string"
+        },
+        "material_condition": {
+          "enum": [
+            "not_applicable",
+            "as_received",
+            "dry",
+            "dry_ash_free"
+          ],
+          "title": "Material Condition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "energy_convention",
+        "material_condition"
+      ],
+      "title": "EnergyBasis",
+      "type": "object"
+    },
+    "EnergyScenarioDelta": {
+      "additionalProperties": false,
+      "properties": {
+        "absolute": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Absolute"
+        },
+        "relative": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relative"
+        }
+      },
+      "required": [
+        "absolute",
+        "relative"
+      ],
+      "title": "EnergyScenarioDelta",
+      "type": "object"
+    },
+    "EnergyScenarioDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Base Revision Id",
+          "type": "string"
+        },
+        "energy_result_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Energy Result Content Sha256",
+          "type": "string"
+        },
+        "revision_content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Revision Content Sha256",
+          "type": "string"
+        },
+        "scenario_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Scenario Id",
+          "type": "string"
+        },
+        "scenario_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Scenario Name",
+          "type": "string"
+        },
+        "solved_snapshot_ref": {
+          "$ref": "nebula.energy-scenario-comparison.v1.schema.json#/$defs/EnergySolvedSnapshotRef"
+        },
+        "system_revision_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "System Revision Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scenario_id",
+        "scenario_name",
+        "base_revision_id",
+        "system_revision_id",
+        "revision_content_sha256",
+        "solved_snapshot_ref",
+        "energy_result_content_sha256"
+      ],
+      "title": "EnergyScenarioDescriptor",
+      "type": "object"
+    },
+    "EnergyScenarioIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "scenario_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Scenario Ids",
+          "type": "array"
+        },
+        "severity": {
+          "const": "warning",
+          "enum": [
+            "warning"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "scenario_ids"
+      ],
+      "title": "EnergyScenarioIssue",
+      "type": "object"
+    },
+    "EnergyScenarioMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "$ref": "nebula.energy-scenario-comparison.v1.schema.json#/$defs/EnergyBasis"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "deltas": {
+          "additionalProperties": {
+            "$ref": "nebula.energy-scenario-comparison.v1.schema.json#/$defs/EnergyScenarioDelta"
+          },
+          "minProperties": 2,
+          "title": "Deltas",
+          "type": "object"
+        },
+        "label": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "metric_key": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Metric Key",
+          "type": "string"
+        },
+        "unit_identity_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Unit Identity Sha256",
+          "type": "string"
+        },
+        "unit_symbol": {
+          "const": "MJ",
+          "enum": [
+            "MJ"
+          ],
+          "title": "Unit Symbol",
+          "type": "string"
+        },
+        "values": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "minProperties": 2,
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "metric_key",
+        "label",
+        "unit_symbol",
+        "unit_identity_sha256",
+        "basis",
+        "values",
+        "deltas",
+        "content_sha256"
+      ],
+      "title": "EnergyScenarioMetric",
+      "type": "object"
+    },
+    "EnergySolvedSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "solve_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Solve Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content_sha256",
+        "solve_hash"
+      ],
+      "title": "EnergySolvedSnapshotRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "base_revision_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Base Revision Id",
+      "type": "string"
+    },
+    "baseline_scenario_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Baseline Scenario Id",
+      "type": "string"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "issues": {
+      "items": {
+        "$ref": "nebula.energy-scenario-comparison.v1.schema.json#/$defs/EnergyScenarioIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "metrics": {
+      "items": {
+        "$ref": "nebula.energy-scenario-comparison.v1.schema.json#/$defs/EnergyScenarioMetric"
+      },
+      "minItems": 1,
+      "title": "Metrics",
+      "type": "array"
+    },
+    "scenarios": {
+      "items": {
+        "$ref": "nebula.energy-scenario-comparison.v1.schema.json#/$defs/EnergyScenarioDescriptor"
+      },
+      "maxItems": 5,
+      "minItems": 2,
+      "title": "Scenarios",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "nebula.energy-scenario-comparison.v1",
+      "enum": [
+        "nebula.energy-scenario-comparison.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "passed_with_warnings"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "baseline_scenario_id",
+    "base_revision_id",
+    "scenarios",
+    "metrics",
+    "issues",
+    "status",
+    "content_sha256"
+  ],
+  "title": "EnergyScenarioComparison",
+  "type": "object"
+}

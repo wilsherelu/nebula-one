@@ -1,0 +1,515 @@
+{
+  "schema_version": "nebula.standard-seed.roles.v1",
+  "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
+  "version": "1.1.0",
+  "identity_namespace": "aa413a24-3706-5bdd-b257-c0c1f967af14",
+  "identity_rules": {
+    "project_id": "uuid5(namespace, \"project|<seed_id>|<version>\")",
+    "model_version_id": "uuid5(namespace, \"version|<seed_id>|<version>|<revision>\")",
+    "process_uuid": "uuid5(namespace, \"process|<seed_id>|<version>|<role_id>\")",
+    "owned_flow_uuid": "uuid5(namespace, \"flow|<seed_id>|<version>|<flow_name>\")",
+    "exchange_id": "<node_id>::<port_id>",
+    "template_only": [
+      "seed_id",
+      "version",
+      "role_id",
+      "port_id"
+    ],
+    "note": "role_id and port_id are never written to the engine; they are the template keys that the derived instance UUIDs and exchange ids map onto. The version string is inside every key, so a content change that needs a new identity gets one by raising the version."
+  },
+  "upstream_dataset_identity_warning": "The two catalog flows this seed does not own (injected natural gas and grid electricity) are the hydrogen seed's own mass and energy basis rows at nebula.standard-lca-seed/1.3.0, re-derived from that seed's identity and pinned to its bundle hash in model/flow-dependencies.json. They are not an upstream dataset identity, and the installer must re-run the read-only probes on the acceptance engine before trusting the stored observation.",
+  "roles": [
+    {
+      "role_id": "ore-sintering",
+      "process_uuid": "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+      "name": "Iron ore sintering strand",
+      "merged_sub_roles": [
+        {
+          "sub_role_id": "sinter_agglomeration",
+          "clause_refs": [
+            "ST-03"
+          ],
+          "note": "Combustion of the coke breeze in the sinter bed. The breeze carbon becomes CO2 here and is the only sintering fuel source authored in version 1.1.0."
+        },
+        {
+          "sub_role_id": "sinter_carbonate_decomposition",
+          "clause_refs": [
+            "ST-03",
+            "ST-18"
+          ],
+          "note": "Decomposition of the limestone flux carbonates. ST-18 makes carbonate decomposition, including material used for flue gas cleaning, a process emission, so it may not be hung on a combustion factor."
+        },
+        {
+          "sub_role_id": "sinter_flue_gas_cleaning_slot",
+          "clause_refs": [
+            "ST-18"
+          ],
+          "note": "Slot for the dedusting and flue gas cleaning reagents. No exchange is authored for it in version 1.1.0, which is modeling gap MG-S09; the slot exists so the omission is a stated gap rather than an invisible one."
+        }
+      ],
+      "ports": [
+        {
+          "port_id": "iron-ore-in",
+          "flow_role": "iron_ore",
+          "direction": "input",
+          "role": "feedstock",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-13",
+            "ST-14"
+          ]
+        },
+        {
+          "port_id": "limestone-in",
+          "flow_role": "limestone_flux",
+          "direction": "input",
+          "role": "flux",
+          "clause_refs": [
+            "ST-03",
+            "ST-18"
+          ]
+        },
+        {
+          "port_id": "coke-breeze-in",
+          "flow_role": "coke_breeze",
+          "direction": "input",
+          "role": "fuel",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-03",
+            "ST-10",
+            "ST-11"
+          ]
+        },
+        {
+          "port_id": "grid-electricity-in",
+          "flow_role": "grid_electricity",
+          "direction": "input",
+          "role": "auxiliary_energy",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-12"
+          ]
+        },
+        {
+          "port_id": "sinter-out",
+          "flow_role": "sintered_ore",
+          "direction": "output",
+          "role": "intermediate_to_blast_furnace",
+          "clause_refs": [
+            "ST-15",
+            "ST-17"
+          ]
+        },
+        {
+          "port_id": "co2-sinter-breeze-out",
+          "flow_role": "carbon_dioxide_fossil",
+          "direction": "output",
+          "role": "emission_source",
+          "emission_kind": "combustion",
+          "counted_for_cbam": true,
+          "clause_refs": [
+            "ST-03",
+            "ST-08",
+            "ST-10",
+            "ST-18"
+          ]
+        },
+        {
+          "port_id": "co2-sinter-carbonate-out",
+          "flow_role": "carbon_dioxide_fossil",
+          "direction": "output",
+          "role": "emission_source",
+          "emission_kind": "process",
+          "counted_for_cbam": true,
+          "clause_refs": [
+            "ST-03",
+            "ST-08",
+            "ST-18"
+          ]
+        }
+      ]
+    },
+    {
+      "role_id": "blast-furnace",
+      "process_uuid": "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+      "name": "Blast furnace (liquid pig iron)",
+      "merged_sub_roles": [
+        {
+          "sub_role_id": "burden_reduction",
+          "clause_refs": [
+            "ST-04",
+            "ST-10"
+          ],
+          "note": "Reduction of iron oxides by carbon. Part of the ore oxygen and of the burden carbon leaves with the furnace gas, so the carbon counted here is counted once, at the furnace."
+        },
+        {
+          "sub_role_id": "raceway_combustion",
+          "clause_refs": [
+            "ST-10",
+            "ST-18"
+          ],
+          "note": "Combustion of coke and injected carbon in the raceway with the preheated blast. ST-18 counts CO as the molar equivalent amount of CO2, so the mass balance does not need the oxidation state."
+        },
+        {
+          "sub_role_id": "hot_blast_air_slot",
+          "clause_refs": [
+            "ST-10"
+          ],
+          "note": "The preheated air blast, its nitrogen and the moisture it carries are not authored as exchanges in version 1.1.0 (modeling gap MG-S09), which is why this node closes open."
+        }
+      ],
+      "ports": [
+        {
+          "port_id": "sinter-in",
+          "flow_role": "sintered_ore",
+          "direction": "input",
+          "role": "intermediate_from_sintering",
+          "clause_refs": [
+            "ST-15",
+            "ST-17"
+          ]
+        },
+        {
+          "port_id": "coke-in",
+          "flow_role": "metallurgical_coke",
+          "direction": "input",
+          "role": "fuel",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-04",
+            "ST-10",
+            "ST-11"
+          ]
+        },
+        {
+          "port_id": "pci-coal-in",
+          "flow_role": "pci_bituminous_coal",
+          "direction": "input",
+          "role": "fuel",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-10",
+            "ST-11"
+          ]
+        },
+        {
+          "port_id": "natural-gas-in",
+          "flow_role": "natural_gas",
+          "direction": "input",
+          "role": "fuel",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-10",
+            "ST-13"
+          ]
+        },
+        {
+          "port_id": "hot-metal-out",
+          "flow_role": "blast_furnace_hot_metal",
+          "direction": "output",
+          "role": "intermediate_to_converter",
+          "clause_refs": [
+            "ST-04"
+          ]
+        },
+        {
+          "port_id": "bf-slag-out",
+          "flow_role": "bf_process_slag",
+          "direction": "output",
+          "role": "by_product",
+          "clause_refs": [
+            "ST-16"
+          ]
+        },
+        {
+          "port_id": "co2-bf-reduction-out",
+          "flow_role": "carbon_dioxide_fossil",
+          "direction": "output",
+          "role": "emission_source",
+          "emission_kind": "process",
+          "counted_for_cbam": true,
+          "clause_refs": [
+            "ST-04",
+            "ST-10",
+            "ST-18"
+          ]
+        },
+        {
+          "port_id": "co2-bf-raceway-out",
+          "flow_role": "carbon_dioxide_fossil",
+          "direction": "output",
+          "role": "emission_source",
+          "emission_kind": "combustion",
+          "counted_for_cbam": true,
+          "clause_refs": [
+            "ST-10",
+            "ST-18"
+          ]
+        }
+      ]
+    },
+    {
+      "role_id": "basic-oxygen-converter",
+      "process_uuid": "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+      "name": "Basic oxygen converter",
+      "merged_sub_roles": [
+        {
+          "sub_role_id": "basic_oxygen_steelmaking",
+          "clause_refs": [
+            "ST-06"
+          ],
+          "note": "The blow itself; the process list of ST-06 is the boundary of this node."
+        },
+        {
+          "sub_role_id": "converter_carbon_mass_balance",
+          "clause_refs": [
+            "ST-08"
+          ],
+          "note": "Carbon entering with hot metal, scrap and any carburant minus carbon remaining in the steel and in the slag, converted with f published in Annex II, converted by the mass balance method of point B.3.2."
+        },
+        {
+          "sub_role_id": "converter_flux_decomposition",
+          "clause_refs": [
+            "ST-08",
+            "ST-18"
+          ],
+          "note": "Limestone added as flux decomposes in the vessel; its CO2 is a process emission of the same node, kept as a separate exchange so a reader can see which clause pays for it."
+        },
+        {
+          "sub_role_id": "converter_flue_gas_cleaning",
+          "clause_refs": [
+            "ST-06"
+          ],
+          "note": "ST-06 puts flue gas cleaning inside the crude steel boundary as a necessary auxiliary activity. The gas cleaning exchange itself is not authored in version 1.1.0 (modeling gap MG-S09)."
+        }
+      ],
+      "ports": [
+        {
+          "port_id": "hot-metal-in",
+          "flow_role": "blast_furnace_hot_metal",
+          "direction": "input",
+          "role": "intermediate_from_blast_furnace",
+          "clause_refs": [
+            "ST-04"
+          ]
+        },
+        {
+          "port_id": "scrap-in",
+          "flow_role": "steel_scrap",
+          "direction": "input",
+          "role": "feedstock",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-08",
+            "ST-14"
+          ]
+        },
+        {
+          "port_id": "limestone-in",
+          "flow_role": "limestone_flux",
+          "direction": "input",
+          "role": "flux",
+          "clause_refs": [
+            "ST-08",
+            "ST-18"
+          ]
+        },
+        {
+          "port_id": "liquid-steel-out",
+          "flow_role": "converter_liquid_steel",
+          "direction": "output",
+          "role": "intermediate_to_secondary_metallurgy",
+          "clause_refs": [
+            "ST-06"
+          ]
+        },
+        {
+          "port_id": "converter-slag-out",
+          "flow_role": "converter_slag",
+          "direction": "output",
+          "role": "by_product",
+          "clause_refs": [
+            "ST-08",
+            "ST-16"
+          ]
+        },
+        {
+          "port_id": "co2-converter-decarburisation-out",
+          "flow_role": "carbon_dioxide_fossil",
+          "direction": "output",
+          "role": "emission_source",
+          "emission_kind": "process",
+          "counted_for_cbam": true,
+          "clause_refs": [
+            "ST-08",
+            "ST-18"
+          ]
+        },
+        {
+          "port_id": "co2-converter-flux-out",
+          "flow_role": "carbon_dioxide_fossil",
+          "direction": "output",
+          "role": "emission_source",
+          "emission_kind": "process",
+          "counted_for_cbam": true,
+          "clause_refs": [
+            "ST-08",
+            "ST-18"
+          ]
+        }
+      ]
+    },
+    {
+      "role_id": "secondary-metallurgy-and-degassing",
+      "process_uuid": "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+      "name": "Secondary metallurgy and vacuum degassing",
+      "merged_sub_roles": [
+        {
+          "sub_role_id": "secondary_metallurgy_and_vacuum_degassing",
+          "clause_refs": [
+            "ST-06"
+          ],
+          "note": "Named by the ST-06 list. Only the metal pass-through is authored; alloy additions, protective gas, fluxes and refractory losses are modeling gap MG-S09."
+        }
+      ],
+      "ports": [
+        {
+          "port_id": "liquid-steel-in",
+          "flow_role": "converter_liquid_steel",
+          "direction": "input",
+          "role": "intermediate_from_converter",
+          "clause_refs": [
+            "ST-06"
+          ]
+        },
+        {
+          "port_id": "treated-steel-out",
+          "flow_role": "secondary_metallurgy_treated_steel",
+          "direction": "output",
+          "role": "intermediate_to_caster",
+          "clause_refs": [
+            "ST-06"
+          ]
+        }
+      ]
+    },
+    {
+      "role_id": "continuous-casting",
+      "process_uuid": "ea66dbd3-03e1-5ff8-a1d0-9662604392c0",
+      "name": "Continuous slab caster",
+      "merged_sub_roles": [
+        {
+          "sub_role_id": "continuous_casting",
+          "clause_refs": [
+            "ST-06"
+          ],
+          "note": "Strand casting to the slab, which is the good this seed reports."
+        },
+        {
+          "sub_role_id": "primary_hot_rolling_slot",
+          "clause_refs": [
+            "ST-07"
+          ],
+          "note": "ST-07 admits only primary hot rolling and rough forging into the crude steel category, so the slot exists to say that nothing beyond it is modelled here: finishing rolling belongs to another aggregated goods category (modeling gap MG-S01)."
+        }
+      ],
+      "ports": [
+        {
+          "port_id": "treated-steel-in",
+          "flow_role": "secondary_metallurgy_treated_steel",
+          "direction": "input",
+          "role": "intermediate_from_secondary_metallurgy",
+          "clause_refs": [
+            "ST-06"
+          ]
+        },
+        {
+          "port_id": "grid-electricity-in",
+          "flow_role": "grid_electricity",
+          "direction": "input",
+          "role": "auxiliary_energy",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-12"
+          ]
+        },
+        {
+          "port_id": "crude-steel-slab-out",
+          "flow_role": "crude_steel_slab",
+          "direction": "output",
+          "role": "reference_product",
+          "counted_for_cbam": false,
+          "clause_refs": [
+            "ST-01",
+            "ST-02",
+            "ST-06"
+          ],
+          "is_reference_exchange": true
+        },
+        {
+          "port_id": "casting-crop-out",
+          "flow_role": "continuous_casting_crop",
+          "direction": "output",
+          "role": "recycled_cutting_loss",
+          "clause_refs": [
+            "ST-16"
+          ]
+        }
+      ]
+    }
+  ],
+  "mandatory_role_check": {
+    "clause_ref": "ST-06",
+    "required_sub_roles": [
+      "sinter_agglomeration",
+      "sinter_carbonate_decomposition",
+      "sinter_flue_gas_cleaning_slot",
+      "burden_reduction",
+      "raceway_combustion",
+      "hot_blast_air_slot",
+      "basic_oxygen_steelmaking",
+      "converter_carbon_mass_balance",
+      "converter_flux_decomposition",
+      "converter_flue_gas_cleaning",
+      "secondary_metallurgy_and_vacuum_degassing",
+      "continuous_casting",
+      "primary_hot_rolling_slot"
+    ],
+    "on_missing": "refuse import and name the missing sub_role_id",
+    "note": "the list is the ST-06 process enumeration of the crude steel system boundary plus the three slots that exist to keep an unauthored activity visible; a slot with no exchange is a registered gap, never a silent absence"
+  },
+  "coverage_no_double_count": [
+    {
+      "topic": "burden carbon that leaves with the furnace gas",
+      "rule": "counted once, as the two furnace CO2 exchanges, never also at the coke or coal input ports",
+      "clause_refs": [
+        "ST-08",
+        "ST-10"
+      ],
+      "validation": "a second fossil CO2 source whose carbon origin is the same coke or coal input must be rejected by the coverage report"
+    },
+    {
+      "topic": "sintered ore and hot metal inside one production process boundary",
+      "rule": "their direct emissions enter the numerator at the process that produces them; they are not also charged as precursors of the slab",
+      "clause_refs": [
+        "ST-15",
+        "ST-17"
+      ]
+    },
+    {
+      "topic": "grid electricity",
+      "rule": "present as an activity for MFA and for the PCF question, excluded from the CBAM numerator with clause basis, because Annex II lists crude steel as a direct-emissions-only good",
+      "clause_refs": [
+        "ST-12"
+      ]
+    },
+    {
+      "topic": "continuous casting crop",
+      "rule": "leaves the boundary as an output for the mass account but carries zero embedded emissions and never enters the activity level",
+      "clause_refs": [
+        "ST-16"
+      ]
+    }
+  ]
+}

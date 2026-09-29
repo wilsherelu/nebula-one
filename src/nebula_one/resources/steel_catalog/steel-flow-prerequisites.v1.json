@@ -1,0 +1,16 @@
+{
+  "schema_version": "nebula_one.steel-flow-prerequisites.v1",
+  "asset": "steel-flow-prerequisites.v1.zip",
+  "asset_sha256": "5b3067d4bba6809be451de5aaf8552a5abd064377b6ea01692d3ab8aea251511",
+  "flows_sha256": "56a0a5727de3586f3e64de2d3ffd123c5ffc7eb3e88f15a700cfd80ea8e8a6e0",
+  "source_seed_id": "nebula.hydrogen.natural-gas-smr",
+  "source_seed_version": "1.3.0",
+  "source_bundle_content_sha256": "acfa0630535f7af5d78412d0f7186bbbaf99cd81f3dd0847f7cb049fe1325b67",
+  "source_bundle_zip_sha256": "051746298de86b9649fa0f87fb7cd30025f1b515d44a9c0a10eb4a7615d88529",
+  "source_project_id": "3feb2aff-4439-5eaa-98d6-aa9e58692add",
+  "flow_uuids": [
+    "222665f3-76a4-5894-a34a-27107e793f08",
+    "345ca664-03ac-55d0-b66b-141c91029812"
+  ],
+  "license": "Apache-2.0; two authored catalog product-flow rows only; no source project or model is redistributed"
+}

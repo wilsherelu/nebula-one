@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "ReportingPeriodIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "const": "frozen",
+          "enum": [
+            "frozen"
+          ],
+          "title": "Lifecycle Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "lifecycle_status"
+      ],
+      "title": "ReportingPeriodIdentity",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "claim_level": {
+      "enum": [
+        "demonstration",
+        "measured"
+      ],
+      "title": "Claim Level",
+      "type": "string"
+    },
+    "end_date": {
+      "format": "date",
+      "title": "End Date",
+      "type": "string"
+    },
+    "period_kind": {
+      "const": "representative_year",
+      "enum": [
+        "representative_year"
+      ],
+      "title": "Period Kind",
+      "type": "string"
+    },
+    "reporting_period": {
+      "$ref": "nebula.reporting-period.v1.schema.json#/$defs/ReportingPeriodIdentity"
+    },
+    "schema_version": {
+      "const": "nebula.reporting-period.v1",
+      "enum": [
+        "nebula.reporting-period.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "start_date": {
+      "format": "date",
+      "title": "Start Date",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "reporting_period",
+    "period_kind",
+    "start_date",
+    "end_date",
+    "claim_level"
+  ],
+  "title": "ReportingPeriodDocument",
+  "type": "object"
+}

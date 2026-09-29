@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "audit": {
+      "title": "Audit",
+      "type": "object"
+    },
+    "capability_key": {
+      "const": "energy.scenario-comparison.v1",
+      "enum": [
+        "energy.scenario-comparison.v1"
+      ],
+      "title": "Capability Key",
+      "type": "string"
+    },
+    "comparison": {
+      "title": "Comparison",
+      "type": "object"
+    },
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "reporting_period": {
+      "title": "Reporting Period",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "nebula_one.period-energy-scenario-comparison.v1",
+      "enum": [
+        "nebula_one.period-energy-scenario-comparison.v1"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_comparison_run": {
+      "title": "Source Comparison Run",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "capability_key",
+    "reporting_period",
+    "source_comparison_run",
+    "comparison",
+    "audit",
+    "content_sha256"
+  ],
+  "title": "PeriodEnergyComparisonOut",
+  "type": "object"
+}
