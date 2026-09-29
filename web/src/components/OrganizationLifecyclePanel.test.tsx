@@ -68,6 +68,7 @@ it('uses the versioned English projection for organization categories and exchan
   expect(screen.getByText('Iron ore purchased for sintering')).toBeInTheDocument();
   expect(screen.getByText('Scope 1: on site direct emissions')).toBeInTheDocument();
   expect(screen.getByText('Some required data is missing')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Open HTML report' })).toHaveAttribute('href', expect.stringContaining('report.html?lang=en'));
   expect(screen.queryByText('采购铁矿石上游')).not.toBeInTheDocument();
   expect(screen.queryByText('范围 1：厂内直接排放')).not.toBeInTheDocument();
 });

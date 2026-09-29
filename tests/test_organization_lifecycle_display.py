@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from nebula_one.errors import DomainError
+from nebula_one.exports.organization_lifecycle import render_organization_lifecycle_html
 from nebula_one.hashing import canonical_json_sha256
 from nebula_one.organization_lifecycle_display import organization_lifecycle_display
 from nebula_one.runtime_schemas import MethodPackageCreate
@@ -35,3 +36,28 @@ def test_display_refuses_method_hash_drift():
     with pytest.raises(DomainError) as caught:
         organization_lifecycle_display(method, "en")
     assert caught.value.code == "ORGANIZATION_DISPLAY_SOURCE_MISMATCH"
+
+
+def test_english_report_uses_pinned_category_labels_without_changing_result():
+    display = organization_lifecycle_display(_method(), "en")
+    record = {"content_sha256": "a" * 64, "result": {
+        "facility": "Steel", "reporting_period": {"name": "2026"},
+        "method_package": {"reference": "nebula.organization-lifecycle-carbon.steel-model@1.0.5",
+                           "content_sha256": display["method_package"]["content_sha256"]},
+        "source_snapshot": {"id": "snapshot", "content_sha256": "b" * 64},
+        "activity_basis": {"mode": "per_unit_product", "baseline_output": 1000,
+                           "period_output": 1000, "scale_factor": 1},
+        "groups": {"on_site_direct": {"value": 1940, "status": "calculated_from_controlled_foreground"},
+                   "purchased_energy_lifecycle": {"value": 92, "status": "calculated_from_exclusive_energy_background_paths"},
+                   "other_value_chain": {"value": None, "status": "partial", "categories": [
+                       {"category": "purchased_iron_ore", "name": "采购铁矿石上游",
+                        "boundary_status": "selected", "value": None, "activities": [],
+                        "proxy_reference_value": None}]}},
+        "combined_total": None,
+    }}
+    html = render_organization_lifecycle_html(record, english_labels=display["labels"])
+    assert "Upstream purchased iron ore" in html
+    assert "Scope 1: on site direct emissions" in html
+    assert "Some required data is missing" in html
+    assert "采购铁矿石上游" not in html
+    assert "not a complete lifecycle inventory" in html

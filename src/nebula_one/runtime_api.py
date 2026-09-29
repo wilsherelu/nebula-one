@@ -12,6 +12,7 @@ from .analysis.pcf_visual import render_product_pcf_svg
 from .analysis.carbon_management_visual import render_carbon_management_svg
 from .organization_lifecycle_display import organization_lifecycle_display
 from .errors import DomainError
+from .hashing import canonical_json_sha256
 from .schemas import AnalysisRunOut, OutboxEventOut, QueuedAnalysisRunOut
 from .runtime_schemas import (
     AnalysisPlanCreate,
@@ -1188,10 +1189,29 @@ def get_organization_lifecycle_inventory(application_id: str, record_id: str, re
 
 
 @router.get("/applications/{application_id}/organization-lifecycle-inventories/{record_id}/report.html")
-def report_organization_lifecycle_inventory(application_id: str, record_id: str, request: Request) -> Response:
+def report_organization_lifecycle_inventory(application_id: str, record_id: str, request: Request,
+                                            lang: str = "zh") -> Response:
     record = _container(request).organization_lifecycle.get(application_id, record_id)
-    return Response(content=render_organization_lifecycle_html(record), media_type="text/html; charset=utf-8",
-                    headers={"ETag": f'"{record["content_sha256"]}"'})
+    if lang == "en":
+        source = record["result"]["method_package"]
+        method = next((item for item in _container(request).registry.list_method_packages()
+                       if f"{item.package_id}@{item.version}" == source["reference"]
+                       and item.content_sha256 == source["content_sha256"]), None)
+        if method is None:
+            raise DomainError(code="ORGANIZATION_DISPLAY_METHOD_MISMATCH",
+                              message="The report's exact organization method is not registered", status_code=409)
+        projection = organization_lifecycle_display(method, "en")
+        content = render_organization_lifecycle_html(record, english_labels=projection["labels"])
+        etag = canonical_json_sha256({"result": record["content_sha256"],
+                                      "projection": projection["projection_sha256"], "language": "en"})
+    elif lang == "zh":
+        content = render_organization_lifecycle_html(record)
+        etag = record["content_sha256"]
+    else:
+        raise DomainError(code="ORGANIZATION_DISPLAY_LANGUAGE_INVALID",
+                          message="Unsupported report language", status_code=422)
+    return Response(content=content, media_type="text/html; charset=utf-8",
+                    headers={"ETag": f'"{etag}"'})
 
 
 @router.post(

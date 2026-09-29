@@ -147,7 +147,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     <h4>{t('org.savedResults')}</h4>
     {matching.length ? matching.map(record => <section className="section-panel" key={record.id}>
       <strong>{record.result.reporting_period.name} · {record.result.facility}</strong>
-      <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html`} target="_blank">{t('org.openReport')}</Button></p>
+      <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></p>
       <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
       <Table rowKey="key" pagination={false} data={[
         { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
