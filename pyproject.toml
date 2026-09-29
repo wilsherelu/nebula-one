@@ -31,7 +31,7 @@ nebula-one = "nebula_one.__main__:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-nebula_one = ["resources/*.json", "resources/model_processing/*.json", "resources/official_methods/*.json", "resources/public_supply/*.json", "resources/steel_catalog/*.json", "resources/steel_catalog/*.zip", "migrations/*.mako"]
+nebula_one = ["resources/*.json", "resources/model_processing/*.json", "resources/official_methods/*.json", "resources/organization_lifecycle_display/*.json", "resources/public_supply/*.json", "resources/steel_catalog/*.json", "resources/steel_catalog/*.zip", "migrations/*.mako"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
