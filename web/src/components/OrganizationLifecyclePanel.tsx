@@ -150,9 +150,9 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
       <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html`} target="_blank">{t('org.openReport')}</Button></p>
       <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
       <Table rowKey="key" pagination={false} data={[
-        { key: 'direct', label: t('org.groupDirect'), ...record.result.groups.on_site_direct },
-        { key: 'energy', label: t('org.groupEnergy'), ...record.result.groups.purchased_energy_lifecycle },
-        { key: 'other', label: t('org.groupOther'), ...record.result.groups.other_value_chain },
+        { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
+        { key: 'energy', ...record.result.groups.purchased_energy_lifecycle, label: t('org.groupEnergy') },
+        { key: 'other', ...record.result.groups.other_value_chain, label: t('org.groupOther') },
       ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
       <p>{t('org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
       {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: categoryName(item.category), value: format(item.proxy_reference_value) })}</p>)}
