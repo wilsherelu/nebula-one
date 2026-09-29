@@ -302,6 +302,20 @@ export interface MethodPackage {
   created_at: string;
 }
 
+export interface OrganizationLifecycleDisplay {
+  schema_version: 'nebula_one.organization-lifecycle-display.v1';
+  version: string;
+  language: 'zh' | 'en';
+  method_package: { package_id: string; version: string; content_sha256: string };
+  projection_sha256: string;
+  labels: {
+    input_basis: Record<string, string>;
+    group_status: Record<string, string>;
+    categories: Record<string, string>;
+    exchanges: Record<string, string>;
+  };
+}
+
 export interface ProductCarbonFootprint {
   schema_version: 'nebula_one.pcf.product.v1';
   capability_key: 'pcf.product.v1';

@@ -10,6 +10,8 @@ from .exports.organization_period import render_organization_period_html
 from .exports.organization_lifecycle import render_organization_lifecycle_html
 from .analysis.pcf_visual import render_product_pcf_svg
 from .analysis.carbon_management_visual import render_carbon_management_svg
+from .organization_lifecycle_display import organization_lifecycle_display
+from .errors import DomainError
 from .schemas import AnalysisRunOut, OutboxEventOut, QueuedAnalysisRunOut
 from .runtime_schemas import (
     AnalysisPlanCreate,
@@ -111,6 +113,18 @@ def list_method_packages(request: Request) -> list[MethodPackageOut]:
         MethodPackageOut.model_validate(record)
         for record in _container(request).registry.list_method_packages()
     ]
+
+
+@router.get("/method-packages/organization-lifecycle-display")
+def get_organization_lifecycle_display(method_package_ref: str, method_package_sha256: str,
+                                       request: Request, lang: str = "en") -> dict:
+    methods = _container(request).registry.list_method_packages()
+    method = next((item for item in methods
+                   if f"{item.package_id}@{item.version}" == method_package_ref), None)
+    if method is None or method.content_sha256 != method_package_sha256:
+        raise DomainError(code="ORGANIZATION_DISPLAY_METHOD_MISMATCH",
+                          message="The requested exact method is not registered", status_code=409)
+    return organization_lifecycle_display(method, lang)
 
 
 @router.post(

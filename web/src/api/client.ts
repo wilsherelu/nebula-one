@@ -32,6 +32,7 @@ import type {
   OrganizationPeriodResult,
   OrganizationLifecycleRequest,
   OrganizationLifecycleResult,
+  OrganizationLifecycleDisplay,
   SetupStatus,
   CasePackMaterializeRequest,
   CasePackMaterializeResult,
@@ -206,6 +207,8 @@ export const api = {
   pcfDefaultMethod: (snapshotId: string) => requestJson<ClimateMethodResolution>(`/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint/default-method`),
   periods: (applicationId: string) => requestJson<ReportingPeriod[]>(`/api/v1/applications/${applicationId}/periods`),
   methodPackages: () => requestJson<MethodPackage[]>('/api/v1/method-packages'),
+  organizationLifecycleDisplay: (method: MethodPackage, lang: Lang) =>
+    requestJson<OrganizationLifecycleDisplay>(`/api/v1/method-packages/organization-lifecycle-display?method_package_ref=${encodeURIComponent(`${method.package_id}@${method.version}`)}&method_package_sha256=${encodeURIComponent(method.content_sha256)}&lang=${lang}`),
   organizationPeriodInventories: (applicationId: string) => requestJson<OrganizationPeriodResult[]>(`/api/v1/applications/${applicationId}/organization-period-inventories`),
   createOrganizationPeriodInventory: (applicationId: string, payload: OrganizationPeriodRequest) =>
     requestJson<OrganizationPeriodResult>(`/api/v1/applications/${applicationId}/organization-period-inventories`, {

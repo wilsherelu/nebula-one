@@ -15,6 +15,10 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const periods = useQuery({ queryKey: ['periods', applicationId], queryFn: () => api.periods(applicationId) });
   const workspace = useQuery({ queryKey: ['workspace', applicationId, snapshot.system_revision_id, lang], queryFn: () => api.workspace(applicationId, snapshot.system_revision_id, lang) });
   const records = useQuery({ queryKey: ['organization-lifecycle', applicationId], queryFn: () => api.organizationLifecycleInventories(applicationId) });
+  const display = useQuery({ queryKey: ['organization-lifecycle-display', method.package_id, method.version, method.content_sha256, lang],
+    queryFn: () => api.organizationLifecycleDisplay(method, lang),
+    enabled: lang === 'en' && Boolean(method.content_sha256) && Array.isArray(snapshot.provider_receipt.project_background_process_receipts),
+  });
   const [periodId, setPeriodId] = useState('');
   const [facility, setFacility] = useState('');
   const [output, setOutput] = useState('');
@@ -23,6 +27,9 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const rules = ((method.manifest.classification_rules as Record<string, unknown> | undefined)?.other_value_chain_categories ?? {}) as Record<string, CategoryRule>;
   const projectSupplyMethod = (method.manifest.classification_rules as Record<string, unknown> | undefined)?.energy_path_source === 'project_background_process_receipts';
   const labels = (method.manifest.display_labels ?? {}) as { input_basis?: Record<string, string>; group_status?: Record<string, string> };
+  const categoryName = (key: string) => lang === 'en' ? display.data?.labels.categories[key] ?? key : rules[key]?.name ?? key;
+  const exchangeName = (key: string, rule: CategoryRule) => lang === 'en' ? display.data?.labels.exchanges[key] ?? key : rule.exchange_labels?.[key] ?? key;
+  const groupStatus = (key: string) => lang === 'en' ? display.data?.labels.group_status[key] ?? key : labels.group_status?.[key] ?? key;
   const basis = (snapshot.provider_receipt.calculation_basis ?? {}) as Record<string, unknown>;
   const demand = Array.isArray(basis.demand) ? basis.demand[0] as { amount?: number; unit?: string } | undefined : undefined;
   const baseline = Number(demand?.amount);
@@ -79,6 +86,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     : !snapshot.native_background_climate) {
     return <EmptyState description={projectSupplyMethod ? t('org.needSupply') : t('org.needNative')} />;
   }
+  if (lang === 'en' && display.isLoading) return <LoadingState rows={4} />;
+  if (lang === 'en' && display.isError) return <ErrorState error={display.error} />;
   return <div className="pcf-result">
     <h3>{t('org.title')}</h3>
     <p>{t('org.intro')}</p>
@@ -94,7 +103,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     </div>
     <h4>{t('org.otherActivities')}</h4>
     {Object.entries(rules).map(([category, rule]) => <div className="section-panel" key={category}>
-        <strong>{rule.name ?? category}</strong>
+        <strong>{categoryName(category)}</strong>
         {(rule.eligible_consumer_exchange_ids ?? []).length === 0 ? <p>{rule.boundary_status === 'not_in_boundary' ? t('org.outOfBoundary') : t('org.missingPath')}</p> : null}
         {(rule.eligible_consumer_exchange_ids ?? []).map(exchangeId => {
           const key = `${category}:${exchangeId}`;
@@ -109,7 +118,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
                   && item.valid_to >= (periods.data ?? []).find(period => period.id === periodId)!.end_date));
           });
           return <div className="project-period-form" key={exchangeId}>
-            <label><input aria-label={t('org.enableFactor', { key })} type="checkbox" checked={entry?.enabled ?? false} onChange={event => update(key, { enabled: event.target.checked })} />{rule.exchange_labels?.[exchangeId] ?? exchangeId}</label>
+            <label><input aria-label={t('org.enableFactor', { key })} type="checkbox" checked={entry?.enabled ?? false} onChange={event => update(key, { enabled: event.target.checked })} />{exchangeName(exchangeId, rule)}</label>
             {entry?.enabled ? <>
               <span>{t('org.periodAmount', { amount: exchange ? `${format(Number(exchange.amount) * scale)} ${String(exchange.unit)}` : t('org.noExchange') })} </span>
               {factorOptions.length ? <label>{t('org.registeredEvidence')}<Select aria-label={t('org.registeredEvidence')} value={entry.factorRef} onChange={value => selectFactor(key, value)}
@@ -139,14 +148,14 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     {matching.length ? matching.map(record => <section className="section-panel" key={record.id}>
       <strong>{record.result.reporting_period.name} · {record.result.facility}</strong>
       <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html`} target="_blank">{t('org.openReport')}</Button></p>
-      <p>{t('org.resultBasis', { basis: lang === 'zh' ? labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : record.result.activity_basis.mode === 'per_unit_product' ? t('org.perProduct') : t('org.annual'), output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
+      <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
       <Table rowKey="key" pagination={false} data={[
         { key: 'direct', label: t('org.groupDirect'), ...record.result.groups.on_site_direct },
         { key: 'energy', label: t('org.groupEnergy'), ...record.result.groups.purchased_energy_lifecycle },
         { key: 'other', label: t('org.groupOther'), ...record.result.groups.other_value_chain },
-      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => labels.group_status?.[row.status] ?? row.status }]} />
-      <p>{t('org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(key => rules[key]?.name ?? key).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(key => rules[key]?.name ?? key).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
-      {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: item.name, value: format(item.proxy_reference_value) })}</p>)}
+      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
+      <p>{t('org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
+      {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: categoryName(item.category), value: format(item.proxy_reference_value) })}</p>)}
       <small>{t('org.methodEvidence', { method: record.result.method_package.reference, hash: record.content_sha256 })}</small>
     </section>) : <EmptyState description={t('org.noResults')} />}
   </div>;
