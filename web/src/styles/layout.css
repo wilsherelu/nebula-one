@@ -13,6 +13,7 @@
 .sidebar-foot { padding: var(--no-space-5); font-size: var(--no-font-helper); color: var(--no-color-text-tertiary); border-top: 1px solid var(--no-color-border); }
 .app-sidebar .arco-menu-item { margin-inline: var(--no-space-2); border-radius: var(--no-radius-control); }
 .app-content { min-width: 0; margin-left: var(--no-sidebar-width); }
+.app-shell > .app-content { overflow-x: clip; }
 @media (max-width: 768px) {
   .sidebar-foot { display: none; }
   .app-shell { display: block; }

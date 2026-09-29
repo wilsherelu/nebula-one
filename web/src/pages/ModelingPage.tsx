@@ -33,7 +33,9 @@ function ModelingHandoffPage() {
   const base = params.get('model') ?? undefined;
   const baseRevision = params.get('revision') ?? undefined;
   const applicationId = params.get('application') ?? '';
-  const autoLaunch = params.get('launch') === '1';
+  // Only the template-author entry launches immediately. Old project edit links remain a
+  // reviewable way to create a separate model; they never mutate a locked project in place.
+  const autoLaunch = params.get('launch') === '1' && params.get('template') === '1';
   const started = useRef(false);
   const [name, setName] = useState('');
   const config = useQuery({queryKey: ['modeling-configuration'], queryFn: modelingApi.configuration});

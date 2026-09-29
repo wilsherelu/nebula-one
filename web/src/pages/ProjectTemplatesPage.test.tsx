@@ -26,7 +26,7 @@ it('opens the exact installed template model for editing', async () => {
     <MemoryRouter><ProjectTemplatesPage /></MemoryRouter>
   </QueryClientProvider>);
   fireEvent.click(await screen.findByRole('button', {name: '修改模板'}));
-  expect(open).toHaveBeenCalledWith('/modeling?application=source-app&model=source-model&launch=1&revision=source-revision&lang=zh', '_blank', 'noopener,noreferrer');
+  expect(open).toHaveBeenCalledWith('/modeling?application=source-app&model=source-model&launch=1&template=1&revision=source-revision&lang=zh', '_blank', 'noopener,noreferrer');
 });
 
 it('creates an installed template even when the separate example catalog fails', async () => {

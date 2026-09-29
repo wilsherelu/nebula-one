@@ -8,7 +8,7 @@ import { EmptyState, ErrorState, LoadingState } from './ui/States';
 
 interface CategoryRule { name?: string; factor_boundary?: string; boundary_status?: string; eligible_consumer_exchange_ids?: string[]; exchange_labels?: Record<string, string> }
 interface Entry { enabled: boolean; factorRef: string; factor: string; version: string; source: string; hash: string; evidenceRole: 'supplier_specific' | 'demonstration_proxy'; methodId: string; methodVersion: string; methodHash: string; referenceProduct: string }
-export function OrganizationLifecyclePanel({ applicationId, snapshot, method, methodPackages = [] }: { applicationId: string; snapshot: SolvedSystemSnapshot; method: MethodPackage; methodPackages?: MethodPackage[] }) {
+export function OrganizationLifecyclePanel({ applicationId, snapshot, method, methodPackages = [], recordId, onCreated }: { applicationId: string; snapshot: SolvedSystemSnapshot; method: MethodPackage; methodPackages?: MethodPackage[]; recordId?: string; onCreated?: (id: string) => void }) {
   const { lang, t, formatNumber } = useI18n();
   const format = (value: number | null | undefined) => formatNumber(value, { maximumSignificantDigits: 9 });
   const queryClient = useQueryClient();
@@ -81,7 +81,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
         input_basis: basisMode, period_product_output: Number(output), other_activities: activities,
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['organization-lifecycle', applicationId] }),
+    onSuccess: result => { queryClient.invalidateQueries({ queryKey: ['organization-lifecycle', applicationId] }); onCreated?.(result.id); },
   });
   if (projectSupplyMethod
     ? !Array.isArray(snapshot.provider_receipt.project_background_process_receipts) || !snapshot.provider_receipt.project_background_process_receipts.length
@@ -92,11 +92,11 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   if (lang === 'en' && display.isError) return <ErrorState error={display.error} />;
   return <div className="pcf-result">
     <h3>{t('org.title')}</h3>
-    <p>{t('org.intro')}</p>
-    <Alert type="info" content={t('org.scopeNote')} />
+    {!recordId ? <><p>{t('org.intro')}</p>
+    <Alert type="info" content={t('org.scopeNote')} /></> : null}
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
-    <div className="project-period-form">
+    {!recordId ? <><div className="project-period-form">
       <label>{t('org.period')}<Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${periodName(item)} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></label>
       <label>{t('org.facility')}<input aria-label={t('org.facilityAria')} value={facility} onChange={event => setFacility(event.target.value)} /></label>
       <label>{t('org.basis')}<Select aria-label={t('org.basis')} value={basisMode} onChange={value => setBasisMode(value as typeof basisMode)} options={[{ label: lang === 'zh' ? labels.input_basis?.per_unit_product ?? t('org.perProduct') : t('org.perProduct'), value: 'per_unit_product' }, { label: lang === 'zh' ? labels.input_basis?.annual_total ?? t('org.annual') : t('org.annual'), value: 'annual_total' }]} /></label>
@@ -146,8 +146,9 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
       </div>)}
     <Button type="primary" loading={create.isPending} onClick={() => create.mutate()}>{t('org.calculate')}</Button>
     {create.isError ? <ErrorState error={create.error} /> : null}
-    <h4>{t('org.savedResults')}</h4>
-    {matching.length ? matching.map(record => <section className="section-panel" key={record.id}>
+    </> : null}
+    {!recordId ? <h4>{t('org.savedResults')}</h4> : null}
+    {matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
       <strong>{periodName(record.result.reporting_period)} · {record.result.facility}</strong>
       <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></p>
       <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>

@@ -1,6 +1,6 @@
 import { Alert, Button, InputNumber } from '@arco-design/web-react';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { api, isStaleDataVersion } from '../api/client';
 import type { ProjectWorkspace } from '../api/types';
 import { useI18n } from '../i18n';
@@ -10,7 +10,11 @@ import { ProcessInventoryTable } from './ProcessInventoryTable';
 import { BackgroundEditDialog } from './BackgroundEditDialog';
 import { ProcessGraph } from './ProcessGraph';
 
-export function ProjectDataForm({ workspace, onSaved, onReload, onDirtyChange }: { workspace: ProjectWorkspace; onSaved: (workspace: ProjectWorkspace, baseRevisionId: string) => void; onReload: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+export interface ProjectDataFormHandle {
+  save: () => Promise<ProjectWorkspace>;
+}
+
+export const ProjectDataForm = forwardRef<ProjectDataFormHandle, { workspace: ProjectWorkspace; onSaved: (workspace: ProjectWorkspace, baseRevisionId: string) => void; onReload: () => void; onDirtyChange?: (dirty: boolean) => void; onSaveStateChange?: (saving: boolean) => void; hideFooterSave?: boolean }>(function ProjectDataForm({ workspace, onSaved, onReload, onDirtyChange, onSaveStateChange, hideFooterSave = false }, ref) {
   const { t, formatNumber, lang } = useI18n();
   const draftKey = projectDraftKey(workspace.application_id, workspace.revision_id);
   const initial = { amounts: workspace.demand.map(d => d.amount), values: Object.fromEntries(workspace.fields.map(f => [f.key, f.value])), source: workspace.source };
@@ -48,6 +52,12 @@ export function ProjectDataForm({ workspace, onSaved, onReload, onDirtyChange }:
     workspace.fields.some(f => isInvalid(f.key, f.reference_product)) ? t('form.blockerFields') : null,
   ].filter((reason): reason is string => !!reason);
   const ready = !blockers.length;
+  useImperativeHandle(ref, () => ({ save: () => {
+    if (!ready) return Promise.reject(new Error(t('form.blockers', { reasons: blockers.join(' · ') })));
+    if (save.isPending) return Promise.reject(new Error(t('workspace.saving')));
+    return save.mutateAsync();
+  } }));
+  useEffect(() => { onSaveStateChange?.(save.isPending); }, [save.isPending, onSaveStateChange]);
   const productOutput = (amounts: (number | undefined)[]) => workspace.demand.map((d, i) =>
     t('form.productOutput', { amount: formatNumber(amounts[i]), unit: d.unit })).join('、');
   return <section className="section-panel project-data-form">
@@ -62,8 +72,8 @@ export function ProjectDataForm({ workspace, onSaved, onReload, onDirtyChange }:
       {bgTarget ? <BackgroundEditDialog workspace={workspace} exchangeId={bgTarget} onClose={() => setBgTarget(undefined)} onSaved={next => { carryProjectDraft(workspace.application_id, workspace.revision_id, next.revision_id); onSaved(next, workspace.revision_id); }} onReload={onReload} /> : null}
     </> : workspace.fields.length ? <div className="project-process-section"><h3>{t('form.processSection')}</h3><p className="helper-text">{t('form.processSectionHint')}</p><div className="project-process-grid">{Array.from(new Set(workspace.fields.map(f => f.process))).map(process => <fieldset className="project-process-group" key={process}><legend>{process}</legend>{workspace.fields.filter(f => f.process === process).map(field => <label className="project-field" key={field.key}><span>{field.label}</span><InputNumber suffix={field.unit} aria-label={field.label} value={draft.values[field.key]} min={0} disabled={save.isPending} onChange={value => update({ ...draft, values: { ...draft.values, [field.key]: value } })} /></label>)}</fieldset>)}</div></div> : <p className="helper-text">{t('form.noParams')}</p>}
     {save.isError ? <ErrorState error={save.error} onRetry={isStaleDataVersion(save.error) ? onReload : undefined} /> : null}
-    <div className="form-actions"><Button disabled={save.isPending} onClick={() => update(initial)}>{t('form.restore')}</Button><Button type="primary" disabled={!ready || save.isPending} loading={save.isPending} onClick={() => save.mutate()}>{t('form.save')}</Button></div>
+    <div className="form-actions"><Button disabled={save.isPending} onClick={() => update(initial)}>{t('form.restore')}</Button>{!hideFooterSave ? <Button type="primary" disabled={!ready || save.isPending} loading={save.isPending} onClick={() => save.mutate()}>{t('form.save')}</Button> : null}</div>
     {!ready && !save.isPending ? <p className="helper-text" role="status">{t('form.blockers', { reasons: blockers.join(' · ') })}</p> : null}
     {dirty ? <p className="helper-text">{t('form.draftSaved')}</p> : null}
   </section>;
-}
+});

@@ -293,6 +293,23 @@ class OutboxEvent(Base):
     )
 
 
+class AuthoredProjectTemplate(Base):
+    """Immutable project template pinned to one reviewed model revision and method set."""
+
+    __tablename__ = "authored_project_templates"
+    __table_args__ = (UniqueConstraint("title", "version", name="uq_authored_template_title_version"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    version: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_application_id: Mapped[str] = mapped_column(ForeignKey("applications.id"), nullable=False)
+    source_model_id: Mapped[str] = mapped_column(ForeignKey("system_models.id"), nullable=False)
+    source_revision_id: Mapped[str] = mapped_column(ForeignKey("system_revisions.id"), nullable=False)
+    content: Mapped[dict] = mapped_column(JSON, nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
 class SeedInstallation(Base):
     """A seed version installed into one engine database, with per-stage receipts."""
 

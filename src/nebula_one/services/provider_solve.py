@@ -1040,6 +1040,8 @@ class ProviderSolveService:
             if calculation_basis is not None:
                 parameters["calculation_purpose"] = payload.calculation_purpose
                 parameters["calculation_basis"] = calculation_basis
+            if payload.analysis_task is not None:
+                parameters["analysis_task"] = payload.analysis_task
             return ProviderSolveContext(
                 application_id=application_id,
                 system_revision_id=system_revision_id,
@@ -1289,6 +1291,7 @@ class ProviderSolveService:
                 # The purpose is part of the accepted request, so recovery re-derives under the same
                 # accounting scope instead of falling back to the whole stored model.
                 calculation_purpose=run.parameters.get("calculation_purpose"),
+                analysis_task=run.parameters.get("analysis_task"),
             )
         except ValidationError as exc:
             raise DomainError(
@@ -1477,6 +1480,8 @@ class ProviderSolveService:
                 context, payload, derived, bool(mapped_receipts)
             ),
         }
+        if payload.analysis_task is not None:
+            provider_receipt["analysis_task"] = payload.analysis_task
         if mapped_receipts:
             contribution_graph['mapped_background_process_receipts'] = mapped_receipts
             provider_receipt['mapped_background_process_receipts'] = mapped_receipts

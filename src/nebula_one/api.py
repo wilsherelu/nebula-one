@@ -44,6 +44,8 @@ from .casepacks.bindings import ParameterBindingDocument, ResolvedOperationSet
 from .casepacks.catalog import CasePackCatalogResponse
 from .services.project_workspace import ProjectInputs, ProjectWorkspaceService
 from .services.seed_projects import SeedProjectCreate, SeedProjectService
+from .services.authored_project_templates import AuthoredProjectTemplateService, PublishAuthoredTemplate
+from .models import AuthoredProjectTemplate
 from .services.project_background import BackgroundSelection, ProjectBackgroundService
 from .services.project_mapped_background import MappedBackgroundSelection, ProjectMappedBackgroundService
 from .services.project_user_background import UserBackgroundSelection, ProjectUserBackgroundService
@@ -54,12 +56,24 @@ router = APIRouter()
 
 @router.get('/api/v1/project-templates')
 def seed_project_templates(request: Request):
-    return SeedProjectService(_container(request)).catalog()
+    container = _container(request)
+    catalog = SeedProjectService(container).catalog()
+    return {"items": [*catalog["items"], *AuthoredProjectTemplateService(container).catalog()]}
+
+
+@router.post('/api/v1/project-templates/authored')
+def publish_authored_project_template(payload: PublishAuthoredTemplate, request: Request):
+    return AuthoredProjectTemplateService(_container(request)).publish(payload)
 
 
 @router.post('/api/v1/project-templates/{installation_id}/projects')
 def create_seed_project(installation_id: str, payload: SeedProjectCreate, request: Request):
-    return SeedProjectService(_container(request)).create(installation_id, payload)
+    container = _container(request)
+    with container.database.session() as db:
+        authored = db.get(AuthoredProjectTemplate, installation_id) is not None
+    if authored:
+        return AuthoredProjectTemplateService(container).create(installation_id, payload)
+    return SeedProjectService(container).create(installation_id, payload)
 
 @router.get("/api/v1/applications/{application_id}/workspace/{revision_id}")
 def project_workspace(application_id: str, revision_id: str, request: Request, lang: str | None = None):

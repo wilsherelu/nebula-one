@@ -490,6 +490,19 @@ def test_two_purposes_of_one_stored_model_never_share_one_frozen_answer(steel_pr
     assert cbam_run.provider_receipt["model_derivation"]["purpose"] == "cbam"
 
 
+def test_explicit_analysis_task_survives_the_frozen_http_solve(steel_project):
+    legacy = steel_project.solve("lca")
+    assert legacy.status_code == 201, legacy.text
+    response = steel_project.solve("lca", analysis_task="mfa")
+    assert response.status_code == 201, response.text
+    frozen = response.json()
+    assert frozen["id"] != legacy.json()["id"]
+    assert frozen["solve_hash"] != legacy.json()["solve_hash"]
+    assert frozen["provider_receipt"]["analysis_task"] == "mfa"
+    run = steel_project.run(frozen["provider_receipt"]["analysis_run_id"])
+    assert run.parameters["analysis_task"] == "mfa"
+
+
 def test_an_identical_purpose_request_replays_the_frozen_answer_without_solving_again(
     steel_project,
 ):

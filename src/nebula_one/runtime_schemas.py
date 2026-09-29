@@ -660,9 +660,16 @@ class ProviderSolveAndFreezeCreate(BaseModel):
     # processes, associations and emissions a purpose keeps is decided by the versioned model
     # processing package bound to this model's template.
     calculation_purpose: str | None = Field(default=None, min_length=1, max_length=64)
+    analysis_task: Literal["mfa", "pcf", "cbam", "organization"] | None = None
 
     @model_validator(mode="after")
     def require_native_climate_scope(self) -> "ProviderSolveAndFreezeCreate":
+        if self.analysis_task == "cbam" and self.calculation_purpose != "cbam":
+            raise ValueError("CBAM task requires the reviewed CBAM calculation purpose")
+        if self.analysis_task in ("pcf", "organization") and not (self.climate_default or self.native_background_climate or self.lcia_methods):
+            raise ValueError("a climate task requires a characterized method")
+        if self.analysis_task == "mfa" and (self.climate_default or self.native_background_climate or self.lcia_methods):
+            raise ValueError("MFA task cannot claim a climate answer")
         if self.native_background_inventory:
             providers = {item.process_uuid for item in self.mapped_background_process_pins}
             if (self.native_background_climate or self.climate_default or self.lcia_methods is not None

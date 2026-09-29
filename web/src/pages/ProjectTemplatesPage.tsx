@@ -7,6 +7,7 @@ import { seedProjectsApi, templateName } from '../api/seedProjects';
 import { languageParam, useI18n } from '../i18n';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
+import { TemplateFinalizePanel } from '../components/TemplateFinalizePanel';
 
 export function ProjectTemplatesPage() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function ProjectTemplatesPage() {
   const catalog = useQuery({ queryKey: ['casepacks'], queryFn: api.casepacks });
   const [selected, setSelected] = useState<string | null>(null);
   const editTemplate = (item: {source_application_id: string; source_model_id: string; source_revision_id: string | null}) => {
-    const params = new URLSearchParams({ application: item.source_application_id, model: item.source_model_id, launch: '1', });
+    const params = new URLSearchParams({ application: item.source_application_id, model: item.source_model_id, launch: '1', template: '1' });
     if (item.source_revision_id) params.set('revision', item.source_revision_id);
     // The modelling app runs on another port, so language is carried in the URL rather than storage.
     params.set('lang', lang);
@@ -29,6 +30,7 @@ export function ProjectTemplatesPage() {
       const key = `${pack.id}@${pack.version}/${item.id}@${item.version}`;
       return <section className="section-panel template-library-card" key={key}><h2>{item.title}</h2><p className="helper-text">{item.study_frame_title}</p><p>{item.editable_parameter_count ? t('dialog.editableParams', { count: item.editable_parameter_count }) : t('dialog.scaleOnly')}</p><div><small>{t('templates.version', { version: item.version })}</small><Button type="primary" onClick={() => setSelected(key)}>{t('templates.useNew')}</Button></div></section>;
     }))}</div>}
+    <TemplateFinalizePanel />
     {selected !== null ? <ProjectCreateDialog key={selected} initialSelection={selected} onClose={() => setSelected(null)} /> : null}
   </main>;
 }

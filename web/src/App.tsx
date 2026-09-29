@@ -12,6 +12,8 @@ import { AnalysisResultsPage } from './pages/AnalysisResultsPage';
 import { ModelImportPage } from './pages/ModelImportPage';
 import { ModelingPage } from './pages/ModelingPage';
 import { ModelingReturnPage } from './pages/ModelingReturnPage';
+import { ProjectHistoryPage } from './pages/ProjectHistoryPage';
+import { OrganizationCalculationPage } from './pages/OrganizationCalculationPage';
 
 export function App() {
   const [params, setParams] = useSearchParams();
@@ -28,6 +30,8 @@ export function App() {
         <Route path="/modeling/return" element={<ModelingReturnPage />} />
         <Route path="/applications/:applicationId/scenarios" element={<ScenariosPage />} />
         <Route path="/applications/:applicationId/workbench" element={<ProjectWorkspacePage />} />
+        <Route path="/applications/:applicationId/history" element={<ProjectHistoryPage />} />
+        <Route path="/applications/:applicationId/organization" element={<OrganizationCalculationPage />} />
         <Route path="/applications/:applicationId/results" element={<AnalysisResultsPage />} />
         <Route path="/comparison-runs/:runId" element={<ComparisonResultsPage />} />
         <Route path="*" element={<main className="app-page"><NotFoundState /></main>} />

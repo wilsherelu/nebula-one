@@ -239,6 +239,8 @@ class ResultService:
             # Imported historical receipts without this field retain their identity.
             if receipt.get('calculation_basis') is not None:
                 solve_basis['calculation_basis'] = receipt['calculation_basis']
+            if receipt.get('analysis_task') is not None:
+                solve_basis['analysis_task'] = receipt['analysis_task']
             solve_hash = canonical_json_sha256(solve_basis)
             output = payload.model_dump(mode="json")
             content_sha256 = canonical_json_sha256(

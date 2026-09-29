@@ -10,6 +10,7 @@ export interface MappedCandidates {
 
 export interface SeedProjectTemplate {
   id: string; title: string; version: string; template_sha256: string; seed_id: string;
+  kind?: 'authored';
   installed_application_id: string; source_application_id: string; source_model_id: string; source_revision_id: string | null;
   process_count: number; field_count: number; capabilities: string[];
   /** Short names the release declares for this template; absent means the real name is the only one. */
@@ -35,6 +36,10 @@ export const seedProjectsApi = {
   resolveUserProject: (applicationId: string, revisionId: string, payload: {consumer_exchange_id: string; project_id: string; version: number}) =>
     requestJson<{pin: ProjectBackgroundPin; name: string; consumer_unit: string; reference_unit: string; model_processing_rules_ref?: ModelProcessingRulesRef}>(`/api/v1/applications/${applicationId}/workspace/${revisionId}/background/user-project-resolve`, {method: 'POST', body: JSON.stringify(payload)}),
   catalog: () => requestJson<{items: SeedProjectTemplate[]}>('/api/v1/project-templates'),
+  publish: (payload: {title: string; version: string; source_application_id: string; source_model_id: string;
+    source_revision_id: string; expected_revision_sha256: string;
+    methods: Array<{package_id: string; version: string; content_sha256: string}>}) =>
+    requestJson<SeedProjectTemplate>('/api/v1/project-templates/authored', {method: 'POST', body: JSON.stringify(payload)}),
   create: (id: string, payload: {name: string; project_key: string; expected_template_sha256: string}) =>
     requestJson<{application_id: string; system_model_id: string; revision_id: string}>(`/api/v1/project-templates/${id}/projects`, {method: 'POST', body: JSON.stringify(payload)}),
 };

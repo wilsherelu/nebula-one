@@ -7,6 +7,7 @@ import { api } from '../api/client';
 import { seedProjectsApi } from '../api/seedProjects';
 import type { Application, BackgroundProcessPin, MappedBackgroundProcessPin, MethodPackage, ProjectWorkspace, SolvedSystemSnapshot, SystemModel, SystemRevision } from '../api/types';
 import { ProjectWorkspacePage } from './ProjectWorkspacePage';
+import { ProjectHistoryPage } from './ProjectHistoryPage';
 
 const application: Application = {
   id: 'app-steel', name: '钢铁 BF-BOF 粗钢', application_type: 'system_analysis', description: null,
@@ -78,9 +79,10 @@ function mountClimate(workspaceData: ProjectWorkspace, options: { app?: Applicat
   vi.spyOn(api, 'workspace').mockResolvedValue(workspaceData);
   vi.spyOn(api, 'methodPackages').mockResolvedValue(options.packages ?? []);
   vi.spyOn(api, 'solvedSnapshots').mockResolvedValue(options.snapshots ?? [climateSnapshot]);
+  vi.spyOn(api, 'organizationLifecycleInventories').mockResolvedValue([]);
   return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
     <MemoryRouter initialEntries={['/applications/app-steel/workbench?step=reports']}>
-      <Routes><Route path="/applications/:applicationId/workbench" element={<ProjectWorkspacePage />} /></Routes>
+      <Routes><Route path="/applications/:applicationId/workbench" element={<ProjectWorkspacePage />} /><Route path="/applications/:applicationId/history" element={<ProjectHistoryPage />} /></Routes>
     </MemoryRouter>
   </QueryClientProvider>);
 }
@@ -93,9 +95,10 @@ function mount(step = 'data', revisions: SystemRevision[] = [revision], revision
     Promise.resolve(revisionId === 'r3' ? bound : workspace));
   vi.spyOn(api, 'methodPackages').mockResolvedValue([]);
   vi.spyOn(api, 'solvedSnapshots').mockResolvedValue([]);
+  vi.spyOn(api, 'organizationLifecycleInventories').mockResolvedValue([]);
   return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
     <MemoryRouter initialEntries={[`/applications/app-steel/workbench?step=${step}${revisionParam}`]}>
-      <Routes><Route path="/applications/:applicationId/workbench" element={<ProjectWorkspacePage />} /></Routes>
+      <Routes><Route path="/applications/:applicationId/workbench" element={<ProjectWorkspacePage />} /><Route path="/applications/:applicationId/history" element={<ProjectHistoryPage />} /></Routes>
     </MemoryRouter>
   </QueryClientProvider>);
 }
@@ -103,7 +106,8 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.clear(); });
 
 it('opens process data as the primary project entry', async () => {
   mount();
-  expect(await screen.findByRole('tab', { name: '工艺与数据' })).toHaveAttribute('aria-selected', 'true');
+  expect(await screen.findByRole('button', { name: '核算' })).toBeInTheDocument();
+  expect(screen.queryByRole('tab', { name: '工艺与数据' })).not.toBeInTheDocument();
   expect(screen.getByRole('spinbutton', { name: '炼钢 / 电力' })).toBeInTheDocument();
   expect(screen.queryByText('该过程不属于当前模板，请重新选择。')).toBeNull();
 });
@@ -125,7 +129,7 @@ it('retries a failed workspace load instead of leaving the operator stuck', asyn
   expect(load).toHaveBeenCalledOnce();
   reachable = true;
   fireEvent.click(screen.getByRole('button', { name: '重新加载' }));
-  expect(await screen.findByRole('tab', { name: '工艺与数据' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: '核算' })).toBeInTheDocument();
   expect(await screen.findByRole('spinbutton', { name: '核算规模 1' })).toHaveValue('1000');
 });
 
@@ -183,9 +187,35 @@ it('discards the draft when the operator chooses to abandon it on a version swit
   expect(localStorage.getItem('nebula-one:project:app-steel:r2')).toBeNull();
 });
 
+it('saves an edited inventory before solving against the returned exact revision', async () => {
+  const save = vi.spyOn(api, 'saveProjectInputs').mockResolvedValue(bound);
+  const solve = vi.spyOn(api, 'solveAndFreeze').mockResolvedValue({ ...climateSnapshot, system_revision_id: 'r3' });
+  mount('data', [revision, revision3], '&revision=r2');
+  fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
+  fireEvent.click(screen.getByRole('button', { name: '核算' }));
+  fireEvent.click(screen.getByRole('button', { name: '保存并计算' }));
+  await waitFor(() => expect(save).toHaveBeenCalledOnce());
+  await waitFor(() => expect(solve).toHaveBeenCalledOnce());
+  expect(solve.mock.calls[0][1]).toBe('r3');
+  expect(solve.mock.calls[0][2].idempotency_key).toContain(`r3:${'d'.repeat(64)}`);
+});
+
+it('keeps a failed save as a draft and never starts a solve', async () => {
+  vi.spyOn(api, 'saveProjectInputs').mockRejectedValue(new Error('保存失败'));
+  const solve = vi.spyOn(api, 'solveAndFreeze');
+  mount();
+  fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
+  fireEvent.click(screen.getByRole('button', { name: '核算' }));
+  fireEvent.click(screen.getByRole('button', { name: '保存并计算' }));
+  expect((await screen.findAllByText('保存失败')).length).toBeGreaterThan(0);
+  expect(solve).not.toHaveBeenCalled();
+  expect(localStorage.getItem('nebula-one:project:app-steel:r2')).toContain('600');
+});
+
 it('offers the four peer tasks without a separate covered-range LCA or partial-climate button', async () => {
   mountClimate(climateWorkspace);
-  await screen.findByRole('heading', { name: '选择本次分析任务' });
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  expect(await screen.findByText('选择核算方法')).toBeInTheDocument();
   // The standalone covered-range LCA and partial-background climate tasks folded into the four
   // release tasks; a distinct climate button no longer competes with the product footprint task.
   expect(screen.queryByRole('button', { name: '计算部分背景下的气候变化结果' })).toBeNull();
@@ -195,48 +225,52 @@ it('offers the four peer tasks without a separate covered-range LCA or partial-c
 it('requests the server-pinned EF climate default for PCF without choosing a catalog item', async () => {
   const solve = vi.spyOn(api, 'solveAndFreeze').mockResolvedValue(climateSnapshot);
   mountClimate({ ...workspace, capabilities: ['mfa.solved.v1', 'pcf.product.v1'] });
-  fireEvent.click(await screen.findByRole('button', { name: '计算产品气候结果' }));
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
   const payload = solve.mock.calls[0][2];
   expect(payload.climate_default).toBe(true);
   expect(payload.lcia_methods).toBeUndefined();
   expect(payload.native_background_climate).toBeUndefined();
-  expect(payload.idempotency_key).toBe(`project-climate-v1-pcf:r2:${'c'.repeat(64)}`);
+  expect(payload.idempotency_key).toBe(`calc-v2-pcf:r2:${'c'.repeat(64)}`);
 });
 
 it('uses a new idempotency key when an operator retries a failed solve on the same revision', async () => {
   const solve = vi.spyOn(api, 'solveAndFreeze').mockRejectedValueOnce(new Error('上游计算暂时失败'))
     .mockResolvedValueOnce(climateSnapshot);
   mountClimate({ ...workspace, capabilities: ['mfa.solved.v1', 'pcf.product.v1'] });
-  const button = await screen.findByRole('button', { name: '计算产品气候结果' });
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  const button = screen.getByRole('button', { name: '开始计算' });
   fireEvent.click(button);
   expect(await screen.findByText('上游计算暂时失败')).toBeInTheDocument();
   fireEvent.click(button);
   await waitFor(() => expect(solve).toHaveBeenCalledTimes(2));
-  const base = `project-climate-v1-pcf:r2:${'c'.repeat(64)}`;
+  const base = `calc-v2-pcf:r2:${'c'.repeat(64)}`;
   expect(solve.mock.calls.map(call => call[2].idempotency_key)).toEqual([base, `${base}:retry-1`]);
 });
 
 it('uses the method-independent native inventory for mapped-background MFA', async () => {
   const solve = vi.spyOn(api, 'solveAndFreeze').mockResolvedValue(climateSnapshot);
   mountClimate(climateWorkspace);
-  fireEvent.click(await screen.findByRole('button', { name: '计算物质流' }));
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
-  expect(solve.mock.calls[0][2].idempotency_key).toBe(`project-inventory-v1-mfa:r2:${'c'.repeat(64)}`);
+  expect(solve.mock.calls[0][2].idempotency_key).toBe(`calc-v2-mfa:r2:${'c'.repeat(64)}`);
   expect(solve.mock.calls[0][2].native_background_inventory).toBe(true);
   expect(solve.mock.calls[0][2].native_background_climate).toBeUndefined();
 });
 
 it('offers no standalone climate task when the mapped provider cannot resolve one', async () => {
   mountClimate({ ...workspace, native_climate: { available: false, provider_count: 2 } });
-  await screen.findByRole('heading', { name: '选择本次分析任务' });
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  expect(await screen.findByText('选择核算方法')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /部分背景下的气候变化结果/ })).toBeNull();
 });
 
-it('labels a climate snapshot apart from a projection result in the history list', async () => {
+it('opens a saved climate snapshot from the independent history page', async () => {
   mountClimate(workspace);
-  expect(await screen.findByText('数据版本 2 · 部分背景气候结果')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: /部分背景气候结果/ })).toHaveAttribute('href', expect.stringContaining('view=climate'));
+  await userEvent.click(await screen.findByRole('link', { name: '历史结果' }));
+  expect(await screen.findByRole('link', { name: /产品碳足迹/ })).toHaveAttribute('href', expect.stringContaining('snapshot=snap-climate&view=pcf'));
   expect(screen.queryByRole('button', { name: /部分背景下的气候变化结果/ })).toBeNull();
 });
 
@@ -252,9 +286,10 @@ it('links saved task records back to their own result views', async () => {
       project_background_process_receipts: [{ consumer_exchange_id: 'casting::electricity' }] } };
   mountClimate({ ...workspace, capabilities: ['mfa.solved.v1', 'pcf.product.v1', 'cbam.trial.v2', 'organization.lifecycle-carbon.v1'] },
     { app, packages: [organizationMethod], snapshots: [{ ...climateSnapshot, id: 'snap-mfa', native_background_climate: null }, pcf, cbam, org] });
-  for (const [id, view] of [['snap-mfa', 'mfa'], ['snap-pcf', 'pcf'], ['snap-cbam', 'cbam'], ['snap-org', 'organization-lifecycle']]) {
-    expect(await screen.findByRole('link', { name: new RegExp(view === 'organization-lifecycle' ? '组织碳核算' : view === 'mfa' ? '物质流分析' : view === 'pcf' ? '产品碳足迹' : 'CBAM 试算') })).toHaveAttribute('href',
-      `/applications/app-steel/results?snapshot=${id}&view=${view}`);
+  await userEvent.click(await screen.findByRole('link', { name: '历史结果' }));
+  for (const [id, view] of [['snap-mfa', 'mfa'], ['snap-pcf', 'pcf'], ['snap-cbam', 'cbam'], ['snap-org', 'pcf']]) {
+    await waitFor(() => expect(screen.getAllByRole('link', { name: new RegExp(view === 'mfa' ? '物质流分析' : view === 'pcf' ? '产品碳足迹' : 'CBAM 试算') })
+      .some(link => link.getAttribute('href')?.includes(`snapshot=${id}&view=${view}`))).toBe(true));
   }
 });
 
@@ -273,7 +308,8 @@ it('computes organization lifecycle directly without requiring an earlier PCF sn
   const laterMfa = { ...eligible, id: 'snap-mfa', lcia_results: {} };
   const solve = vi.spyOn(api, 'solveAndFreeze').mockResolvedValue(eligible);
   mountClimate(organizationWorkspace, { app, packages: [organizationMethod], snapshots: [wrongRevision, climateSnapshot, eligible, laterMfa] });
-  fireEvent.click(await screen.findByRole('button', { name: '填写组织生命周期归组' }));
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
   expect(solve.mock.calls[0][2]).toMatchObject({ climate_default: true });
 });
@@ -281,9 +317,9 @@ it('computes organization lifecycle directly without requiring an earlier PCF sn
 it('explains how to create the required organization supply answer when only climate without supply exists', async () => {
   const app: Application = { ...application, context: { ...application.context, method_package_refs: ['org.steel@1.0.5'] } };
   mountClimate({ ...workspace, capabilities: ['organization.lifecycle-carbon.v1'] }, { app, packages: [organizationMethod] });
-  expect(await screen.findByText(/产品碳足迹和组织碳核算需要先关联电力供应/)).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '填写组织生命周期归组' })).toBeDisabled();
-  expect(screen.getByRole('button', { name: '去关联电力' })).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  expect((await screen.findAllByText('请先关联适用的电力背景并保存。')).length).toBeGreaterThan(0);
+  expect(screen.getByRole('radio', { name: /组织碳核算/ })).toBeDisabled();
 });
 
 it('routes a return that descends from a reviewed template into the fillable workbench', async () => {
@@ -309,14 +345,16 @@ it('routes a return that descends from a reviewed template into the fillable wor
   </QueryClientProvider>);
   // The workbench offers the tasks the current model can actually answer for: material flow works,
   // while the undeclared cross-boundary supply stays a blocked task rather than a live button.
-  expect(await screen.findByRole('button', { name: '计算物质流' })).toBeInTheDocument();
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  expect(screen.getByRole('radio', { name: /物质流分析/ })).toBeInTheDocument();
   // The blocked capability shows a Chinese task name, not the raw capability key, alongside its reason.
-  expect(screen.getByText(/CBAM 试算：跨界供给尚未声明/)).toBeInTheDocument();
+  expect(screen.getAllByText(/当前数据版本的 CBAM 边界尚未通过审查/).length).toBeGreaterThan(0);
   expect(screen.queryByText(/cbam\.trial\.v2/)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: '计算并查看 CBAM' })).not.toBeInTheDocument();
   // The covered-range LCA button is no longer a first-release task; product footprint covers it.
   expect(screen.queryByRole('button', { name: '计算已覆盖范围 LCA' })).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: '计算产品气候结果' }));
+  fireEvent.click(screen.getByRole('radio', { name: /产品碳足迹/ }));
+  fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
   expect(solve.mock.calls[0][2]).toMatchObject({ calculation_purpose: 'lca', climate_default: true });
 });

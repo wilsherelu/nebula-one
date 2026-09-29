@@ -107,6 +107,12 @@ function hasPinnedClimateMethod(snapshot: SolvedSystemSnapshot): boolean {
 
 /** Each result tab is served only by records that carry the receipt that task computes from. */
 function recordCompatible(snapshot: SolvedSystemSnapshot, task: string, strict: boolean): boolean {
+  const declaredTask = snapshot.provider_receipt.analysis_task;
+  if (typeof declaredTask === 'string') {
+    const requestedTask = task === 'organization-lifecycle' ? 'organization' : task;
+    if (['mfa', 'pcf', 'cbam', 'organization'].includes(requestedTask)) return declaredTask === requestedTask;
+    return false;
+  }
   if (task === 'cbam') return snapshotPurpose(snapshot) === 'cbam';
   if (task === 'pcf') return !strict || (hasClimateAnswer(snapshot)
     && (snapshotPurpose(snapshot) === 'lca'

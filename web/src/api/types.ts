@@ -175,6 +175,7 @@ export interface DemandItem {
 }
 
 export interface SolveAndFreezeRequest {
+  analysis_task?: 'mfa' | 'pcf' | 'cbam' | 'organization';
   mapped_background_process_pins?: MappedBackgroundProcessPin[];
   background_process_pins?: BackgroundProcessPin[];
   project_background_pins?: ProjectBackgroundPin[];
