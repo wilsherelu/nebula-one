@@ -957,11 +957,6 @@ class ProviderSolveService:
                 parameters["lcia_methods"] = payload.lcia_methods
             if payload.climate_default:
                 ensure_official_climate_methods(db)
-                if payload.analysis_task == "organization" and application is not None:
-                    # An organization run explicitly opts into the newest reviewed package. The
-                    # package is added to the application only; older revisions and answers stay frozen.
-                    from .official_product_method import bind_official_organization_lifecycle_method
-                    bind_official_organization_lifecycle_method(db, application)
                 db.commit()
                 bound_refs = list((application.context or {}).get("method_package_refs") or []) if application else []
                 if accepted_climate_method is None:

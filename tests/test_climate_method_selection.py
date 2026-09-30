@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from nebula_one.models import AnalysisRun
+from nebula_one.models import Application
 from nebula_one.runtime_models import SolvedSystemSnapshot
 from nebula_one.services.climate_method_selection import ensure_official_climate_methods
 from nebula_one.native_climate_contract import NativeClimateContract
@@ -56,6 +57,26 @@ def test_climate_default_does_not_reuse_the_same_revisions_inventory_snapshot(cl
     replay = client.post(url, json=climate_request)
     assert replay.status_code == 201, replay.text
     assert replay.json()["id"] == climate.json()["id"]
+
+
+def test_organization_solve_does_not_upgrade_the_projects_bound_grouping_method(client):
+    app = _create_application(client)
+    model = _attach_model(client, app["id"])
+    revision_id = model["upstream_receipt"]["base_revision_id"]
+    with client.app.state.container.database.session() as db:
+        row = db.get(Application, app["id"])
+        row.context = {**row.context, "method_package_refs": ["nebula.organization-lifecycle-carbon.steel-model@1.0.5"],
+                       "modeling_template_binding": {"profile": {
+                           "id": "steel-bf-bof-inventory", "version": "1.1.2",
+                           "content_sha256": "df91eaf3c96638d1f20bbec40c544f046fe1107bb78282ba532da95fd2dbbe35"}}}
+        db.commit()
+    response = client.post(f"/api/v1/applications/{app['id']}/system-revisions/{revision_id}/solve", json={
+        "demand": [{"reference_flow_uuid": "flow-product", "amount": 8, "unit": "kg"}],
+        "climate_default": True, "analysis_task": "organization", "idempotency_key": "keep-organization-method"})
+    assert response.status_code == 201, response.text
+    with client.app.state.container.database.session() as db:
+        assert db.get(Application, app["id"]).context["method_package_refs"] == [
+            "nebula.organization-lifecycle-carbon.steel-model@1.0.5"]
 
 
 def test_frozen_ef_answer_resolves_registered_method_without_project_name(client):

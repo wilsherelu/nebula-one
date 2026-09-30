@@ -46,6 +46,7 @@ def test_finalized_model_version_creates_new_projects_without_rebinding_the_sour
     assert publish.status_code == 200, publish.text
     template = publish.json()
     assert template["template_sha256"] and template["source_revision_id"] == revision_id
+    assert "pcf.product.v1" in template["capabilities"]
     assert any(item["id"] == template["id"] for item in client.get("/api/v1/project-templates").json()["items"])
     endpoint = f"/api/v1/project-templates/{template['id']}/projects"
     request = {"name": "New plant", "project_key": str(uuid4()),

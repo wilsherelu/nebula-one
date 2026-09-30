@@ -102,7 +102,9 @@ class AuthoredProjectTemplateService:
             context.pop("resource_purpose", None)
             context.pop("modeling_handoff_id", None)
             context["method_package_refs"] = [f"{pin['package_id']}@{pin['version']}" for pin in pins]
-            capabilities = ["mfa.solved.v1"]
+            # PCF uses the engine's versioned LCIA climate method, independently of
+            # optional regulatory and organization grouping packages.
+            capabilities = ["mfa.solved.v1", "pcf.product.v1"]
             for kind, capability in (("product_carbon_footprint", "pcf.product.v1"),
                                      ("cbam_trial", "cbam.trial.v2"),
                                      ("cbam_partial_review", "cbam.trial.v2"),
