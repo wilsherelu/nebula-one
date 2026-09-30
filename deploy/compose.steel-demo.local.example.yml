@@ -3,7 +3,7 @@
 services:
   nebula-lca-api:
     environment:
-      NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: /app/data/provider_profiles/steel_tiangong_open_flows.v1.json
+      NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: /app/data/provider_profiles/steel_tiangong_open_flows.v2.json
       NEBULA_PROVIDER_TIDAS_REFERENCE_DEPENDENCY_SNAPSHOT_PATH: /app/data/provider_profiles/steel_tiangong_open_references.v1.json
   nebula-one:
     command: ["sh", "-c", "python -m nebula_one.seeds.prepare_steel_catalog && python -m nebula_one"]

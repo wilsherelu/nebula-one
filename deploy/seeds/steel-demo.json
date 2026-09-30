@@ -69,6 +69,13 @@
       "content_sha256": "45e2c29dd362ba236705829ce9a0fd98b668ee9239e40e0d4c7e0a52bc2960f0"
     },
     {
+      "kind": "ensure_public_supply",
+      "path": "src/nebula_one/resources/public_supply/tiangong-china-grid-2022.v1.json",
+      "seed_id": "tiangong-china-grid-2022",
+      "version": "1.0.0",
+      "content_sha256": "701457f86a73d3f86d1a40b142341148dc2303ca698d54473fbf1f2b0a435e8e"
+    },
+    {
       "kind": "ensure_template_editor_source",
       "seed": "nebula.iron-steel.bf-bof-crude-steel",
       "version": "1.1.0",

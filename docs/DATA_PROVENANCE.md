@@ -1,6 +1,6 @@
 # Bundled reference data and redistribution
 
-The local Compose image builds from Nebula LCA commit `8730ba471b0c329cf5a6033d453ec874d63bc87e`. All reference files named below are tracked at that commit; the build does not read a developer database, local runtime volume, or uncommitted engine file. Nebula One's Apache-2.0 license covers its application code and authored seed structure, not third-party data.
+The local Compose image builds from Nebula LCA commit `ca1992fa9c888877e62cc55b8375a0bdf0a6b7b5`. All engine reference files named below are tracked at that commit; the build does not read a developer database, local runtime volume, or uncommitted engine file. Nebula One's Apache-2.0 license covers its application code and authored seed structure, not third-party data.
 
 | Asset | Identity | SHA-256 |
 | --- | --- | --- |
@@ -16,3 +16,11 @@ The EF 3.1 reference package is documented by the [European Commission JRC](http
 The Compose image copies the EF 3.1 CSVs because the engine needs all three to resolve exact indicators and flows. These CSVs are method/reference data, not ecoinvent LCI background inventories. Neither this repository nor the local acceptance run establishes a blanket right to redistribute transformed JRC reference files or TianGong records. The [TianGong data guidance](https://www.tiangong.earth/en/methodology) explicitly directs users to check each version's source and licence. Confirm the applicable redistribution terms with the data owners before uploading images or publishing these data files; keep the exact file hashes and attribution with any approved distribution.
 
 Commercial ecoinvent processes, LCI vectors, and licensed provider method packages are absent. A user who has those assets can import them into Nebula LCA separately; a foreground-only steel PCF remains partial until a pinned background solve actually contributes.
+
+## Public TianGong electricity supply
+
+The optional steel initialization includes Process `eec0e09b-6fd5-41c9-9a12-41300c9e6cfa@01.01.014`, fetched from TianGong open data on 2026-09-30. Its source record content hash is `8905eab87c04475a1a461085157d460a4db0e2880b9cec97a14b9ee67437fe61`; the adjacent full Process snapshot file SHA-256 is `e2d6f0ffe963575294d158124a3bc8b4059637154908c54b5dedaca43de746fc`. The source's publication section declares copyright `false` and licence `Free of charge for all users and uses`.
+
+The editable supply model retains all four source outputs: reference electricity, fossil CO2, nitrogen oxides and sulphur dioxide. It imports the exact versioned Flow dependencies into Nebula LCA and records their FlowProperty and UnitGroup versions. Quantities come directly from the pinned inventory; no characterization factors are added by the seed. The original inventory declares a partly terminated system. Its operational electricity contribution is usable as a background association, but does not establish complete supply-chain coverage or a CBAM electricity factor. The source inventory and licence statement remain bundled beside the projection.
+
+Authored steel intermediate flows also receive immutable versioned catalog records derived from the reviewed original seed. Initialization preserves the original seed bundle, graph and catalogue identities, rejects conflicting content, and replays existing exact versions without overwriting user edits.

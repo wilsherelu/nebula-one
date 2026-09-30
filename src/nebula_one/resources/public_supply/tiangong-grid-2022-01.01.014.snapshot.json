@@ -1,0 +1,662 @@
+{
+  "schema_version": "tiangong-open-dataset-snapshot.v1",
+  "source_namespace": "tiangong_open_data",
+  "dataset_kind": "process",
+  "state_scope": "open",
+  "filters": {
+    "exact_refs": [
+      "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa@01.01.014"
+    ]
+  },
+  "declared_total": 0,
+  "records": [
+    {
+      "dataset_kind": "process",
+      "source_namespace": "tiangong_open_data",
+      "source_object_id": "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa",
+      "source_version": "01.01.014",
+      "source_modified_at": "2026-09-24T09:36:40.406562+00:00",
+      "type_of_data_set": "Partly terminated system",
+      "payload": {
+        "processDataSet": {
+          "@xmlns": "http://lca.jrc.it/ILCD/Process",
+          "@version": "1.1",
+          "exchanges": {
+            "exchange": [
+              {
+                "meanAmount": "0.568396722",
+                "allocations": {
+                  "allocation": {}
+                },
+                "generalComment": [
+                  {
+                    "#text": "Calculated fossil CO2 per delivered kWh: 0.541 kg per generated kWh ÷ (1 − 0.0482) = 0.5683967220004203 kg. The report supplies the national generation intensity; all of it is conservatively mapped to fossil CO2 because no biogenic split is reported.",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "每交付1 kWh的化石源CO₂计算量：0.541 kg/发电kWh ÷（1 − 0.0482）= 0.5683967220004203 kg。报告给出全国单位发电量强度；因未报告生物源拆分，保守地全部映射为化石源CO₂。",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "resultingAmount": "0.568396722",
+                "exchangeDirection": "Output",
+                "@dataSetInternalID": "1",
+                "quantitativeReference": false,
+                "referenceToFlowDataSet": {
+                  "@uri": "../flows/08a91e70-3ddc-11dd-923d-0050c2490048.xml",
+                  "@type": "flow data set",
+                  "@version": "03.00.004",
+                  "@refObjectId": "08a91e70-3ddc-11dd-923d-0050c2490048",
+                  "common:shortDescription": [
+                    {
+                      "#text": "carbon dioxide (fossil)",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "二氧化碳（化石源）",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                },
+                "referencesToDataSource": {
+                  "referenceToDataSource": [
+                    {
+                      "@uri": "../sources/6939f251-d967-46e3-9f33-f7bface01f0a_01.01.000.xml",
+                      "@type": "source data set",
+                      "@version": "01.01.000",
+                      "@refObjectId": "6939f251-d967-46e3-9f33-f7bface01f0a",
+                      "common:shortDescription": [
+                        {
+                          "#text": "China Electricity Council annual development report 2023 (2022 data)",
+                          "@xml:lang": "en"
+                        },
+                        {
+                          "#text": "中国电力企业联合会电力行业年度发展报告2023（2022年数据）",
+                          "@xml:lang": "zh"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "dataDerivationTypeStatus": "Calculated"
+              },
+              {
+                "meanAmount": "3.6",
+                "allocations": {
+                  "allocation": {
+                    "@allocatedFraction": "100",
+                    "@internalReferenceToCoProduct": "2"
+                  }
+                },
+                "generalComment": [
+                  {
+                    "#text": "Deterministic resulting-process boundary mapping: the model-root transformation-service output b26fc0be@00.00.001 is represented as the established official 1-35 kV consumption-mix electricity Flow 3d76981f@01.01.003. Amount and direction are unchanged; the mapping adds no inventory, efficiency or second loss factor.",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "确定性的结果过程边界映射：模型根的电压转换服务产出b26fc0be@00.00.001在结果边界表示为既有正式1–35千伏消费组合电力Flow 3d76981f@01.01.003。数量与方向不变；该映射不增加任何清单、效率或第二次线损系数。",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "resultingAmount": "3.6",
+                "exchangeDirection": "Output",
+                "@dataSetInternalID": "2",
+                "quantitativeReference": true,
+                "referenceToFlowDataSet": {
+                  "@uri": "../flows/3d76981f-964a-4865-b588-0e067a2a1163.xml",
+                  "@type": "flow data set",
+                  "@version": "01.01.003",
+                  "@refObjectId": "3d76981f-964a-4865-b588-0e067a2a1163",
+                  "common:shortDescription": [
+                    {
+                      "#text": "alternating current; electricity mix; consumption mix",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "交流电;  电力混合; 消费组合, 到用户",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                },
+                "referencesToDataSource": {
+                  "referenceToDataSource": [
+                    {
+                      "@uri": "../sources/6939f251-d967-46e3-9f33-f7bface01f0a_01.01.000.xml",
+                      "@type": "source data set",
+                      "@version": "01.01.000",
+                      "@refObjectId": "6939f251-d967-46e3-9f33-f7bface01f0a",
+                      "common:shortDescription": [
+                        {
+                          "#text": "China Electricity Council annual development report 2023 (2022 data)",
+                          "@xml:lang": "en"
+                        },
+                        {
+                          "#text": "中国电力企业联合会电力行业年度发展报告2023（2022年数据）",
+                          "@xml:lang": "zh"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "dataDerivationTypeStatus": "Calculated"
+              },
+              {
+                "meanAmount": "0.000092086217",
+                "allocations": {
+                  "allocation": {}
+                },
+                "generalComment": [
+                  {
+                    "#text": "Calculated NOx per delivered kWh: 762,000,000 kg ÷ 8,274,854,020,000 kWh = 0.0000920862166460309 kg.",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "每交付1 kWh的NOₓ计算量：762,000,000 kg ÷ 8,274,854,020,000 kWh = 0.0000920862166460309 kg。",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "resultingAmount": "0.000092086217",
+                "exchangeDirection": "Output",
+                "@dataSetInternalID": "3",
+                "quantitativeReference": false,
+                "referenceToFlowDataSet": {
+                  "@uri": "../flows/f79d0f8f-2b0e-49cb-bed0-b1ea0fbd8625.xml",
+                  "@type": "flow data set",
+                  "@version": "01.00.004",
+                  "@refObjectId": "f79d0f8f-2b0e-49cb-bed0-b1ea0fbd8625",
+                  "common:shortDescription": [
+                    {
+                      "#text": "Nitrogen oxides",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "氮氧化物",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                },
+                "referencesToDataSource": {
+                  "referenceToDataSource": [
+                    {
+                      "@uri": "../sources/6939f251-d967-46e3-9f33-f7bface01f0a_01.01.000.xml",
+                      "@type": "source data set",
+                      "@version": "01.01.000",
+                      "@refObjectId": "6939f251-d967-46e3-9f33-f7bface01f0a",
+                      "common:shortDescription": [
+                        {
+                          "#text": "China Electricity Council annual development report 2023 (2022 data)",
+                          "@xml:lang": "en"
+                        },
+                        {
+                          "#text": "中国电力企业联合会电力行业年度发展报告2023（2022年数据）",
+                          "@xml:lang": "zh"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "dataDerivationTypeStatus": "Calculated"
+              },
+              {
+                "meanAmount": "0.000057523673",
+                "allocations": {
+                  "allocation": {}
+                },
+                "generalComment": [
+                  {
+                    "#text": "Calculated SO2 per delivered kWh: 476,000,000 kg ÷ 8,274,854,020,000 kWh = 0.0000575236733904340 kg.",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "每交付1 kWh的SO₂计算量：476,000,000 kg ÷ 8,274,854,020,000 kWh = 0.0000575236733904340 kg。",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "resultingAmount": "0.000057523673",
+                "exchangeDirection": "Output",
+                "@dataSetInternalID": "4",
+                "quantitativeReference": false,
+                "referenceToFlowDataSet": {
+                  "@uri": "../flows/fe0acd60-3ddc-11dd-ac48-0050c2490048.xml",
+                  "@type": "flow data set",
+                  "@version": "03.00.004",
+                  "@refObjectId": "fe0acd60-3ddc-11dd-ac48-0050c2490048",
+                  "common:shortDescription": [
+                    {
+                      "#text": "sulfur dioxide",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "二氧化硫",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                },
+                "referencesToDataSource": {
+                  "referenceToDataSource": [
+                    {
+                      "@uri": "../sources/6939f251-d967-46e3-9f33-f7bface01f0a_01.01.000.xml",
+                      "@type": "source data set",
+                      "@version": "01.01.000",
+                      "@refObjectId": "6939f251-d967-46e3-9f33-f7bface01f0a",
+                      "common:shortDescription": [
+                        {
+                          "#text": "China Electricity Council annual development report 2023 (2022 data)",
+                          "@xml:lang": "en"
+                        },
+                        {
+                          "#text": "中国电力企业联合会电力行业年度发展报告2023（2022年数据）",
+                          "@xml:lang": "zh"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "dataDerivationTypeStatus": "Calculated"
+              }
+            ]
+          },
+          "@locations": "../ILCDLocations.xml",
+          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+          "@xmlns:common": "http://lca.jrc.it/ILCD/Common",
+          "processInformation": {
+            "time": {
+              "common:referenceYear": 2022
+            },
+            "geography": {
+              "locationOfOperationSupplyOrProduction": {
+                "@location": "CN"
+              }
+            },
+            "technology": {
+              "referenceToIncludedProcesses": {
+                "@uri": "../processes/21084c23-87a9-4e84-af4e-d8b45550a1a2_01.01.013.xml",
+                "@type": "process data set",
+                "@version": "01.01.013",
+                "@refObjectId": "21084c23-87a9-4e84-af4e-d8b45550a1a2",
+                "common:shortDescription": [
+                  {
+                    "#text": "Alternating current production; electricity mix; consumption mix; 1-35kV",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "交流电生产; 电力混合; 消费组合; 1-35千伏",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              },
+              "technologyDescriptionAndIncludedProcesses": [
+                {
+                  "#text": "One-node projection: exact published 21084c23@01.01.013 at factor 1 -> this resulting Process. The Lifecycle Model preserves the complete projected inventory without adding a provider connection, efficiency factor, or second line-loss factor.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "单节点投影：精确公开的21084c23@01.01.013以系数1映射至本结果Process。Lifecycle Model完整保留投影清单，不增加provider连接、效率系数或第二次线损系数。",
+                  "@xml:lang": "zh"
+                }
+              ]
+            },
+            "dataSetInformation": {
+              "name": {
+                "baseName": [
+                  {
+                    "#text": "交流电生产",
+                    "@xml:lang": "zh"
+                  },
+                  {
+                    "#text": "Alternating current production",
+                    "@xml:lang": "en"
+                  }
+                ],
+                "mixAndLocationTypes": [
+                  {
+                    "#text": "consumption mix",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "消费组合",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "treatmentStandardsRoutes": [
+                  {
+                    "#text": "electricity mix",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "电力混合",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "functionalUnitFlowProperties": [
+                  {
+                    "#text": "1-35kV",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "1-35千伏",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              },
+              "common:UUID": "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa",
+              "common:generalComment": [
+                {
+                  "#text": "This 2022 China 1-35-kV consumption-boundary result is the deterministic projection of Lifecycle Model eec0e09b@01.01.014. The model contains one factor-1 node, the exact published 21084c23@01.01.013 resulting Process, and carries its exchanges forward without rescaling.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "本结果Process代表2022年中国1–35千伏消费边界，是Lifecycle Model eec0e09b@01.01.014的确定性投影。模型仅含一个系数为1的节点，即精确公开的21084c23@01.01.013结果Process，并原尺度传递其exchange。",
+                  "@xml:lang": "zh"
+                },
+                {
+                  "#text": "The resulting Process retains the established official 1-35 kV consumption-mix reference Flow at 3.6 MJ and the three source-documented operational emission exchanges projected by 21084c23@01.01.013.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "结果Process保留既有正式1–35千伏消费组合参考Flow（3.6 MJ），以及21084c23@01.01.013投影的三项具有来源记录的运行期排放exchange。",
+                  "@xml:lang": "zh"
+                },
+                {
+                  "#text": "The inherited operational inventory uses China Electricity Council 2022 national generation, fossil CO2, SO2 and NOx totals. The 4.82% national all-voltage loss rate converts generation totals to the consumption-boundary delivered-electricity basis once upstream. The Partly terminated system boundary ends before generation technology, upstream fuels, grid infrastructure, dust pending particle-size allocation, and other pollutants.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "继承的运行期清单采用中国电力企业联合会2022年全国发电量及化石源CO₂、SO₂、NOₓ总量。全国全电压等级线损率4.82%仅在上游用于将发电总量换算为消费边界的交付电量基准。部分终止系统边界止于发电技术、上游燃料、电网基础设施、尚待粒径分配的烟尘和其他污染物之前。",
+                  "@xml:lang": "zh"
+                }
+              ],
+              "classificationInformation": {
+                "common:classification": {
+                  "common:class": [
+                    {
+                      "#text": "Electricity, gas, steam and air conditioning supply",
+                      "@level": "0",
+                      "@classId": "D"
+                    },
+                    {
+                      "#text": "Electricity, gas, steam and air conditioning supply",
+                      "@level": "1",
+                      "@classId": "35"
+                    },
+                    {
+                      "#text": "Electric power generation, transmission and distribution activities",
+                      "@level": "2",
+                      "@classId": "351"
+                    },
+                    {
+                      "#text": "Electric power transmission and distribution activities",
+                      "@level": "3",
+                      "@classId": "3513"
+                    }
+                  ]
+                }
+              }
+            },
+            "mathematicalRelations": {
+              "variableParameter": {}
+            },
+            "quantitativeReference": {
+              "@type": "Reference flow(s)",
+              "functionalUnitOrOther": [
+                {
+                  "#text": "Provision of 1 kWh (3.6 MJ) national-average alternating current delivered at the 1-35-kV consumption boundary in China in 2022.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "提供2022年中国全国平均、在1–35千伏消费边界交付的1 kWh（3.6 MJ）交流电。",
+                  "@xml:lang": "zh"
+                }
+              ],
+              "referenceToReferenceFlow": "2"
+            }
+          },
+          "@xsi:schemaLocation": "http://lca.jrc.it/ILCD/Process ../../schemas/ILCD_ProcessDataSet.xsd",
+          "modellingAndValidation": {
+            "validation": {
+              "review": {
+                "@type": "Not reviewed",
+                "common:otherReviewDetails": [
+                  {
+                    "#text": "Data-quality checks cover the exact Lifecycle Model, upstream Process and Flow versions, Process schema, bilingual fields, exchange sources, one-node projection, and reference-flow invariants.",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "数据质量检查涵盖精确Lifecycle Model、上游Process与Flow版本、Process schema、双语字段、exchange来源、单节点投影及参考流不变量。",
+                    "@xml:lang": "zh"
+                  }
+                ],
+                "common:referenceToNameOfReviewerAndInstitution": {
+                  "@uri": "../contacts/f4b4c314-8c4c-4c83-968f-5b3c7724f6a8_01.00.001.xml",
+                  "@type": "contact data set",
+                  "@version": "01.00.001",
+                  "@refObjectId": "f4b4c314-8c4c-4c83-968f-5b3c7724f6a8",
+                  "common:shortDescription": [
+                    {
+                      "#text": "Tiangong LCA Data Working Group",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "天工LCA数据团队",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                }
+              }
+            },
+            "completeness": {
+              "completenessElementaryFlows": {}
+            },
+            "LCIMethodAndAllocation": {
+              "typeOfDataSet": "Partly terminated system"
+            },
+            "complianceDeclarations": {
+              "compliance": {
+                "common:reviewCompliance": "Not defined",
+                "common:qualityCompliance": "Not defined",
+                "common:nomenclatureCompliance": "Not defined",
+                "common:documentationCompliance": "Not defined",
+                "common:methodologicalCompliance": "Not defined",
+                "common:approvalOfOverallCompliance": "Not defined",
+                "common:referenceToComplianceSystem": {
+                  "@uri": "../sources/d92a1a12-2545-49e2-a585-55c259997756_20.20.002.xml",
+                  "@type": "source data set",
+                  "@version": "20.20.002",
+                  "@refObjectId": "d92a1a12-2545-49e2-a585-55c259997756",
+                  "common:shortDescription": [
+                    {
+                      "#text": "ILCD Data Network - Entry-level",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "ILCD 数据网络入门级合规体系",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                }
+              }
+            },
+            "dataSourcesTreatmentAndRepresentativeness": {
+              "referenceToDataSource": [
+                {
+                  "@uri": "../sources/6939f251-d967-46e3-9f33-f7bface01f0a_01.01.000.xml",
+                  "@type": "source data set",
+                  "@version": "01.01.000",
+                  "@refObjectId": "6939f251-d967-46e3-9f33-f7bface01f0a",
+                  "common:shortDescription": [
+                    {
+                      "#text": "China Electricity Council annual development report 2023 (2022 data)",
+                      "@xml:lang": "en"
+                    },
+                    {
+                      "#text": "中国电力企业联合会电力行业年度发展报告2023（2022年数据）",
+                      "@xml:lang": "zh"
+                    }
+                  ]
+                }
+              ],
+              "annualSupplyOrProductionVolume": [
+                {
+                  "#text": "29789474472000 MJ/year; calculated upstream from 8,693,900,000,000 kWh national generation and a 4.82% national line loss. The factor-1 cascade retains that exact delivered total and applies no second loss factor.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "29789474472000 MJ/年；上游按全国发电量8,693,900,000,000 kWh和全国线损率4.82%计算。本系数为1的级联保留该精确交付总量，不施加第二次线损系数。",
+                  "@xml:lang": "zh"
+                }
+              ],
+              "dataCutOffAndCompletenessPrinciples": [
+                {
+                  "#text": "Coverage comprises 1-35 kV reference electricity and source-documented operational fossil CO2, SO2 and NOx. The Partly terminated system boundary ends before generation-technology composition, upstream fuel supply, generation and grid infrastructure, construction, maintenance, end-of-life, water, CH4, N2O, aggregate dust pending particle-size allocation, and other pollutants.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "覆盖范围包括1–35千伏参考电力以及具有来源记录的运行期化石源CO₂、SO₂和NOₓ。部分终止系统边界止于发电技术构成、上游燃料供应、发电及电网基础设施、建设、维护、报废、用水、CH₄、N₂O、尚待粒径分配的烟尘和其他污染物之前。",
+                  "@xml:lang": "zh"
+                }
+              ],
+              "dataTreatmentAndExtrapolationsPrinciples": [
+                {
+                  "#text": "Inventory quantities are calculated from China Electricity Council 2022 sector totals. Standard elementary-flow identities characterize the calculated Chinese operational emissions. The national all-voltage loss rate converts generation totals to the consumption-boundary delivered-electricity basis and is applied once upstream.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "清单数量根据中国电力企业联合会2022年行业总量计算。标准基本流用于表征计算所得的中国运行期排放。全国全电压等级线损率用于将发电总量换算为消费边界的交付电量基准，并仅在上游应用一次。",
+                  "@xml:lang": "zh"
+                }
+              ]
+            }
+          },
+          "administrativeInformation": {
+            "dataEntryBy": {
+              "common:timeStamp": "2026-08-18T22:51:12.000Z",
+              "common:referenceToDataSetFormat": {
+                "@uri": "../sources/a97a0155-0234-4b87-b4ce-a45da52f2a40_03.00.003.xml",
+                "@type": "source data set",
+                "@version": "03.00.003",
+                "@refObjectId": "a97a0155-0234-4b87-b4ce-a45da52f2a40",
+                "common:shortDescription": [
+                  {
+                    "#text": "ILCD format",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "ILCD 数据格式",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              },
+              "common:referenceToPersonOrEntityEnteringTheData": {
+                "@uri": "../contacts/f4b4c314-8c4c-4c83-968f-5b3c7724f6a8_01.00.001.xml",
+                "@type": "contact data set",
+                "@version": "01.00.001",
+                "@refObjectId": "f4b4c314-8c4c-4c83-968f-5b3c7724f6a8",
+                "common:shortDescription": [
+                  {
+                    "#text": "Tiangong LCA Data Working Group",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "天工LCA数据团队",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              }
+            },
+            "dataGenerator": {
+              "common:referenceToPersonOrEntityGeneratingTheDataSet": {
+                "@uri": "../contacts/339fec5b-cded-4b4e-9579-5e32597bb15e_01.00.006.xml",
+                "@type": "contact data set",
+                "@version": "01.00.006",
+                "@refObjectId": "339fec5b-cded-4b4e-9579-5e32597bb15e",
+                "common:shortDescription": [
+                  {
+                    "#text": "熊若熙",
+                    "@xml:lang": "zh"
+                  },
+                  {
+                    "#text": "Xiong, Ruoxi",
+                    "@xml:lang": "en"
+                  }
+                ]
+              }
+            },
+            "publicationAndOwnership": {
+              "common:copyright": "false",
+              "common:licenseType": "Free of charge for all users and uses",
+              "common:dataSetVersion": "01.01.014",
+              "common:dateOfLastRevision": "2026-08-18T22:51:12.000Z",
+              "common:permanentDataSetURI": "https://lcdn.tiangong.earth/datasetdetail/process.xhtml?uuid=eec0e09b-6fd5-41c9-9a12-41300c9e6cfa&version=01.01.014",
+              "common:referenceToOwnershipOfDataSet": {
+                "@uri": "../contacts/f4b4c314-8c4c-4c83-968f-5b3c7724f6a8_01.00.001.xml",
+                "@type": "contact data set",
+                "@version": "01.00.001",
+                "@refObjectId": "f4b4c314-8c4c-4c83-968f-5b3c7724f6a8",
+                "common:shortDescription": [
+                  {
+                    "#text": "Tiangong LCA Data Working Group",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "天工LCA数据团队",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              },
+              "common:referenceToPrecedingDataSetVersion": {
+                "@uri": "../processes/eec0e09b-6fd5-41c9-9a12-41300c9e6cfa_01.01.013.xml",
+                "@type": "process data set",
+                "@version": "01.01.013",
+                "@refObjectId": "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa",
+                "common:shortDescription": [
+                  {
+                    "#text": "交流电生产",
+                    "@xml:lang": "zh"
+                  },
+                  {
+                    "#text": "Alternating current production",
+                    "@xml:lang": "en"
+                  }
+                ]
+              }
+            },
+            "common:commissionerAndGoal": {
+              "common:intendedApplications": [
+                {
+                  "#text": "For foreground systems consuming national-average alternating current at the 1-35 kV consumption boundary within the documented Partly terminated operational boundary.",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "适用于在已记录的部分终止运行期边界内，于1–35千伏消费边界消耗全国平均交流电的前景系统。",
+                  "@xml:lang": "zh"
+                }
+              ],
+              "common:referenceToCommissioner": {
+                "@uri": "../contacts/f4b4c314-8c4c-4c83-968f-5b3c7724f6a8_01.00.001.xml",
+                "@type": "contact data set",
+                "@version": "01.00.001",
+                "@refObjectId": "f4b4c314-8c4c-4c83-968f-5b3c7724f6a8",
+                "common:shortDescription": [
+                  {
+                    "#text": "Tiangong LCA Data Working Group",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "天工LCA数据团队",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "content_hash": "8905eab87c04475a1a461085157d460a4db0e2880b9cec97a14b9ee67437fe61"
+    }
+  ],
+  "snapshot_hash": "6755437d2a418b7f0b7422b916c4c90d78776011732572ce71e1e7e4679e3f92",
+  "generated_at": "2026-09-30T15:49:02.680294+00:00",
+  "counts": {
+    "process": 1
+  }
+}

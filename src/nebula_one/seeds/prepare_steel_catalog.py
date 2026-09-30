@@ -10,6 +10,7 @@ from ..errors import DomainError
 from .standard_seed_bundle import SeedBuild, resolve_seed_directory
 from .prepare_open_supply_flow import ensure_open_supply_flow
 from .steel_catalog_prerequisite import load_steel_catalog_prerequisite
+from .steel_flow_versions import ensure_steel_flow_versions
 
 
 def _reference_flow_missing(error: DomainError) -> bool:
@@ -78,10 +79,11 @@ def main() -> int:
         if after:
             raise ValueError("catalog prerequisite did not match the steel pin: " + "; ".join(after))
         supply_flow = ensure_open_supply_flow(client)
+        authored_versions = ensure_steel_flow_versions(client, steel)
         print(json.dumps({"status": "ready", "seed": f"{seed_id}@{version}",
                           "bundle_content_sha256": expected_hash,
                           "verified_flow_uuids": sorted(row["flow_uuid"] for row in expected_flows),
-                          "open_supply_flow": supply_flow}))
+                          "open_supply_flow": supply_flow, "authored_flow_versions": authored_versions}))
         return 0
     finally:
         client.close()

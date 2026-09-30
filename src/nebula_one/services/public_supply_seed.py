@@ -44,13 +44,17 @@ def ensure_public_supply_seed(client: Any, *, path: Path, declared_hash: str,
         _refuse("PUBLIC_SUPPLY_SEED_INVALID", "the public supply seed identity is invalid")
     name, project, graph, factor = (document.get(key) for key in
                                     ("project_name", "project", "graph", "factor"))
-    if not isinstance(name, str) or not isinstance(project, dict) or not isinstance(graph, dict) or not isinstance(factor, dict):
+    source_process = document.get("source_process")
+    if not isinstance(name, str) or not isinstance(project, dict) or not isinstance(graph, dict) or not (isinstance(factor, dict) or isinstance(source_process, dict)):
         _refuse("PUBLIC_SUPPLY_SEED_INVALID", "the public supply seed fields are invalid")
     nodes = graph.get("nodes")
     if not isinstance(nodes, list) or len(nodes) != 1 or graph.get("exchanges") != []:
         _refuse("PUBLIC_SUPPLY_SEED_INVALID", "the supply graph must contain one closed process")
     outputs = nodes[0].get("outputs")
-    if not isinstance(outputs, list) or len(outputs) != 2 or not any(
+    if source_process is not None:
+        from ..seeds.open_process_supply import ensure_open_process_supply_flows
+        ensure_open_process_supply_flows(client, document, path)
+    elif not isinstance(outputs, list) or len(outputs) != 2 or not any(
         port.get("type") == "biosphere" and port.get("amount") == factor.get("value")
         for port in outputs if isinstance(port, dict)
     ):

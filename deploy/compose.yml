@@ -47,6 +47,7 @@ services:
         COPY nebula-lca-api/data/EF3.1/lcia_factors.csv ./data/EF3.1/lcia_factors.csv
         COPY nebula-lca-api/data/flow_mappings/nebula-flow-mapping-v1/ ./data/flow_mappings/nebula-flow-mapping-v1/
         COPY nebula-lca-api/data/provider_profiles/steel_tiangong_open_flows.v1.json ./data/provider_profiles/steel_tiangong_open_flows.v1.json
+        COPY nebula-lca-api/data/provider_profiles/steel_tiangong_open_flows.v2.json ./data/provider_profiles/steel_tiangong_open_flows.v2.json
         COPY nebula-lca-api/data/provider_profiles/steel_tiangong_open_references.v1.json ./data/provider_profiles/steel_tiangong_open_references.v1.json
         COPY nebula-lca-solver/app/core/ /nebula-lca-solver/app/core/
         RUN mkdir -p /app/data/runtime /app/import-cache /app/runtime

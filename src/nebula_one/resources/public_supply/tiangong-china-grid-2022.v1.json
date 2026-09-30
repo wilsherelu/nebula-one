@@ -1,0 +1,121 @@
+{
+  "schema_version": "nebula_one.public-supply-seed.v1",
+  "seed_id": "tiangong-china-grid-2022",
+  "seed_version": "1.0.0",
+  "project_name": "TianGong China national electricity 2022 (partial)",
+  "project": {
+    "reference_product": "alternating current",
+    "functional_unit": "3.6 MJ",
+    "system_boundary": "Source Partly terminated system: operational CO2, SO2 and NOx; upstream fuel and infrastructure excluded",
+    "time_representativeness": "2022",
+    "geography": "CN",
+    "description": "Exact public TianGong Process eec0e09b-6fd5-41c9-9a12-41300c9e6cfa@01.01.014; partial electricity inventory, not a complete PCF or EU CBAM factor.",
+    "source_policy": "open_mixed",
+    "allowed_lcia_scope": "ef31_only"
+  },
+  "source_process": {
+    "asset": "tiangong-grid-2022-01.01.014.snapshot.json",
+    "asset_sha256": "e2d6f0ffe963575294d158124a3bc8b4059637154908c54b5dedaca43de746fc",
+    "process_uuid": "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa",
+    "version": "01.01.014",
+    "content_hash": "8905eab87c04475a1a461085157d460a4db0e2880b9cec97a14b9ee67437fe61",
+    "claim_limit": "source_declared_partly_terminated_system",
+    "flows_asset": "tiangong-grid-flows.v2.snapshot.json",
+    "flows_asset_sha256": "ed18b03239d257dd0d9537716577e1ba3e21f99bda99549c2d659000b0ac31b5"
+  },
+  "graph": {
+    "functionalUnit": "3.6 MJ alternating current",
+    "nodes": [
+      {
+        "id": "tiangong-grid-2022",
+        "node_kind": "unit_process",
+        "mode": "normalized",
+        "process_uuid": "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa",
+        "name": "TianGong China national electricity 2022 (partial)",
+        "location": "CN",
+        "reference_product": "alternating current",
+        "reference_product_flow_uuid": "3d76981f-964a-4865-b588-0e067a2a1163",
+        "reference_product_direction": "output",
+        "inputs": [],
+        "outputs": [
+          {
+            "id": "1",
+            "flowUuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+            "flowSourceNamespace": "tiangong_open_data",
+            "flowVersion": "03.00.004",
+            "flowPropertyUuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+            "flowPropertyVersion": "03.00.003",
+            "unitGroupUuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+            "unitGroupVersion": "03.00.003",
+            "name": "carbon dioxide (fossil)",
+            "unit": "kg",
+            "unitGroup": "Units of mass",
+            "amount": 0.568396722,
+            "type": "biosphere",
+            "direction": "output",
+            "isProduct": false
+          },
+          {
+            "id": "2",
+            "flowUuid": "3d76981f-964a-4865-b588-0e067a2a1163",
+            "flowSourceNamespace": "tiangong_open_data",
+            "flowVersion": "01.01.003",
+            "flowPropertyUuid": "93a60a56-a3c8-11da-a746-0800200c9a66",
+            "flowPropertyVersion": "03.00.003",
+            "unitGroupUuid": "93a60a57-a3c8-11da-a746-0800200c9a66",
+            "unitGroupVersion": "03.00.003",
+            "name": "alternating current; electricity mix; consumption mix",
+            "unit": "MJ",
+            "unitGroup": "Units of energy",
+            "amount": 3.6,
+            "type": "technosphere",
+            "direction": "output",
+            "isProduct": true
+          },
+          {
+            "id": "3",
+            "flowUuid": "f79d0f8f-2b0e-49cb-bed0-b1ea0fbd8625",
+            "flowSourceNamespace": "tiangong_open_data",
+            "flowVersion": "01.00.004",
+            "flowPropertyUuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+            "flowPropertyVersion": "03.00.003",
+            "unitGroupUuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+            "unitGroupVersion": "03.00.003",
+            "name": "Nitrogen oxides",
+            "unit": "kg",
+            "unitGroup": "Units of mass",
+            "amount": 9.2086217e-05,
+            "type": "biosphere",
+            "direction": "output",
+            "isProduct": false
+          },
+          {
+            "id": "4",
+            "flowUuid": "fe0acd60-3ddc-11dd-ac48-0050c2490048",
+            "flowSourceNamespace": "tiangong_open_data",
+            "flowVersion": "03.00.004",
+            "flowPropertyUuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+            "flowPropertyVersion": "03.00.003",
+            "unitGroupUuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+            "unitGroupVersion": "03.00.003",
+            "name": "sulfur dioxide",
+            "unit": "kg",
+            "unitGroup": "Units of mass",
+            "amount": 5.7523673e-05,
+            "type": "biosphere",
+            "direction": "output",
+            "isProduct": false
+          }
+        ]
+      }
+    ],
+    "exchanges": [],
+    "metadata": {
+      "source_namespace": "tiangong_open_data",
+      "source_process_uuid": "eec0e09b-6fd5-41c9-9a12-41300c9e6cfa",
+      "source_process_version": "01.01.014",
+      "source_process_content_hash": "8905eab87c04475a1a461085157d460a4db0e2880b9cec97a14b9ee67437fe61",
+      "claim_limit": "source_declared_partly_terminated_system"
+    }
+  }
+}
