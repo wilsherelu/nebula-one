@@ -80,8 +80,8 @@ it('can remove an obsolete mapping even when its catalog is unavailable', async 
   expect(resolve).not.toHaveBeenCalled();
 });
 
-it('shows a missing reviewed mapping as an empty choice without enabling confirmation', async () => {
-  vi.spyOn(seedProjectsApi, 'mappedCandidates').mockRejectedValue(new ApiError('No mapping', 422, 'PROJECT_MAPPING_UNAVAILABLE'));
+it.each(['PROJECT_MAPPING_UNAVAILABLE', 'PROJECT_BACKGROUND_MAPPING_REQUIRED'])('shows %s as an empty choice without enabling confirmation', async (code) => {
+  vi.spyOn(seedProjectsApi, 'mappedCandidates').mockRejectedValue(new ApiError('No mapping', 422, code));
   const save = vi.spyOn(api, 'saveProjectInputs');
   mount();
   expect(await screen.findByText('暂无可关联的背景数据')).toBeInTheDocument();

@@ -38,7 +38,7 @@ export function MappedBackgroundDialog({workspace, consumerId, onClose, onSaved,
   const content = <>
     <div className="background-picker-body">
     {!embedded ? <p>{port?.process} · {port?.label}</p> : null}
-    {catalog.isLoading ? <LoadingState /> : catalog.error instanceof ApiError && catalog.error.code === 'PROJECT_MAPPING_UNAVAILABLE' ? <><EmptyState description={t('background.empty')} /><p className="helper-text">{t('background.mappingMissing')}</p></> : catalog.isError ? <ErrorState error={catalog.error} onRetry={() => catalog.refetch()} /> : catalog.data ? <>
+    {catalog.isLoading ? <LoadingState /> : catalog.error instanceof ApiError && ['PROJECT_MAPPING_UNAVAILABLE', 'PROJECT_BACKGROUND_MAPPING_REQUIRED'].includes(catalog.error.code ?? '') ? <><EmptyState description={t('background.empty')} /><p className="helper-text">{t('background.mappingMissing')}</p><details><summary>{t('results.details')}</summary>{catalog.error.code}</details></> : catalog.isError ? <ErrorState error={catalog.error} onRetry={() => catalog.refetch()} /> : catalog.data ? <>
       {!catalog.data.providers.length ? <><EmptyState description={t('background.empty')} /><p className="helper-text">{t('background.emptyReason')}</p></> :
         <Radio.Group value={selected} disabled={save.isPending} className="template-options" onChange={value => {setSelected(value); setConfirmed(false); save.reset();}}>
           {catalog.data.providers.map(p => <Radio key={p.process_uuid} value={p.process_uuid} disabled={!p.executable}>

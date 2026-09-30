@@ -125,6 +125,17 @@ function mockReads() {
 }
 
 describe('CBAM rule trial panel', () => {
+  it('keeps configuration hidden while the frozen result is loading', async () => {
+    mockReads();
+    let finish!: (value: CbamTrialResult) => void;
+    const trial = vi.spyOn(api, 'cbamTrial').mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    renderPanel('/?cbam-tab=simple', <Panel complexMethods={[]} />);
+    await waitFor(() => expect(trial).toHaveBeenCalled());
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    finish(simpleResult as CbamTrialResult);
+    expect(await screen.findByRole('button', { name: '重新核算' })).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
   it('discloses a partial v2 total, missing indirect factor and nitrogen basis without substituting zero', async () => {
     mockReads();
     vi.spyOn(api, 'cbamTrial').mockResolvedValue({

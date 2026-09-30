@@ -173,7 +173,7 @@ export function ProductCarbonFootprintPanel({
             : t('pcf.footprintOnly')} />
         ) : result.contribution_analysis.hotspots.length ? (
           <>
-          <ContributionChart result={result} nodes={processNodes} />
+          <ContributionChart result={result} nodes={processNodes} exchangeNames={exchangeNames} />
           <p className="helper-text">{t('pcf.hotspotHint')}</p>
           <Table
             rowKey="_row_key"

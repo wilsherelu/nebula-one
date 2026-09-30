@@ -183,6 +183,9 @@ export function CbamRuleTrialPanel(props: Props) {
     </>;
   }
 
+  // Keep the result layout pending while the selected frozen trial is fetched.
+  if (!configVisible && (mode.pending || period.pending || boundary.pending || activeResult.isLoading)) return <LoadingState rows={7} />;
+
   const complex = result?.schema_version === 'nebula_one.cbam.complex-trial.v1' ? result : undefined;
   const simple = result && result.schema_version !== 'nebula_one.cbam.complex-trial.v1' ? result : undefined;
   const direct = complex?.attributed_emissions.total_direct_component ?? simple?.attributed_emissions.direct;
