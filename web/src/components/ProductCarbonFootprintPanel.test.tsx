@@ -55,7 +55,7 @@ describe('Product carbon footprint panel', () => {
     renderPanel(<ProductCarbonFootprintPanel {...baseProps} />);
     expect(screen.getAllByText('Foreground climate change result')).toHaveLength(2);
     expect(screen.getByText('Process name unavailable')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Excel details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
     expect(screen.queryByText('process-hotspot')).not.toBeInTheDocument();
   });
   it('explains a native total without exposing an English audit reason in the main result', () => {
@@ -96,20 +96,22 @@ describe('Product carbon footprint panel', () => {
     renderPanel(<ProductCarbonFootprintPanel {...baseProps} />);
 
     expect(screen.getAllByText('前景气候变化结果')).toHaveLength(2);
-    expect(screen.getByText('热点可用')).toBeInTheDocument();
+    expect(screen.queryByText('热点可用')).not.toBeInTheDocument();
     expect(screen.getByText('未提供过程名称')).toBeInTheDocument();
     expect(screen.queryByText('exchange-hotspot')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Excel 明细' }));
-    expect(screen.getByRole('button', { name: 'HTML 报告' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '打印 / 另存 PDF' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: '导出' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Excel 明细' }));
+    expect(screen.getByRole('button', { name: '导出' })).toBeDisabled();
     finishExport?.(new Blob(['xlsx']));
     await waitFor(() => expect(api.productCarbonFootprintExport).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@1.0.0'));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'HTML 报告' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: '导出' })).toBeEnabled());
 
-    await userEvent.click(screen.getByRole('button', { name: 'HTML 报告' }));
+    await userEvent.click(screen.getByRole('button', { name: '导出' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'HTML 报告' }));
     await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
-    await userEvent.click(screen.getByRole('button', { name: '打印 / 另存 PDF' }));
+    await userEvent.click(screen.getByRole('button', { name: '导出' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '打印 / 另存 PDF' }));
     await waitFor(() => expect(report).toHaveBeenCalledTimes(2));
     const loadHandler = onLoad.mock.calls[0][1] as () => void;
     loadHandler();
@@ -126,7 +128,8 @@ describe('Product carbon footprint panel', () => {
     renderPanel(<ProductCarbonFootprintPanel {...baseProps} result={{ ...result, contribution_analysis: { status: 'unavailable', coverage: 'total_only', reason: '供应商未返回逐交换贡献回执', indicator_receipt: null, hotspots: [] } }} />);
 
     expect(screen.getByText('当前冻结结果只提供气候总量或来源分项，尚无经过核验的过程热点。')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Excel 明细' }));
+    await userEvent.click(screen.getByRole('button', { name: '导出' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Excel 明细' }));
     expect(await screen.findByText('导出服务暂时不可用')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '重新加载' }));
     await waitFor(() => expect(exportFile).toHaveBeenCalledTimes(2));

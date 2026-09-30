@@ -40,8 +40,8 @@ it('shows the local background choice in English without translating provider id
   vi.spyOn(seedProjectsApi, 'mappedCandidates').mockResolvedValue(catalog);
   mount();
   expect(await screen.findByText('Synthetic provider')).toBeInTheDocument();
-  expect(screen.getByText('Select local background data')).toBeInTheDocument();
-  expect(screen.getByRole('button', {name: 'Link and save new version'})).toBeDisabled();
+  expect(screen.getByText('Choose background data')).toBeInTheDocument();
+  expect(screen.getByRole('button', {name: 'Confirm link'})).toBeDisabled();
 });
 
 it('requires L2 confirmation and saves exact pins with quantities and other mappings intact', async () => {
@@ -51,9 +51,9 @@ it('requires L2 confirmation and saves exact pins with quantities and other mapp
   const other = {...pin, consumer_exchange_id: 'steel::ore'};
   mount({...workspace, mapped_background_process_pins: [other]});
   fireEvent.click(await screen.findByRole('radio'));
-  expect(screen.getByRole('button', {name: '关联并保存新版本'})).toBeDisabled();
+  expect(screen.getByRole('button', {name: '确认关联'})).toBeDisabled();
   fireEvent.click(screen.getByRole('checkbox'));
-  fireEvent.click(screen.getByRole('button', {name: '关联并保存新版本'}));
+  fireEvent.click(screen.getByRole('button', {name: '确认关联'}));
   await waitFor(() => expect(save).toHaveBeenCalledWith('steel', expect.objectContaining({
     revision_id: 'r1', values: {power: 36}, amounts: [1000], mapped_background_process_pins: [other, pin],
   }), 'zh'));
@@ -65,7 +65,7 @@ it('never saves if the mapping has changed on the server', async () => {
   vi.spyOn(seedProjectsApi, 'resolveMapped').mockRejectedValue(new Error('Mapping changed'));
   const save = vi.spyOn(api, 'saveProjectInputs');
   mount(); fireEvent.click(await screen.findByRole('radio'));
-  fireEvent.click(screen.getByRole('button', {name: '关联并保存新版本'}));
+  fireEvent.click(screen.getByRole('button', {name: '确认关联'}));
   expect(await screen.findByText('Mapping changed')).toBeInTheDocument();
   expect(save).not.toHaveBeenCalled();
 });
@@ -80,6 +80,16 @@ it('can remove an obsolete mapping even when its catalog is unavailable', async 
   expect(resolve).not.toHaveBeenCalled();
 });
 
+it('shows a missing reviewed mapping as an empty choice without enabling confirmation', async () => {
+  vi.spyOn(seedProjectsApi, 'mappedCandidates').mockRejectedValue(new ApiError('No mapping', 422, 'PROJECT_MAPPING_UNAVAILABLE'));
+  const save = vi.spyOn(api, 'saveProjectInputs');
+  mount();
+  expect(await screen.findByText('暂无可关联的背景数据')).toBeInTheDocument();
+  expect(screen.getByRole('button', {name: '确认关联'})).toBeDisabled();
+  expect(screen.queryByText('No mapping')).not.toBeInTheDocument();
+  expect(save).not.toHaveBeenCalled();
+});
+
 it('offers a reload when the saved version moved under the binding', async () => {
   vi.spyOn(seedProjectsApi, 'mappedCandidates').mockResolvedValue(catalog);
   vi.spyOn(seedProjectsApi, 'resolveMapped').mockResolvedValue({pin, name: 'Synthetic provider'});
@@ -88,7 +98,7 @@ it('offers a reload when the saved version moved under the binding', async () =>
   mount(workspace, onReload);
   fireEvent.click(await screen.findByRole('radio'));
   fireEvent.click(screen.getByRole('checkbox'));
-  fireEvent.click(screen.getByRole('button', {name: '关联并保存新版本'}));
+  fireEvent.click(screen.getByRole('button', {name: '确认关联'}));
   await waitFor(() => expect(save).toHaveBeenCalledOnce());
   expect(await screen.findByText('数据版本已改变，请重新加载后再保存。')).toBeInTheDocument();
   expect(screen.getByRole('checkbox')).toBeChecked();

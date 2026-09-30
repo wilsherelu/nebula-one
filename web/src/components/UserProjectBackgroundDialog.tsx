@@ -1,17 +1,19 @@
-import { Alert, Button, Modal, Select } from '@arco-design/web-react';
+import { Button, Modal, Select } from '@arco-design/web-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, isStaleDataVersion } from '../api/client';
 import { seedProjectsApi } from '../api/seedProjects';
 import type { ProjectWorkspace } from '../api/types';
 import { useI18n } from '../i18n';
 import { ErrorState } from './ui/States';
 
-export function UserProjectBackgroundDialog({ workspace, consumerId, onClose, onSaved, onReload }: {
+export function UserProjectBackgroundDialog({ workspace, consumerId, onClose, onSaved, onReload, embedded = false, onBusyChange }: {
   workspace: ProjectWorkspace; consumerId: string; onClose: () => void;
   onSaved: (next: ProjectWorkspace) => void; onReload: () => void;
+  embedded?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const existing = workspace.project_background_pins?.find(item => item.consumer_exchange_id === consumerId);
   const [projectId, setProjectId] = useState(existing?.project_id ?? '');
   const [version, setVersion] = useState<number | undefined>(existing?.version);
@@ -37,32 +39,32 @@ export function UserProjectBackgroundDialog({ workspace, consumerId, onClose, on
       : [...(workspace.project_background_pins ?? []).filter(item => item.consumer_exchange_id !== consumerId), checked!.pin],
     model_processing_rules_ref: remove ? workspace.model_processing_rules_ref : checked!.model_processing_rules_ref,
   }, lang), onSuccess: next => { onSaved(next); onClose(); } });
+  useEffect(() => { onBusyChange?.(save.isPending); }, [onBusyChange, save.isPending]);
   const port = workspace.background_ports?.find(item => item.exchange_id === consumerId);
-  return <Modal visible title="关联自建供应过程" footer={null} onCancel={() => { if (!save.isPending) onClose(); }}
-    closable={!save.isPending} maskClosable={!save.isPending} escToExit={!save.isPending} style={{ width: 620, maxWidth: 'calc(100vw - 32px)' }}>
-    <p>{port?.process} · {port?.label}</p>
-    <p className="helper-text">选择已在专业建模中保存的单过程供应项目和版本。系统会核对参考产品流、单位与模型内容。</p>
-    <label className="project-field"><span>供应项目</span><Select aria-label="供应项目"
+  const content = <><div className="background-picker-body">
+    {!embedded ? <p>{port?.process} · {port?.label}</p> : null}
+    <div className="project-field"><span>{t('background.supplyProject')}</span><Select aria-label={t('background.supplyProject')}
       value={projects.data?.items.some(item => item.project_id === projectId) ? projectId : undefined}
-      placeholder="选择供应项目" loading={projects.isLoading} disabled={save.isPending}
+      placeholder={t('background.supplyProject')} loading={projects.isLoading} disabled={save.isPending}
       options={(projects.data?.items ?? []).filter(item => item.latest_version !== null)
         .map(item => ({value: item.project_id, label: `${item.name} · v${item.latest_version}`}))}
-      onChange={value => { setProjectId(String(value)); setVersion(undefined); resolve.reset(); }} /></label>
+      onChange={value => { setProjectId(String(value)); setVersion(undefined); resolve.reset(); }} /></div>
     {projects.data?.items.every(item => item.latest_version === null)
-      ? <Alert type="info" content="尚无已保存的供应过程。请先到“专业建模”创建单过程项目并保存版本，再返回此处关联。" /> : null}
-    <label className="project-field"><span>模型版本</span><Select aria-label="供应项目版本" value={versions.data?.items.some(item => item.version === version) ? String(version) : undefined}
-      placeholder="选择模型版本" loading={versions.isLoading} disabled={!projectId || save.isPending}
-      options={(versions.data?.items ?? []).map(item => ({value: String(item.version), label: `版本 ${item.version}`}))}
-      onChange={value => { setVersion(Number(value)); resolve.reset(); }} /></label>
+      ? <p>{t('background.empty')}</p> : null}
+    <div className="project-field"><span>{t('background.supplyVersion')}</span><Select aria-label={t('background.supplyVersion')} value={versions.data?.items.some(item => item.version === version) ? String(version) : undefined}
+      placeholder={t('background.supplyVersion')} loading={versions.isLoading} disabled={!projectId || save.isPending}
+      options={(versions.data?.items ?? []).map(item => ({value: String(item.version), label: `v${item.version}`}))}
+      onChange={value => { setVersion(Number(value)); resolve.reset(); }} /></div>
     {projects.isError ? <ErrorState error={projects.error} /> : null}
     {versions.isError ? <ErrorState error={versions.error} /> : null}
-    <Button disabled={!projectId || !version || resolve.isPending || save.isPending} loading={resolve.isPending} onClick={() => resolve.mutate()}>校验供应过程</Button>
+    <Button disabled={!projectId || !version || resolve.isPending || save.isPending} loading={resolve.isPending} onClick={() => resolve.mutate()}>{t('background.validate')}</Button>
     {resolve.isError ? <ErrorState error={resolve.error} /> : null}
-    {checked ? <><Alert type="info" content={`已核对 ${checked.name}，1 ${checked.consumer_unit} 投入对应 ${checked.pin.provider_amount_per_consumer_unit} ${checked.reference_unit} 供应。该过程仅覆盖这一项供应，不自动形成完整生命周期或 CBAM 合规结论。`} />
-      <details><summary>精确来源</summary><p>项目 {checked.pin.project_id} · 版本 {checked.pin.version} · 图哈希 {checked.pin.expected_graph_hash}</p></details>
-      <Button type="primary" disabled={save.isPending} loading={save.isPending} onClick={() => save.mutate(false)}>关联并保存新版本</Button></> : null}
+    {checked ? <><p className="helper-text">{t('background.validated', { name: checked.name })}</p>
+      <details><summary>{t('results.details')}</summary><p>{checked.pin.project_id} · v{checked.pin.version}</p><p>{checked.pin.expected_graph_hash}</p></details>
+      </> : null}
     {(workspace.project_background_pins ?? []).some(item => item.consumer_exchange_id === consumerId)
-      ? <Button disabled={save.isPending} onClick={() => save.mutate(true)}>移除此供应关联</Button> : null}
+      ? <Button disabled={save.isPending} onClick={() => save.mutate(true)}>{t('background.remove')}</Button> : null}
     {save.isError ? <ErrorState error={save.error} onRetry={isStaleDataVersion(save.error) ? onReload : undefined} /> : null}
-  </Modal>;
+  </div><div className="background-picker-footer"><Button disabled={save.isPending} onClick={onClose}>{t('background.cancel')}</Button><Button type="primary" disabled={!checked || save.isPending} loading={save.isPending} onClick={() => save.mutate(false)}>{t('background.linkConfirm')}</Button></div></>;
+  return embedded ? content : <Modal visible title={t('background.choose')} className="background-picker" footer={null} onCancel={() => { if (!save.isPending) onClose(); }} closable={!save.isPending} maskClosable={!save.isPending} escToExit={!save.isPending} style={{ width: 720, maxWidth: 'calc(100vw - 32px)' }}>{content}</Modal>;
 }

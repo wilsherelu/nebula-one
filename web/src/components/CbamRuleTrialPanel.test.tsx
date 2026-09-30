@@ -148,7 +148,7 @@ describe('CBAM rule trial panel', () => {
     expect(await screen.findByText('已计入直接排放强度')).toBeInTheDocument();
     expect(screen.getByText('待补因子')).toBeInTheDocument();
     // the逐端口/间接/氮基 technical detail lives behind the single 计算依据 entry
-    await userEvent.click(screen.getByRole('button', { name: '查看计算依据' }));
+    await userEvent.click(screen.getByRole('button', { name: '详情' }));
     expect(await screen.findByText(/reviewed-electricity-factor/)).toBeInTheDocument();
     expect(screen.getByText('已记录用电量：12.5 kWh')).toBeInTheDocument();
     expect(screen.getByText('尚未量化，不能按零排放计入。')).toBeInTheDocument();
@@ -180,7 +180,7 @@ describe('CBAM rule trial panel', () => {
     expect(api.cbamComplexTrial).toHaveBeenCalledWith('snapshot-1', { method_package_ref: 'cbam.complex@1.0.0', reporting_period_id: 'period-2026', precursors: [{ solved_snapshot_id: 'snapshot-2', method_package_ref: 'cbam.simple@1.0.0' }] });
     expect(await screen.findByRole('img', { name: '复杂商品前体贡献图' })).toHaveAttribute('src', 'blob:cbam-chart');
 
-    await userEvent.click(screen.getByRole('button', { name: '查看计算依据' }));
+    await userEvent.click(screen.getByRole('button', { name: '详情' }));
     expect(await screen.findByText('method-hash')).toBeInTheDocument();
     expect(screen.getByText('rule-source-hash')).toBeInTheDocument();
     expect(screen.getByText('result-hash')).toBeInTheDocument();
@@ -194,7 +194,7 @@ describe('CBAM rule trial panel', () => {
     expect(await screen.findByText('Ammonia')).toBeInTheDocument();
     expect(api.cbamComplexTrial).toHaveBeenCalledTimes(1);
     expect(api.cbamComplexTrial).toHaveBeenCalledWith('snapshot-1', { method_package_ref: 'cbam.complex@1.0.0', reporting_period_id: 'period-2025', precursors: [{ solved_snapshot_id: 'snapshot-2', method_package_ref: 'cbam.simple@1.0.0' }] });
-    expect(screen.getByText('Calendar year 2025 · 2025-01-01—2025-12-31')).toBeInTheDocument();
+    expect(screen.getByText('Calendar year 2025')).toBeInTheDocument();
     expect(api.cbamComplexTrialChart).toHaveBeenCalledTimes(1);
     expect(searchTerm()).toContain('view=cbam');
     expect(searchTerm()).toContain('snapshot=snapshot-1');
@@ -273,6 +273,7 @@ describe('CBAM rule trial panel', () => {
     expect(await screen.findByText('Ammonia')).toBeInTheDocument();
     expect(searchTerm()).toBe('view=cbam');
 
+    await userEvent.click(screen.getByRole('button', { name: '重新核算' }));
     await userEvent.click(screen.getByRole('tab', { name: '模型边界试算' }));
     expect(await screen.findByText('Ammonia simple goods')).toBeInTheDocument();
     expect(searchTerm()).toBe('view=cbam&cbam-tab=simple');
@@ -353,11 +354,11 @@ describe('CBAM rule trial panel', () => {
       boundary_definition_id: 'boundary-cbam-1',
     });
     // the first screen carries one concise coverage line, not the port table
-    expect(screen.getByText(/已计入 [\d,]+(\.\d+)? kg CO2e/)).toBeInTheDocument();
-    expect(screen.getByText(/1 项待定缺项未计入合计/)).toBeInTheDocument();
+    expect(screen.queryByText(/已计入 [\d,]+(\.\d+)? kg CO2e/)).not.toBeInTheDocument();
+    expect(screen.getByText('1 项待补资料')).toBeInTheDocument();
     expect(screen.queryByText(/边界覆盖：28 个端口/)).not.toBeInTheDocument();
     expect(screen.queryByText(/ST-18/)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: '查看计算依据' }));
+    await userEvent.click(screen.getByRole('button', { name: '详情' }));
     expect(await screen.findByText(/ST-18/)).toBeInTheDocument();
     expect(screen.getByText(/缺口引用 MG-S09/)).toBeInTheDocument();
     expect(screen.getByText(/nebula\.iron-steel\.bf-bof-crude-steel@1\.0\.0 boundaries\/cbam\.json/)).toBeInTheDocument();
@@ -421,11 +422,11 @@ describe('CBAM rule trial panel', () => {
     renderPanel('/applications/app-1/results?view=cbam&cbam-tab=simple',
       <Panel boundaryRequiredFor={['cbam.simple@1.0.0']} cbamBoundaries={[cbamBoundary]} />);
 
-    expect(await screen.findByText('CBAM rule trial')).toBeInTheDocument();
+    expect(await screen.findByText('Crude steel')).toBeInTheDocument();
     expect(screen.getByText('Included direct emissions intensity')).toBeInTheDocument();
     expect(screen.getByText('No eligible emission factor')).toBeInTheDocument();
-    expect(screen.getByText(/1 unresolved items are excluded from the total/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Calculation basis' }));
+    expect(screen.getByText('1 missing items')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Details' }));
     expect(await screen.findByText('Unresolved coverage items')).toBeInTheDocument();
     expect(api.cbamTrial).toHaveBeenCalledWith('snapshot-1', expect.objectContaining({ boundary_definition_id: cbamBoundary.id }));
   });

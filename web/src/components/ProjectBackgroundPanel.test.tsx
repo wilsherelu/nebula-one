@@ -41,7 +41,7 @@ it('does not let a late validation response approve a different version', async 
   await waitFor(() => expect(resolve).toHaveBeenCalledOnce());
   fireEvent.change(screen.getByRole('textbox', {name: '数据版本'}), {target: {value: '02.00.000'}});
   await act(async () => finish({pin, name: 'Old provider'}));
-  expect(screen.queryByRole('button', {name: '确认关联并保存'})).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', {name: '确认关联'})).not.toBeInTheDocument();
   expect(save).not.toHaveBeenCalled();
 });
 
@@ -51,13 +51,13 @@ it('preserves other bindings and saves an exact validated pin against the displa
   let finish!: (result: ProjectWorkspace) => void;
   const save = vi.spyOn(api, 'saveProjectInputs').mockImplementation(() => new Promise(done => {finish = done;}));
   const onSaved = vi.fn(); mount({...workspace, background_process_pins: [other]}, onSaved); await select();
-  fireEvent.click(await screen.findByRole('button', {name: '确认关联并保存'}));
+  fireEvent.click(await screen.findByRole('button', {name: '确认关联'}));
   await waitFor(() => expect(save).toHaveBeenCalledExactlyOnceWith('steel', {
     revision_id: 'r2', expected_content_sha256: workspace.content_sha256, amounts: [1000], demand_mode: undefined,
     values: {power: 50}, source: '生产台账', background_process_pins: [other, pin], project_background_pins: [],
   }, 'zh'));
   expect(screen.getByRole('textbox', {name: '数据版本'})).toBeDisabled();
-  expect(screen.getByRole('button', {name: '确认关联并保存'})).toBeDisabled();
+  expect(screen.getByRole('button', {name: '确认关联'})).toBeDisabled();
   await act(async () => finish({...workspace, revision_id: 'r3', background_process_pins: [other, pin]}));
   await waitFor(() => expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({revision_id: 'r3'})));
 });
@@ -107,7 +107,7 @@ it('shows a stale data version inside the open dialog and reloads on request', a
   const save = vi.spyOn(api, 'saveProjectInputs').mockRejectedValue(new ApiError('数据版本已改变，请重新加载。', 409, 'PROJECT_INPUT_CONFLICT'));
   mount(workspace, vi.fn(), onReload);
   await select();
-  fireEvent.click(await screen.findByRole('button', { name: '确认关联并保存' }));
+  fireEvent.click(await screen.findByRole('button', { name: '确认关联' }));
   await waitFor(() => expect(save).toHaveBeenCalledOnce());
   const refusal = await screen.findByText('数据版本已改变，请重新加载后再保存。');
   expect(refusal.closest('.arco-modal')).not.toBeNull();
@@ -134,7 +134,7 @@ it('binds a second electricity input to the same provider process without droppi
   fireEvent.change(await screen.findByRole('textbox', { name: '背景过程 UUID' }), { target: { value: pin.process_uuid } });
   fireEvent.change(screen.getByRole('textbox', { name: '数据版本' }), { target: { value: pin.version } });
   fireEvent.click(screen.getByRole('button', { name: '校验背景数据' }));
-  fireEvent.click(await screen.findByRole('button', { name: '确认关联并保存' }));
+  fireEvent.click(await screen.findByRole('button', { name: '确认关联' }));
   await waitFor(() => expect(save).toHaveBeenCalledWith('steel', expect.objectContaining({
     revision_id: 'r2', background_process_pins: [{ ...pin, consumer_exchange_id: first.exchange_id }],
   }), 'zh'));
@@ -143,7 +143,7 @@ it('binds a second electricity input to the same provider process without droppi
   fireEvent.change(await screen.findByRole('textbox', { name: '背景过程 UUID' }), { target: { value: pin.process_uuid } });
   fireEvent.change(screen.getByRole('textbox', { name: '数据版本' }), { target: { value: pin.version } });
   fireEvent.click(screen.getByRole('button', { name: '校验背景数据' }));
-  fireEvent.click(await screen.findByRole('button', { name: '确认关联并保存' }));
+  fireEvent.click(await screen.findByRole('button', { name: '确认关联' }));
   await waitFor(() => expect(save).toHaveBeenCalledWith('steel', expect.objectContaining({
     revision_id: 'r3', expected_content_sha256: 'd'.repeat(64),
     background_process_pins: [{ ...pin, consumer_exchange_id: first.exchange_id }, { ...pin, consumer_exchange_id: second.exchange_id }],

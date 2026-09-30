@@ -1,12 +1,12 @@
 import { Alert, Button, Select, Table } from '@arco-design/web-react';
-import { IconDownload, IconExpand, IconFile, IconPrinter } from '@arco-design/web-react/icon';
+import { IconExpand } from '@arco-design/web-react/icon';
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { ProductCarbonFootprint } from '../api/types';
 import { useI18n } from '../i18n';
 import { MetricCard } from './ui/MetricCard';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
-import { StatusBadge } from './ui/StatusBadge';
+import { ResultHeaderActions, ResultExportMenu, ResultDetails } from './ResultHeaderActions';
 import { ContributionChart, processName } from './ContributionChart';
 
 interface MethodPackageOption {
@@ -17,6 +17,7 @@ interface MethodPackageOption {
 interface ProductCarbonFootprintPanelProps {
   snapshotId: string;
   processNodes?: Array<Record<string, unknown>>;
+  exchangeNames?: Record<string, string>;
   methodPackages: MethodPackageOption[];
   selectedMethodPackageRef: string;
   onMethodPackageChange: (reference: string) => void;
@@ -51,6 +52,7 @@ function useObjectUrl(blob: Blob | undefined): string | undefined {
 export function ProductCarbonFootprintPanel({
   snapshotId,
   processNodes = [],
+  exchangeNames = {},
   methodPackages,
   selectedMethodPackageRef,
   onMethodPackageChange,
@@ -136,19 +138,11 @@ export function ProductCarbonFootprintPanel({
     : result.boundary_claim.complete_product_declaration ? t('task.pcf') : t('pcf.covered');
   return (
     <div className="pcf-result">
-      <div className="pcf-result__head">
-        <div>
-          <h3>{resultLabel}</h3>
-          <p>{t('pcf.summary')}</p>
-        </div>
-        {methodSelector}
-      </div>
-
-      <div className="pcf-result__actions" aria-label={t('pcf.exportAria')}>
-        <Button icon={<IconDownload />} loading={artifactAction === 'excel'} disabled={Boolean(artifactAction)} onClick={() => runArtifactAction('excel')}>{t('pcf.excel')}</Button>
-        <Button icon={<IconFile />} loading={artifactAction === 'report'} disabled={Boolean(artifactAction)} onClick={() => runArtifactAction('report')}>{t('pcf.report')}</Button>
-        <Button icon={<IconPrinter />} loading={artifactAction === 'print'} disabled={Boolean(artifactAction)} onClick={() => runArtifactAction('print')}>{t('pcf.print')}</Button>
-      </div>
+      <ResultHeaderActions><ResultExportMenu disabled={Boolean(artifactAction)} actions={[
+        { key: 'excel', label: t('pcf.excel'), run: () => runArtifactAction('excel') },
+        { key: 'report', label: t('pcf.report'), run: () => runArtifactAction('report') },
+        { key: 'print', label: t('pcf.print'), run: () => runArtifactAction('print') },
+      ]} /></ResultHeaderActions>
       {artifactError ? <ErrorState error={artifactError} onRetry={failedAction ? () => runArtifactAction(failedAction) : undefined} /> : null}
 
       <div className="pcf-result__summary">
@@ -160,23 +154,18 @@ export function ProductCarbonFootprintPanel({
         <dl className="pcf-result__facts">
           <div><dt>{t('pcf.functionalUnit')}</dt><dd>{functionalUnit}</dd></div>
           <div><dt>{t('pcf.method')}</dt><dd>{result.method_package.lcia_method}</dd></div>
-          <div><dt>{t('pcf.auditStatus')}</dt><dd><StatusBadge status={result.audit.status} /></dd></div>
+          <div><dt>{t('pcf.boundaryTitle')}</dt><dd>{result.boundary_claim.coverage === 'foreground_only' ? t('pcf.foreground') : t('results.withBackground')}</dd></div>
         </dl>
       </div>
 
       {!result.boundary_claim.complete_product_declaration ? (
-        <Alert
-          type="warning"
-          title={t('pcf.boundaryTitle')}
-          content={t('pcf.boundaryNote')}
-        />
+        <p className="result-coverage-note">{t(result.boundary_claim.coverage === 'foreground_only' ? 'pcf.coverageForeground' : 'pcf.coverageBackground')}</p>
       ) : null}
 
 
       <section className="pcf-result__hotspots" aria-labelledby="pcf-hotspots-title">
         <div className="section-heading">
           <h3 id="pcf-hotspots-title">{t('pcf.hotspots')}</h3>
-          <StatusBadge status={result.contribution_analysis.status} />
         </div>
         {result.contribution_analysis.status === 'unavailable' ? (
           <Alert type="info" title={t('pcf.noHotspots')} content={result.contribution_analysis.coverage === 'total_only'
@@ -193,7 +182,7 @@ export function ProductCarbonFootprintPanel({
             data={result.contribution_analysis.hotspots.slice(0, 3).map((item) => ({ ...item, _row_key: `${item.rank}:${item.process_id}:${item.exchange_id}` }))}
             columns={[
               { title: t('pcf.rank'), dataIndex: 'rank', width: 72 },
-              { title: t('pcf.process'), width: 190, render: (_, item) => processName(item.process_id, processNodes, t('pcf.unnamedProcess')) },
+              { title: t('pcf.process'), width: 280, render: (_, item) => <div title={exchangeNames[item.exchange_id]}>{processName(item.process_id, processNodes, t('pcf.unnamedProcess'))}{exchangeNames[item.exchange_id] ? <small className="contribution-flow-name">{exchangeNames[item.exchange_id]}</small> : null}</div> },
               { title: t('pcf.contribution'), align: 'right', width: 180, render: (_, item) => <span className="tabular">{formatNumber(item.contribution_value)} {item.contribution_unit}</span> },
               { title: t('pcf.share'), align: 'right', width: 120, render: (_, item) => <span className="tabular">{item.share_of_total === null ? '—' : `${formatNumber(item.share_of_total * 100)}%`}</span> },
             ]}
@@ -201,7 +190,7 @@ export function ProductCarbonFootprintPanel({
           </>
         ) : <EmptyState description={t('pcf.noRows')} />}
       </section>
-      <details className="result-details"><summary>{t('pcf.components')}</summary>
+      <ResultDetails><h3>{t('pcf.components')}</h3>
       <div className="pcf-result__chart" role="region" aria-label={t('pcf.chartAria')}>
         <div className="pcf-result__chart-toolbar">
           <strong>{t('pcf.componentTitle')}</strong>
@@ -224,7 +213,7 @@ export function ProductCarbonFootprintPanel({
           ]}
         />
       ) : <EmptyState description={t('pcf.noComponents')} />}
-      </details>
+      </ResultDetails>
     </div>
   );
 }

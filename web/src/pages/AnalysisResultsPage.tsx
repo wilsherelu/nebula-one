@@ -10,6 +10,7 @@ import { projectResultViews } from '../api/projectViews';
 import type { MethodPackage, SolvedSystemSnapshot } from '../api/types';
 import { EnergyCarrierResultPanel } from '../components/EnergyCarrierResultPanel';
 import { ProductCarbonFootprintPanel } from '../components/ProductCarbonFootprintPanel';
+import { ResultActionsTarget, ResultDetailsTarget } from '../components/ResultHeaderActions';
 import { processDisplayNodes } from '../components/ContributionChart';
 import { NativeClimatePanel } from '../components/NativeClimatePanel';
 import { PeriodEnergyTrendPanel } from '../components/PeriodEnergyTrendPanel';
@@ -149,6 +150,8 @@ export function AnalysisResultsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [auditVisible, setAuditVisible] = useState(false);
+  const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null);
+  const [detailsTarget, setDetailsTarget] = useState<HTMLDivElement | null>(null);
   const [selectedMfaSeriesId, setSelectedMfaSeriesId] = useState('');
   const [selectedCarbonMethodRef, setSelectedCarbonMethodRef] = useState('');
   const [selectedSpatialBoundaryId, setSelectedSpatialBoundaryId] = useState('');
@@ -434,11 +437,12 @@ export function AnalysisResultsPage() {
   if (!applicationId) return <NotFoundState />;
   const error = application.error || snapshots.error;
   return (
-    <main className="app-page">
+    <ResultActionsTarget.Provider value={actionsTarget}><ResultDetailsTarget.Provider value={detailsTarget}><main className="app-page compact-result-page">
       <header className="result-page-header">
         <div className="result-page-header__top">
-          <h1>{application.data?.name ?? t('results.title')}</h1>
-          <Button icon={<IconArrowLeft />} onClick={() => navigate(`/applications/${applicationId}/workbench${application.data?.context.template_locked && selected ? `?step=reports&revision=${selected.system_revision_id}` : ''}`)}>{t('analysis.backToProject')}</Button>
+          <Button size="small" icon={<IconArrowLeft />} onClick={() => navigate(`/applications/${applicationId}/workbench${application.data?.context.template_locked && selected ? `?step=reports&revision=${selected.system_revision_id}` : ''}`)}>{t('analysis.backToProject')}</Button>
+          <h1 title={application.data?.name}>{application.data?.name ?? t('results.title')} <span>· {activeResultTab === 'pcf' ? t('task.pcf') : activeResultTab === 'cbam' ? t('task.cbam') : activeResultTab === 'organization-lifecycle' ? t('task.organization') : activeResultTab === 'mfa' ? t('task.mfa') : t('results.title')}</span></h1>
+          <div className="result-header-actions"><div ref={setActionsTarget} />{selected && activeResultTab !== 'cbam' ? <Button size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button> : null}</div>
         </div>
         {selected && !invalidResultView && activeResultTab !== 'organization-ghg' ? <div className="result-page-header__records">
           <label htmlFor="snapshot-select">{t('analysis.recordSelectorAria')}</label>
@@ -448,7 +452,6 @@ export function AnalysisResultsPage() {
             setSearchParams(next);
           }} options={taskRecords.map((item, index) => ({ label: t('results.record', { number: taskRecords.length - index, date: formatDate(item.created_at) }), value: item.id }))} />
           {selectedDemand?.length === 1 ? <span className="result-page-header__basis">{t('results.demand', { amount: formatNumber(selectedDemand[0].amount), unit: selectedDemand[0].unit })}</span> : null}
-          <Button icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('analysis.calculationDetails')}</Button>
         </div> : null}
       </header>
       {application.isLoading || snapshots.isLoading ? <section className="section-panel"><LoadingState rows={7} /></section> : null}
@@ -551,6 +554,7 @@ export function AnalysisResultsPage() {
                 {pcfMethod.invalid ? <InvalidReferencesAlert references={[{ label: t('pcf.methodPackage'), requested: pcfMethod.requested, key: 'pcf-method' }]} note={t('results.pcfUnknownMethod')} /> : null}
                 <ProductCarbonFootprintPanel
                   snapshotId={selected.id}
+                  exchangeNames={Object.fromEntries((resultWorkspace.data?.fields ?? []).filter(field => field.process_id && field.port_id).map(field => [`${field.process_id}::${field.port_id}`, field.label]))}
                   processNodes={processDisplayNodes({
                     workspaceNodes: resultWorkspace.data?.process_graph?.nodes ?? [],
                     exchanges: [...selected.scaled_elementary_exchanges, ...selected.scaled_technosphere_exchanges],
@@ -622,7 +626,8 @@ export function AnalysisResultsPage() {
               </Tabs.TabPane>
             </AnalysisTabs>
           </section>
-          <Drawer className="audit-drawer" width={560} visible={auditVisible} onCancel={() => setAuditVisible(false)} footer={null} title="求解与快照证据" unmountOnExit>
+          <Drawer className="audit-drawer" width="min(680px, 100vw)" visible={auditVisible} onCancel={() => setAuditVisible(false)} footer={null} title={t('results.details')} unmountOnExit>
+            <div ref={setDetailsTarget} />
             <SnapshotContext snapshot={selected} />
             <Descriptions column={1} size="small" border data={[
               { label: 'Snapshot ID', value: <CopyableValue value={selected.id} compact={false} /> },
@@ -681,6 +686,6 @@ export function AnalysisResultsPage() {
           </Drawer>
         </>
       ) : null}
-    </main>
+    </main></ResultDetailsTarget.Provider></ResultActionsTarget.Provider>
   );
 }
