@@ -15,3 +15,31 @@ desktop/resources/
 .env
 runtime/
 tmp/
+
+# Local dependencies, reports, and private working material
+node_modules/
+coverage/
+.vite/
+playwright-report/
+test-results/
+/tmp-*
+/docs/internal/
+/docs/evidence/
+/artifacts/
+*.log
+*.tsbuildinfo
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.bundle
+
+# Unreleased industry data stays in internal repositories
+/cases/petrochemical-refinery-reference/
+/examples/petrochemical-refinery-reference/
+/cases/standard-lca-seeds/ammonia-*/
+/cases/standard-lca-seeds/hydrogen-*/
+/deploy/seeds/hydrogen-demo.json
