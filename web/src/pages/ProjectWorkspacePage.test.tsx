@@ -162,7 +162,7 @@ it('asks before switching versions with an unsaved draft and keeps it scoped to 
   mount('data', [revision, revision3], '&revision=r2');
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
   await userEvent.click(screen.getByRole('combobox', { name: '当前数据版本' }));
-  fireEvent.click(await screen.findByRole('option', { name: /数据版本 3/ }));
+  fireEvent.click(await screen.findByRole('option', { name: /版本 3/ }));
   // The switch is refused until the operator chooses; the version bar still reads the current one.
   expect(await screen.findByText(/尚未保存的填报修改/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: '保留草稿并切换' }));
@@ -172,7 +172,7 @@ it('asks before switching versions with an unsaved draft and keeps it scoped to 
   expect(localStorage.getItem('nebula-one:project:app-steel:r3')).toBeNull();
   // Returning to r2 restores the unsaved edit.
   await userEvent.click(screen.getByRole('combobox', { name: '当前数据版本' }));
-  fireEvent.click(await screen.findByRole('option', { name: /模板初始数据|数据版本 2/ }));
+  fireEvent.click(await screen.findByRole('option', { name: /版本 2/ }));
   expect(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' })).toHaveValue('600');
 });
 
@@ -180,7 +180,7 @@ it('discards the draft when the operator chooses to abandon it on a version swit
   mount('data', [revision, revision3], '&revision=r2');
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
   await userEvent.click(screen.getByRole('combobox', { name: '当前数据版本' }));
-  fireEvent.click(await screen.findByRole('option', { name: /数据版本 3/ }));
+  fireEvent.click(await screen.findByRole('option', { name: /版本 3/ }));
   expect(await screen.findByText(/尚未保存的填报修改/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: '放弃草稿' }));
   await waitFor(() => expect(api.workspace).toHaveBeenCalledWith('app-steel', 'r3', 'zh'));
@@ -314,12 +314,13 @@ it('computes organization lifecycle directly without requiring an earlier PCF sn
   expect(solve.mock.calls[0][2]).toMatchObject({ climate_default: true });
 });
 
-it('explains how to create the required organization supply answer when only climate without supply exists', async () => {
+it('keeps PCF and organization available without a background and hides the raw method ID', async () => {
   const app: Application = { ...application, context: { ...application.context, method_package_refs: ['org.steel@1.0.5'] } };
   mountClimate({ ...workspace, capabilities: ['organization.lifecycle-carbon.v1'] }, { app, packages: [organizationMethod] });
   fireEvent.click(await screen.findByRole('button', { name: '核算' }));
-  expect((await screen.findAllByText('请先关联适用的电力背景并保存。')).length).toBeGreaterThan(0);
-  expect(screen.getByRole('radio', { name: /组织碳核算/ })).toBeDisabled();
+  expect(screen.getByRole('radio', { name: /组织碳核算/ })).toBeEnabled();
+  expect(screen.getByRole('button', { name: '取消' })).toBeInTheDocument();
+  expect(screen.queryByText(/org\.steel@1\.0\.5/)).not.toBeInTheDocument();
 });
 
 it('routes a return that descends from a reviewed template into the fillable workbench', async () => {

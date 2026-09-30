@@ -33,9 +33,12 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
     if (not facility.strip() or sorted(controlled_process_ids) != sorted(model_process_ids)
             or len(set(controlled_process_ids)) != len(controlled_process_ids)):
         raise DomainError(code="ORGANIZATION_LIFECYCLE_CONTROL_INVALID", message="controlled processes must match the solved foreground", status_code=422)
-    subset_mode = rules.get("energy_path_selection") == "nonempty_declared_subset_v1"
-    energy_paths_match = (bool(mapped_exchange_ids) and set(mapped_exchange_ids) <= set(expected_energy)
-                          if subset_mode else sorted(mapped_exchange_ids) == sorted(expected_energy))
+    selection = rules.get("energy_path_selection")
+    energy_paths_match = ((bool(mapped_exchange_ids) and set(mapped_exchange_ids) <= set(expected_energy))
+                          if selection == "nonempty_declared_subset_v1" else
+                          (set(mapped_exchange_ids) <= set(expected_energy))
+                          if selection == "declared_subset_v1" else
+                          sorted(mapped_exchange_ids) == sorted(expected_energy))
     if (not energy_paths_match
             or len(set(mapped_exchange_ids)) != len(mapped_exchange_ids)
             or not allowed_energy_types
@@ -113,6 +116,8 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
     missing = [row["category"] for row in category_rows if row["status"] not in {"calculated", "not_in_boundary"}]
     excluded = [row["category"] for row in category_rows if row["status"] == "not_in_boundary"]
     proxies = [row["activity_id"] for items in proxy_rows.values() for row in items]
+    missing_energy_paths = sorted(set(expected_energy) - set(mapped_exchange_ids))
+    incomplete_energy = selection == "declared_subset_v1" and bool(missing_energy_paths)
     result = {
         "schema_version": output_schema,
         "application_id": application_id, "system_revision_id": revision_id,
@@ -127,18 +132,18 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
             "on_site_direct": {"value": foreground_value * scale, "unit": climate_unit,
                                "label": "范围 1：厂内直接排放",
                                "status": "calculated_from_controlled_foreground"},
-            "purchased_energy_lifecycle": {"value": background_value * scale, "unit": climate_unit,
+            "purchased_energy_lifecycle": {"value": background_value * scale if mapped_exchange_ids else None, "unit": climate_unit,
                                            "label": "LC-Scope 2：外购二次能源生命周期排放",
-                                           "status": "calculated_from_exclusive_energy_background_paths",
+                                           "status": "calculated_from_exclusive_energy_background_paths" if mapped_exchange_ids else "missing_energy_path",
                                            "exchange_ids": sorted(mapped_exchange_ids)},
             "other_value_chain": {"value": sum(row["value"] for row in category_rows if row["value"] is not None)
                                   if any(row["value"] is not None for row in category_rows) else None,
                                   "unit": climate_unit, "label": "LC-Scope 3：其他价值链排放", "categories": category_rows,
                                   "status": "partial" if missing else "configured_categories"},
         },
-        "combined_total": None if missing or proxies else foreground_value * scale + background_value * scale
+        "combined_total": None if missing or proxies or incomplete_energy or not mapped_exchange_ids else foreground_value * scale + background_value * scale
                           + sum(row["value"] for row in category_rows if row["value"] is not None),
-        "coverage": {"status": "partial" if missing or proxies else "configured_boundary_calculated",
+        "coverage": {"status": "partial" if missing or proxies or incomplete_energy or not mapped_exchange_ids else "configured_boundary_calculated",
                      "missing_categories": missing, "not_in_boundary_categories": excluded,
                      "demonstration_proxy_activity_ids": proxies,
                      "not_a_complete_lifecycle_inventory": True,
@@ -148,6 +153,8 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
         result["native_climate_method"] = native_method
     else:
         result["climate_source"] = climate_source
+    if selection == "declared_subset_v1":
+        result["coverage"]["missing_energy_paths"] = missing_energy_paths
     if not explicit_boundary:
         result["coverage"].pop("not_in_boundary_categories")
     result["content_sha256"] = canonical_json_sha256(result)

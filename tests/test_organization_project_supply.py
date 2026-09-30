@@ -13,6 +13,8 @@ from nebula_one.services.organization_project_supply import project_supply_clima
 
 MANIFEST = json.loads((Path(__file__).resolve().parents[1] / "src" / "nebula_one" / "resources" /
                        "official_methods" / "organization-lifecycle-carbon-steel-1.0.5.json").read_text(encoding="utf-8"))["manifest"]
+OPTIONAL_MANIFEST = json.loads((Path(__file__).resolve().parents[1] / "src" / "nebula_one" / "resources" /
+                                "official_methods" / "organization-lifecycle-carbon-steel-1.0.6.json").read_text(encoding="utf-8"))["manifest"]
 
 
 def _source():
@@ -79,6 +81,59 @@ def test_project_supply_groups_exact_climate_once_and_keeps_scope_3_missing():
     assert result["groups"]["other_value_chain"]["value"] is None
     assert result["combined_total"] is None
     assert result["climate_source"]["suppliers"][0]["version"] == 2
+
+
+def test_optional_supply_keeps_foreground_and_marks_unlinked_energy_unknown():
+    snapshot, revision = deepcopy(_source())
+    snapshot.provider_receipt["calculation_basis"]["project_background_pins"] = []
+    snapshot.provider_receipt["project_background_process_receipts"] = []
+    snapshot.provider_receipt["provenance"] = {}
+    snapshot.internal_transfers = []
+    climate = snapshot.lcia_results["indicator_contribution_receipts"][0]
+    climate["terms"] = climate["terms"][:1]
+    climate["indicator_value"] = climate["contribution_total"] = 1941.739734
+    climate.pop("content_hash")
+    climate["content_hash"] = canonical_json_sha256(climate)
+    snapshot.lcia_results["indicator_results"][0]["value"] = 1941.739734
+    snapshot.lcia_results["contribution_receipts_hash"] = canonical_json_sha256([climate])
+    foreground, background, unit, method, source, exchange_ids = project_supply_climate(
+        snapshot, revision, OPTIONAL_MANIFEST)
+    result = build_organization_lifecycle(
+        application_id="app", revision_id="revision", snapshot_id="snapshot", snapshot_hash="c" * 64,
+        period={"id": "period", "name": "2026"}, facility="steel", controlled_process_ids=["steel-process"],
+        model_process_ids=["steel-process"], input_basis="annual_total", baseline_output=1000,
+        period_output=1000, foreground_value=foreground, background_value=background,
+        climate_unit=unit, native_method=method,
+        method_ref="nebula.organization-lifecycle-carbon.steel-model@1.0.6", method_hash="d" * 64,
+        manifest=OPTIONAL_MANIFEST, mapped_exchange_ids=exchange_ids,
+        external_exchanges={"ore-sintering::iron-ore-in": {"amount": 10, "unit": "kg", "direction": "input"}},
+        activities=[], climate_source=source)
+    assert result["groups"]["on_site_direct"]["value"] == pytest.approx(1941.739734)
+    assert result["groups"]["purchased_energy_lifecycle"]["value"] is None
+    assert result["groups"]["purchased_energy_lifecycle"]["status"] == "missing_energy_path"
+    assert result["coverage"]["missing_energy_paths"] == sorted(OPTIONAL_MANIFEST["classification_rules"]["energy_purchase_exchange_ids"])
+    assert result["combined_total"] is None
+    with pytest.raises(DomainError):
+        project_supply_climate(snapshot, revision, MANIFEST)
+
+
+def test_partial_energy_cannot_form_total_even_when_scope_3_is_outside_boundary():
+    manifest = deepcopy(OPTIONAL_MANIFEST)
+    for rule in manifest["classification_rules"]["other_value_chain_categories"].values():
+        rule.update(boundary_status="not_in_boundary", eligible_consumer_exchange_ids=[])
+    result = build_organization_lifecycle(
+        application_id="app", revision_id="revision", snapshot_id="snapshot", snapshot_hash="c" * 64,
+        period={"id": "period", "name": "2026"}, facility="steel", controlled_process_ids=["steel-process"],
+        model_process_ids=["steel-process"], input_basis="annual_total", baseline_output=1000,
+        period_output=1000, foreground_value=100, background_value=10,
+        climate_unit="kg CO2-Eq", native_method={}, method_ref="test@1", method_hash="d" * 64,
+        manifest=manifest, mapped_exchange_ids=["ore-sintering::grid-electricity-in"],
+        external_exchanges={}, activities=[], climate_source={})
+    assert result["coverage"]["missing_categories"] == []
+    assert result["coverage"]["missing_energy_paths"] == ["continuous-casting::grid-electricity-in"]
+    assert result["groups"]["purchased_energy_lifecycle"]["value"] == 10
+    assert result["combined_total"] is None
+    assert result["coverage"]["status"] == "partial"
 
 
 @pytest.mark.parametrize("mutate", [

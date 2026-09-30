@@ -8,12 +8,15 @@ from .errors import DomainError
 from .hashing import canonical_json_sha256
 
 
-PROJECTION = (Path(__file__).resolve().parent / "resources" / "organization_lifecycle_display"
-              / "steel-1.0.5-en.v1.json")
+PROJECTION_ROOT = Path(__file__).resolve().parent / "resources" / "organization_lifecycle_display"
 
 
 def organization_lifecycle_display(method, language: str) -> dict:
-    projection = json.loads(PROJECTION.read_text(encoding="utf-8"))
+    projection_path = PROJECTION_ROOT / f"steel-{method.version}-en.v1.json"
+    if not projection_path.is_file():
+        raise DomainError(code="ORGANIZATION_DISPLAY_SOURCE_MISMATCH",
+                          message="No display projection is pinned to this exact organization method", status_code=409)
+    projection = json.loads(projection_path.read_text(encoding="utf-8"))
     source = projection["method_package"]
     if (method.package_id != source["package_id"] or method.version != source["version"]
             or method.content_sha256 != source["content_sha256"]

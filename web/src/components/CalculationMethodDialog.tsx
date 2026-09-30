@@ -30,9 +30,9 @@ export function CalculationMethodDialog({ visible, choices, selected, onSelect, 
     <Radio.Group className="calculation-method-choices" aria-label={t('workspace.chooseTask')} value={selected}
       onChange={value => onSelect(value as CalculationTask)} disabled={pending}>
       {choices.map(choice => <Radio key={choice.task} value={choice.task} disabled={!choice.available}>
-        <strong>{labels[choice.task]}</strong>
-        {choice.method ? <small>{choice.method}</small> : null}
-        {!choice.available && choice.reason ? <small>{choice.reason}</small> : null}
+        <span className="calculation-method-copy"><strong>{labels[choice.task]}</strong>
+          {choice.method ? <small>{choice.method}</small> : null}
+          {!choice.available && choice.reason ? <small>{choice.reason}</small> : null}</span>
       </Radio>)}
     </Radio.Group>
     {error ? <Alert type="error" content={error instanceof Error ? error.message : String(error)} /> : null}

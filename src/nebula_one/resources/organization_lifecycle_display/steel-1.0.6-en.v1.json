@@ -1,0 +1,38 @@
+{
+  "schema_version": "nebula_one.organization-lifecycle-display.v1",
+  "version": "1.0.0",
+  "method_package": {
+    "package_id": "nebula.organization-lifecycle-carbon.steel-model",
+    "version": "1.0.6",
+    "content_sha256": "dca6752dfe688ed614ee8b8d81ce91a8212da72af92d5057d93daf13bc5b7496"
+  },
+  "language": "en",
+  "labels": {
+    "input_basis": {
+      "per_unit_product": "Per unit of product",
+      "annual_total": "Annual total"
+    },
+    "group_status": {
+      "calculated_from_controlled_foreground": "Calculated from the model",
+      "calculated_from_exclusive_energy_background_paths": "Calculated from declared energy supply paths",
+      "missing_energy_path": "Energy supply not linked; value unknown",
+      "partial": "Some required data is missing",
+      "configured_categories": "Calculated within the selected boundary"
+    },
+    "categories": {
+      "purchased_iron_ore": "Upstream purchased iron ore",
+      "purchased_coke_upstream": "Upstream purchased coke",
+      "purchased_coal_upstream": "Upstream purchased coal",
+      "natural_gas_upstream": "Upstream purchased natural gas",
+      "external_waste_treatment": "External waste treatment",
+      "downstream_use": "Downstream use"
+    },
+    "exchanges": {
+      "ore-sintering::iron-ore-in": "Iron ore purchased for sintering",
+      "blast-furnace::coke-in": "Coke purchased for the blast furnace",
+      "ore-sintering::coke-breeze-in": "Coke breeze purchased for sintering",
+      "blast-furnace::pci-coal-in": "Coal purchased for blast furnace injection",
+      "blast-furnace::natural-gas-in": "Natural gas purchased for the blast furnace"
+    }
+  }
+}

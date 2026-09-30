@@ -10,14 +10,14 @@ interface CategoryRule { name?: string; factor_boundary?: string; boundary_statu
 interface Entry { enabled: boolean; factorRef: string; factor: string; version: string; source: string; hash: string; evidenceRole: 'supplier_specific' | 'demonstration_proxy'; methodId: string; methodVersion: string; methodHash: string; referenceProduct: string }
 export function OrganizationLifecyclePanel({ applicationId, snapshot, method, methodPackages = [], recordId, onCreated }: { applicationId: string; snapshot: SolvedSystemSnapshot; method: MethodPackage; methodPackages?: MethodPackage[]; recordId?: string; onCreated?: (id: string) => void }) {
   const { lang, t, formatNumber } = useI18n();
-  const format = (value: number | null | undefined) => formatNumber(value, { maximumSignificantDigits: 9 });
+  const format = (value: number | null | undefined) => value == null ? t('org.unknown') : formatNumber(value, { maximumSignificantDigits: 9 });
   const queryClient = useQueryClient();
   const periods = useQuery({ queryKey: ['periods', applicationId], queryFn: () => api.periods(applicationId) });
   const workspace = useQuery({ queryKey: ['workspace', applicationId, snapshot.system_revision_id, lang], queryFn: () => api.workspace(applicationId, snapshot.system_revision_id, lang) });
   const records = useQuery({ queryKey: ['organization-lifecycle', applicationId], queryFn: () => api.organizationLifecycleInventories(applicationId) });
   const display = useQuery({ queryKey: ['organization-lifecycle-display', method.package_id, method.version, method.content_sha256, lang],
     queryFn: () => api.organizationLifecycleDisplay(method, lang),
-    enabled: lang === 'en' && Boolean(method.content_sha256) && Array.isArray(snapshot.provider_receipt.project_background_process_receipts),
+    enabled: lang === 'en' && Boolean(method.content_sha256),
   });
   const [periodId, setPeriodId] = useState('');
   const [facility, setFacility] = useState('');
@@ -26,6 +26,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const [entries, setEntries] = useState<Record<string, Entry>>({});
   const rules = ((method.manifest.classification_rules as Record<string, unknown> | undefined)?.other_value_chain_categories ?? {}) as Record<string, CategoryRule>;
   const projectSupplyMethod = (method.manifest.classification_rules as Record<string, unknown> | undefined)?.energy_path_source === 'project_background_process_receipts';
+  const optionalSupplyMethod = (method.manifest.classification_rules as Record<string, unknown> | undefined)?.energy_path_source === 'optional_project_background_process_receipts';
   const labels = (method.manifest.display_labels ?? {}) as { input_basis?: Record<string, string>; group_status?: Record<string, string> };
   const categoryName = (key: string) => lang === 'en' ? display.data?.labels.categories[key] ?? key : rules[key]?.name ?? key;
   const exchangeName = (key: string, rule: CategoryRule) => lang === 'en' ? display.data?.labels.exchanges[key] ?? key : rule.exchange_labels?.[key] ?? key;
@@ -85,6 +86,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   });
   if (projectSupplyMethod
     ? !Array.isArray(snapshot.provider_receipt.project_background_process_receipts) || !snapshot.provider_receipt.project_background_process_receipts.length
+    : optionalSupplyMethod ? !Array.isArray(snapshot.lcia_results?.indicator_contribution_receipts)
     : !snapshot.native_background_climate) {
     return <EmptyState description={projectSupplyMethod ? t('org.needSupply') : t('org.needNative')} />;
   }
@@ -156,8 +158,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
         { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
         { key: 'energy', ...record.result.groups.purchased_energy_lifecycle, label: t('org.groupEnergy') },
         { key: 'other', ...record.result.groups.other_value_chain, label: t('org.groupOther') },
-      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
-      <p>{t('org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
+      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => row.value == null ? t('org.unknown') : `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
+      <p>{t(record.result.combined_total == null ? 'org.coveragePartial' : 'org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
       {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: categoryName(item.category), value: format(item.proxy_reference_value) })}</p>)}
       <small>{t('org.methodEvidence', { method: record.result.method_package.reference, hash: record.content_sha256 })}</small>
     </section>) : <EmptyState description={t('org.noResults')} />}

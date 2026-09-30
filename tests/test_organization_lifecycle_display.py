@@ -11,9 +11,9 @@ from nebula_one.organization_lifecycle_display import organization_lifecycle_dis
 from nebula_one.runtime_schemas import MethodPackageCreate
 
 
-def _method():
+def _method(version="1.0.5"):
     path = (Path(__file__).resolve().parents[1] / "src" / "nebula_one" / "resources"
-            / "official_methods" / "organization-lifecycle-carbon-steel-1.0.5.json")
+            / "official_methods" / f"organization-lifecycle-carbon-steel-{version}.json")
     package = MethodPackageCreate.model_validate(json.loads(path.read_text(encoding="utf-8")))
     return SimpleNamespace(package_id=package.package_id, version=package.version,
                            package_kind=package.package_kind, manifest=package.manifest,
@@ -28,6 +28,13 @@ def test_english_display_covers_exact_immutable_method():
     assert result["labels"]["exchanges"]["ore-sintering::iron-ore-in"] == "Iron ore purchased for sintering"
     assert result["labels"]["group_status"]["partial"] == "Some required data is missing"
     assert organization_lifecycle_display(method, "zh")["labels"]["categories"]["purchased_iron_ore"] == "采购铁矿石上游"
+
+
+def test_optional_supply_method_has_its_own_exact_display_projection():
+    method = _method("1.0.6")
+    display = organization_lifecycle_display(method, "en")
+    assert display["method_package"]["content_sha256"] == method.content_sha256
+    assert display["labels"]["group_status"]["missing_energy_path"] == "Energy supply not linked; value unknown"
 
 
 def test_display_refuses_method_hash_drift():

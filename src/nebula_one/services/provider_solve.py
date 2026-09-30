@@ -902,6 +902,7 @@ class ProviderSolveService:
             }
             preliminary_derivation = None
             effective_mapped_pins = [item.model_dump(mode="json") for item in payload.mapped_background_process_pins]
+            effective_background_pins = [item.model_dump(mode="json") for item in payload.background_process_pins]
             if payload.climate_default:
                 source_parameters = {
                     **parameters,
@@ -916,16 +917,11 @@ class ProviderSolveService:
                 )
                 if preliminary_derivation is not None:
                     effective_mapped_pins = preliminary_derivation.derived.mapped_background_process_pins
-                    if preliminary_derivation.derived.background_process_pins:
-                        raise DomainError(
-                            code="CLIMATE_DEFAULT_BACKGROUND_SOURCE_UNSUPPORTED",
-                            message="the derived climate boundary contains a background source without a compatible EF method",
-                            status_code=422,
-                        )
-                elif payload.background_process_pins:
+                    effective_background_pins = preliminary_derivation.derived.background_process_pins
+                if effective_mapped_pins and (effective_background_pins or payload.project_background_pins):
                     raise DomainError(
                         code="CLIMATE_DEFAULT_BACKGROUND_SOURCE_UNSUPPORTED",
-                        message="the climate calculation contains a background source without a compatible EF method",
+                        message="native mapped providers cannot be mixed with other background sources in one climate solve",
                         status_code=422,
                     )
             use_native_climate = payload.native_background_climate or (
@@ -961,6 +957,11 @@ class ProviderSolveService:
                 parameters["lcia_methods"] = payload.lcia_methods
             if payload.climate_default:
                 ensure_official_climate_methods(db)
+                if payload.analysis_task == "organization" and application is not None:
+                    # An organization run explicitly opts into the newest reviewed package. The
+                    # package is added to the application only; older revisions and answers stay frozen.
+                    from .official_product_method import bind_official_organization_lifecycle_method
+                    bind_official_organization_lifecycle_method(db, application)
                 db.commit()
                 bound_refs = list((application.context or {}).get("method_package_refs") or []) if application else []
                 if accepted_climate_method is None:

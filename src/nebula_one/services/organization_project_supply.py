@@ -13,9 +13,10 @@ def project_supply_climate(snapshot, revision, manifest):
     source_rows = receipt.get("project_background_process_receipts") or []
     rules = manifest.get("classification_rules") or {}
     formula = manifest.get("formula_graph") or {}
-    if (not pins or len(pins) != len(source_rows) or basis.get("mapped_background_process_pins")
+    optional_supply = rules.get("energy_path_source") == "optional_project_background_process_receipts"
+    if ((not pins and not optional_supply) or len(pins) != len(source_rows) or basis.get("mapped_background_process_pins")
             or basis.get("background_process_pins") or snapshot.native_background_climate is not None
-            or receipt.get("provenance", {}).get("project_background_pins_hash") != canonical_json_sha256(pins)):
+            or (pins and receipt.get("provenance", {}).get("project_background_pins_hash") != canonical_json_sha256(pins))):
         raise DomainError(code="ORGANIZATION_PROJECT_SUPPLY_SOURCE_INVALID",
                           message="frozen project supply must be exact and exclusive", status_code=422)
     links, issues = project_supply_links({"provider_receipt": receipt,

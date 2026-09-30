@@ -53,7 +53,8 @@ class OrganizationLifecycleService:
             if len(demand) != 1 or demand[0].get("unit") != "kg":
                 raise DomainError(code="ORGANIZATION_LIFECYCLE_PRODUCT_INVALID", message="source solve must have one kilogram product demand", status_code=422)
             climate_source = None
-            if (method.manifest.get("classification_rules") or {}).get("energy_path_source") == "project_background_process_receipts":
+            if (method.manifest.get("classification_rules") or {}).get("energy_path_source") in {
+                    "project_background_process_receipts", "optional_project_background_process_receipts"}:
                 foreground_value, background_value, climate_unit, climate_method, climate_source, mapped = (
                     project_supply_climate(snapshot, revision, method.manifest))
             else:

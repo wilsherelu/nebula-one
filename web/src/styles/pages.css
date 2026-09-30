@@ -343,13 +343,16 @@
 .project-workspace-header .page-header p { white-space: normal; font-size: 13px; }
 .project-back-link { white-space: nowrap; font-size: 13px; text-decoration: none; color: var(--no-color-text-secondary); }
 .project-version-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--no-color-text-secondary); }
-.project-version-bar .arco-select { width: 290px; }
+.project-version-bar .arco-select { width: 205px; }
 .project-header-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.project-history-button { display: inline-flex; align-items: center; justify-content: center; height: 32px; line-height: 30px; padding: 0 15px; text-decoration: none; white-space: nowrap; }
 .project-save-status { color: var(--no-color-text-secondary); font-size: 12px; min-width: 0; }
 .calculation-method-choices { display: grid; gap: 8px; width: 100%; }
 .calculation-method-choices .arco-radio { display: flex; width: 100%; margin: 0; padding: 12px; border: 1px solid var(--no-color-border); border-radius: 8px; }
 .calculation-method-choices .arco-radio-checked { border-color: var(--color-primary-light-4); background: var(--color-primary-light-1); }
-.calculation-method-choices .arco-radio-label { display: grid; gap: 4px; }
+.calculation-method-choices .arco-radio-label { min-width: 0; }
+.calculation-method-copy { display: flex; flex-direction: column; gap: 4px; line-height: 1.45; }
+.calculation-method-copy strong, .calculation-method-copy small { display: block; }
 .calculation-method-choices small { color: var(--no-color-text-secondary); }
 .project-workspace-tabs > .arco-tabs-header-nav { padding: 0 12px; background: white; border: 1px solid var(--no-color-border); border-top: 0; border-radius: 0 0 8px 8px; }
 .project-workspace-tabs > .arco-tabs-content { padding-top: 16px; }

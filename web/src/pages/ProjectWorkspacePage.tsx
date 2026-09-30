@@ -28,7 +28,10 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const client = useQueryClient();
-  const { t, lang, formatDate } = useI18n();
+  const { t, lang } = useI18n();
+  const versionDate = (value: string) => new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-GB', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(value));
   const models = useQuery({ queryKey: ['models', applicationId], queryFn: () => api.models(applicationId) });
   const model = params.get('model') ?? models.data?.[0]?.id ?? '';
   const revisions = useQuery({ queryKey: ['revisions', model], queryFn: () => api.revisions(model), enabled: !!model && !!models.data?.some(m => m.id === model) });
@@ -74,8 +77,6 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
   const inventoryReady = !!workspace.data?.native_inventory?.available;
   const supportsOrganizationLifecycle = workspace.data?.capabilities.includes('organization.lifecycle-carbon.v1');
   const organizationMethod = methodRefs.slice().reverse().map(ref => packages.data?.find(item => `${item.package_id}@${item.version}` === ref)).find(item => item?.package_kind === 'organization_lifecycle_carbon');
-  const projectSupplyMethod = (organizationMethod?.manifest.classification_rules as Record<string, unknown> | undefined)?.energy_path_source === 'project_background_process_receipts';
-  const missingSupply = projectSupplyMethod && !workspace.data?.project_background_pins?.length;
   const pcfMethod = methodRefs.slice().reverse().map(ref => packages.data?.find(item => `${item.package_id}@${item.version}` === ref))
     .find(item => item?.package_kind === 'product_carbon_footprint');
   const pcfClimateMethod = (pcfMethod?.manifest.formula_graph as { lcia_method?: string } | undefined)?.lcia_method;
@@ -120,17 +121,16 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
       };
       return api.solveAndFreeze(applicationId, source.revision_id, payload);
     },
-    onSuccess: (snapshot, view) => { if (activeSolveKey.current) localStorage.removeItem(retryStorageKey(activeSolveKey.current)); activeSolveKey.current = null; client.setQueryData<SolvedSystemSnapshot[]>(['solved-snapshots', applicationId], previous => previous?.some(item => item.id === snapshot.id) ? previous : [...(previous ?? []), snapshot]); client.invalidateQueries({ queryKey: ['solved-snapshots', applicationId] }); setCalculationOpen(false); navigate(view === 'organization' ? `/applications/${applicationId}/organization?snapshot=${snapshot.id}` : `/applications/${applicationId}/results?snapshot=${snapshot.id}&view=${view}`); },
+    onSuccess: (snapshot, view) => { if (activeSolveKey.current) localStorage.removeItem(retryStorageKey(activeSolveKey.current)); activeSolveKey.current = null; client.setQueryData<SolvedSystemSnapshot[]>(['solved-snapshots', applicationId], previous => previous?.some(item => item.id === snapshot.id) ? previous : [...(previous ?? []), snapshot]); client.invalidateQueries({ queryKey: ['solved-snapshots', applicationId] }); client.invalidateQueries({ queryKey: ['application', applicationId] }); client.invalidateQueries({ queryKey: ['method-packages', applicationId] }); setCalculationOpen(false); navigate(view === 'organization' ? `/applications/${applicationId}/organization?snapshot=${snapshot.id}` : `/applications/${applicationId}/results?snapshot=${snapshot.id}&view=${view}`); },
     onError: () => { if (activeSolveKey.current) { const key = retryStorageKey(activeSolveKey.current); const previous = Number(localStorage.getItem(key) ?? 0); localStorage.setItem(key, String(Number.isSafeInteger(previous) && previous >= 0 ? previous + 1 : 1)); activeSolveKey.current = null; } },
   });
   const error = models.error || revisions.error || workspace.error;
   const retry = () => { models.refetch(); if (model) revisions.refetch(); if (revision) workspace.refetch(); };
   const badSelection = (models.isSuccess && !models.data.some(m => m.id === model)) || (revisions.isSuccess && !revision) || !['overview', 'data', 'background', 'reports'].includes(step);
-  const revisionLabel = (number: number) => number === 1 ? t('workspace.revisionBase') : t('workspace.revisionNth', { number });
   const choices = [
-    { task: 'pcf', available: Boolean(supportsPcf && calculationReady && !missingSupply), reason: missingSupply ? t('workspace.needSupply') : undefined, method: pcfClimateMethod },
+    { task: 'pcf', available: Boolean(supportsPcf && calculationReady), method: pcfClimateMethod },
     { task: 'cbam', available: Boolean(supportsCbam && calculationReady && !cbamBlocked), reason: cbamBlocked ? t('workspace.cbamBoundaryUnreviewed') : undefined },
-    { task: 'organization', available: Boolean(supportsOrganizationLifecycle && organizationMethod && calculationReady && !missingSupply), reason: missingSupply ? t('workspace.needSupply') : undefined, method: organizationMethod ? `${organizationMethod.package_id} · ${organizationMethod.version}` : undefined },
+    { task: 'organization', available: Boolean(supportsOrganizationLifecycle && organizationMethod && calculationReady), method: (organizationMethod?.manifest.formula_graph as { lcia_method?: string } | undefined)?.lcia_method },
     { task: 'mfa', available: Boolean(workspace.data?.capabilities.includes('mfa.solved.v1')) },
   ] as const;
   const beginCalculation = () => {
@@ -143,8 +143,8 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
     <div className="project-workspace-header">
     <PageHeader title={name} description="" />
     {workspace.data && !badSelection ? <div className="project-header-actions">
-      <div className="project-version-bar"><span>{t('workspace.dataVersion')}</span><Select aria-label={t('workspace.dataVersionAria')} value={revisionId} disabled={saving || solve.isPending} onChange={requestRevision} options={revisions.data?.map(r => ({ label: `${revisionLabel(r.revision_number)} · ${formatDate(r.created_at)}`, value: r.id }))} /></div>
-      <Link className="arco-btn arco-btn-secondary" to={`/applications/${applicationId}/history?revision=${revisionId}`}
+      <div className="project-version-bar"><span>{t('workspace.dataVersion')}</span><Select aria-label={t('workspace.dataVersionAria')} value={revisionId} disabled={saving || solve.isPending} onChange={requestRevision} options={revisions.data?.map(r => ({ label: `${t('workspace.shortRevision', { number: r.revision_number })} · ${versionDate(r.created_at)}`, value: r.id }))} /></div>
+      <Link className="arco-btn arco-btn-secondary project-history-button" to={`/applications/${applicationId}/history?revision=${revisionId}`}
         onClick={event => { if (saving || solve.isPending) event.preventDefault(); else if (draftDirty) { event.preventDefault(); setPendingLeave(event.currentTarget.getAttribute('href')); } }}>{t('workspace.history')}</Link>
       <span className="project-save-status" role="status">{saving ? t('workspace.saving') : draftDirty ? t('workspace.unsaved') : ''}</span>
       <Button disabled={saving || solve.isPending || (!draftDirty && workspace.data.saved)} loading={saving} onClick={() => { void formRef.current?.save().catch(() => undefined); }}>{t('form.save')}</Button>
