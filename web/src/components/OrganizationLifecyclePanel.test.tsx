@@ -27,7 +27,7 @@ it('explains the missing exact supply receipt in English without a numeric resul
   render(<I18nProvider><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
     <OrganizationLifecyclePanel applicationId="application" snapshot={snapshot} method={method} />
   </QueryClientProvider></I18nProvider>);
-  expect(screen.getByText('Link a user supplied process and calculate a product climate result that includes it first.')).toBeInTheDocument();
+  expect(screen.getByText('This calculation method needs an exact supply receipt. Link a supply and recalculate.')).toBeInTheDocument();
   expect(screen.queryByText('0 kg CO₂e')).not.toBeInTheDocument();
 });
 

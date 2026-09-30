@@ -99,9 +99,9 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
     {!recordId ? <><div className="project-period-form">
-      <label>{t('org.period')}<Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${periodName(item)} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></label>
+      <div className="project-field"><span>{t('org.period')}</span><Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${periodName(item)} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></div>
       <label>{t('org.facility')}<input aria-label={t('org.facilityAria')} value={facility} onChange={event => setFacility(event.target.value)} /></label>
-      <label>{t('org.basis')}<Select aria-label={t('org.basis')} value={basisMode} onChange={value => setBasisMode(value as typeof basisMode)} options={[{ label: lang === 'zh' ? labels.input_basis?.per_unit_product ?? t('org.perProduct') : t('org.perProduct'), value: 'per_unit_product' }, { label: lang === 'zh' ? labels.input_basis?.annual_total ?? t('org.annual') : t('org.annual'), value: 'annual_total' }]} /></label>
+      <div className="project-field"><span>{t('org.basis')}</span><Select aria-label={t('org.basis')} value={basisMode} onChange={value => setBasisMode(value as typeof basisMode)} options={[{ label: lang === 'zh' ? labels.input_basis?.per_unit_product ?? t('org.perProduct') : t('org.perProduct'), value: 'per_unit_product' }, { label: lang === 'zh' ? labels.input_basis?.annual_total ?? t('org.annual') : t('org.annual'), value: 'annual_total' }]} /></div>
       <label>{t('org.output', { unit: demand?.unit ?? 'kg' })}<input aria-label={t('org.outputAria')} type="number" min="0" step="any" value={output} onChange={event => setOutput(event.target.value)} /></label>
       <p>{t('org.baseline', { value: format(baseline), unit: demand?.unit ?? '' })}</p>
     </div>
@@ -125,15 +125,15 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
             <label><input aria-label={t('org.enableFactor', { key })} type="checkbox" checked={entry?.enabled ?? false} onChange={event => update(key, { enabled: event.target.checked })} />{exchangeName(exchangeId, rule)}</label>
             {entry?.enabled ? <>
               <span>{t('org.periodAmount', { amount: exchange ? `${format(Number(exchange.amount) * scale)} ${String(exchange.unit)}` : t('org.noExchange') })} </span>
-              {factorOptions.length ? <label>{t('org.registeredEvidence')}<Select aria-label={t('org.registeredEvidence')} value={entry.factorRef} onChange={value => selectFactor(key, value)}
-                options={[{ label: t('org.manualEvidence'), value: '' }, ...factorOptions.map(item => ({ label: `${item.package_id} · ${item.version}`, value: `${item.package_id}@${item.version}` }))]} /></label>
+              {factorOptions.length ? <div className="project-field"><span>{t('org.registeredEvidence')}</span><Select aria-label={t('org.registeredEvidence')} value={entry.factorRef} onChange={value => selectFactor(key, value)}
+                options={[{ label: t('org.manualEvidence'), value: '' }, ...factorOptions.map(item => ({ label: `${item.package_id} · ${item.version}`, value: `${item.package_id}@${item.version}` }))]} /></div>
                 : <p>{t('org.noRegisteredFactor')}</p>}
               {entry.factorRef ? <p>{t('org.factorSelected', { version: entry.version })}</p> : <details><summary>{t('org.advanced')}</summary>
               <label>{t('org.factor')}<input aria-label={t('org.factor')} type="number" min="0" step="any" value={entry.factor} onChange={event => update(key, { factor: event.target.value })} /></label>
               <label>{t('org.factorVersion')}<input aria-label={t('org.factorVersion')} value={entry.version} onChange={event => update(key, { version: event.target.value })} /></label>
               <label>{t('org.factorSource')}<input aria-label={t('org.factorSource')} value={entry.source} onChange={event => update(key, { source: event.target.value })} /></label>
               <label>{t('org.sourceHash')}<input aria-label={t('org.sourceHash')} value={entry.hash} onChange={event => update(key, { hash: event.target.value })} /></label>
-              <label>{t('org.evidenceType')}<Select aria-label={t('org.evidenceType')} value={entry.evidenceRole} onChange={value => update(key, { evidenceRole: value as Entry['evidenceRole'] })} options={[{ label: t('org.exampleProxy'), value: 'demonstration_proxy' }, { label: t('org.supplierEvidence'), value: 'supplier_specific' }]} /></label>
+              <div className="project-field"><span>{t('org.evidenceType')}</span><Select aria-label={t('org.evidenceType')} value={entry.evidenceRole} onChange={value => update(key, { evidenceRole: value as Entry['evidenceRole'] })} options={[{ label: t('org.exampleProxy'), value: 'demonstration_proxy' }, { label: t('org.supplierEvidence'), value: 'supplier_specific' }]} /></div>
               {entry.evidenceRole === 'supplier_specific' ? <>
                 <label>{t('org.climateMethodId')}<input aria-label={t('org.climateMethodId')} value={entry.methodId} onChange={event => update(key, { methodId: event.target.value })} /></label>
                 <label>{t('org.climateMethodVersion')}<input aria-label={t('org.climateMethodVersion')} value={entry.methodVersion} onChange={event => update(key, { methodVersion: event.target.value })} /></label>

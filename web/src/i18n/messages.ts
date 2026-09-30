@@ -443,7 +443,7 @@ export const MESSAGES = {
   'background.scopeNote': ['所选过程仅补充对应投入的背景清单，不代表全部供应链或企业范围 1–3 已覆盖。', 'The selected process adds background inventory only for this input. It does not cover the entire supply chain or organizational scopes 1–3.'],
   'background.linkSave': ['关联并保存新版本', 'Link and save new version'],
   'background.remove': ['移除此背景关联', 'Remove this background link'],
-  'org.needSupply': ['此项目固定的组织方法要求供应背景。可关联供应后重算，或用支持部分清单的新版模板新建项目。', 'This project’s pinned organization method requires supply background. Link a supply and recalculate, or create a project from a newer template that supports partial inventories.'],
+  'org.needSupply': ['此核算方法需要精确供应回执，请关联供应后重新计算。', 'This calculation method needs an exact supply receipt. Link a supply and recalculate.'],
   'org.needNative': ['请先计算含原生背景的气候结果。', 'Calculate a climate result with native background first.'],
   'org.unknown': ['未计算', 'Not calculated'],
   'org.title': ['LCA 一致型组织碳核算', 'LCA consistent organizational carbon accounting'],
