@@ -1,6 +1,6 @@
 # Bundled reference data and redistribution
 
-The local Compose image builds from Nebula LCA commit `ca1992fa9c888877e62cc55b8375a0bdf0a6b7b5`. All engine reference files named below are tracked at that commit; the build does not read a developer database, local runtime volume, or uncommitted engine file. Nebula One's Apache-2.0 license covers its application code and authored seed structure, not third-party data.
+The local Compose image builds from Nebula LCA commit `d650153d2e8bf80a87638a4f4829832db9b95c63`. All engine reference files named below are tracked at that commit; the build does not read a developer database, local runtime volume, or uncommitted engine file. Nebula One's Apache-2.0 license covers its application code and authored seed structure, not third-party data.
 
 | Asset | Identity | SHA-256 |
 | --- | --- | --- |
