@@ -39,14 +39,14 @@ export function TemplateFinalizePanel() {
     {applications.isError || methods.isError ? <ErrorState error={applications.error || methods.error} /> : null}
     {!candidates.length && applications.isSuccess ? <Alert type="info" content={t('templates.noModelToFinalize')} /> : null}
     <div className="template-finalize-fields">
-      <label>{t('templates.sourceProject')}<Select value={applicationId || undefined} options={candidates.map(item => ({ label: item.name, value: item.id }))}
-        onChange={value => { setApplicationId(value); setModelId(''); setRevisionId(''); setRefs([]); publish.reset(); }} /></label>
-      {selectedApplication ? <label>{t('templates.sourceModel')}<Select value={modelId || undefined}
+      <div className="project-field"><span>{t('templates.sourceProject')}</span><Select aria-label={t('templates.sourceProject')} value={applicationId || undefined} options={candidates.map(item => ({ label: item.name, value: item.id }))}
+        onChange={value => { setApplicationId(value); setModelId(''); setRevisionId(''); setRefs([]); publish.reset(); }} /></div>
+      {selectedApplication ? <div className="project-field"><span>{t('templates.sourceModel')}</span><Select aria-label={t('templates.sourceModel')} value={modelId || undefined}
         options={models.data?.map(item => ({ label: `${item.name} · v${item.upstream_version}`, value: item.id }))}
-        onChange={value => { setModelId(value); setRevisionId(''); publish.reset(); }} /></label> : null}
-      {selectedModel ? <label>{t('templates.sourceRevision')}<Select value={revisionId || undefined}
+        onChange={value => { setModelId(value); setRevisionId(''); publish.reset(); }} /></div> : null}
+      {selectedModel ? <div className="project-field"><span>{t('templates.sourceRevision')}</span><Select aria-label={t('templates.sourceRevision')} value={revisionId || undefined}
         options={revisions.data?.filter(item => item.revision_kind === 'base').map(item => ({ label: `${t('workspace.dataVersion')} ${item.revision_number}`, value: item.id }))}
-        onChange={value => { setRevisionId(value); publish.reset(); }} /></label> : null}
+        onChange={value => { setRevisionId(value); publish.reset(); }} /></div> : null}
       {selectedRevision ? <><label>{t('templates.templateName')}<Input value={title} onChange={setTitle} maxLength={255} /></label>
         <label>{t('templates.templateVersion')}<Input value={version} onChange={setVersion} maxLength={32} /></label>
         <fieldset><legend>{t('templates.methods')}</legend>{availableMethods.map(item => {

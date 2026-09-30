@@ -313,6 +313,7 @@
 .template-finalize-panel { margin-top: 24px; }
 .template-finalize-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; margin: 16px 0; }
 .template-finalize-fields label { display: grid; gap: 6px; }
+.template-finalize-fields .project-field { margin: 0; }
 .template-finalize-fields fieldset { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px; border: 1px solid var(--no-color-border); border-radius: 8px; }
 .project-create-dialog .arco-modal-body { padding: 20px 24px 24px; max-height: 75vh; overflow-y: auto; }
 .project-create-dialog .section-panel { padding: 0; border: 0; box-shadow: none; margin: 0; }
