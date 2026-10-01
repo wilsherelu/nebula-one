@@ -41,6 +41,11 @@ app.on('browser-window-created', (_event, main) => {
       const baseVersion = Number(editorUrl.searchParams.get('version'));
       const current = await call(editorUrl.origin, `/api/projects/${projectId}/versions/${baseVersion}`);
       current.graph.nodes[0].name += ' (desktop acceptance)';
+      const co2Node = current.graph.nodes.find(node => node.outputs?.some(port => port.flowUuid === '08a91e70-3ddc-11dd-923d-0050c2490048'));
+      assert.ok(co2Node, 'Current model must retain its exact fossil CO2 port');
+      const co2Port = co2Node.outputs.find(port => port.flowUuid === '08a91e70-3ddc-11dd-923d-0050c2490048');
+      const addedPort = {...co2Port, id:co2Port.id + '-desktop-added', amount:0.1};
+      co2Node.outputs.push(addedPort);
       const saved = await call(editorUrl.origin, `/api/projects/${projectId}/versions`, {graph:current.graph});
       assert.ok(saved.version > baseVersion);
       const candidate = {state:handoff.state, confirmation_token:handoff.confirmation_token,
@@ -57,13 +62,23 @@ app.on('browser-window-created', (_event, main) => {
       assert.equal(preview.version, saved.version);
       const confirmed = await call(oneOrigin, `/api/v1/modeling/handoffs/${handoff.handoff_id}/confirm`, candidate);
       assert.ok(confirmed.application_id && confirmed.revision_id);
+      const workspace = await call(oneOrigin, `/api/v1/applications/${confirmed.application_id}/workspace/${confirmed.revision_id}`);
+      assert.ok(workspace.fields.some(field => field.port_id === addedPort.id));
+      const snapshot = await call(oneOrigin, `/api/v1/applications/${confirmed.application_id}/system-revisions/${confirmed.revision_id}/solve`, {
+        demand:workspace.demand, analysis_task:'pcf', calculation_purpose:'lca', climate_default:true});
+      assert.equal(snapshot.system_revision_id, confirmed.revision_id);
+      const resultPath = `/api/v1/solved-system-snapshots/${snapshot.id}`;
+      const method = (await call(oneOrigin, resultPath + '/product-carbon-footprint/default-method')).reference;
+      const pcf = await call(oneOrigin, resultPath + '/product-carbon-footprint', {method_package_ref:method});
+      assert.ok(pcf.total_footprint.value > 0);
       assert.equal(main.webContents.getURL(), originalUrl);
       const preferences = editor.webContents.getLastWebPreferences();
       assert.equal(preferences.nodeIntegration, false);
       assert.equal(preferences.contextIsolation, true);
       assert.equal(preferences.sandbox, true);
       fs.writeFileSync(reportPath, JSON.stringify({status:'passed', main_preserved:true,
-        separate_window:true, session_preserved:true, saved_version:saved.version, confirmed, preferences}, null, 2));
+        separate_window:true, session_preserved:true, saved_version:saved.version, confirmed, preferences,
+        added_exact_co2_port:addedPort.id, returned_snapshot_id:snapshot.id, returned_pcf:pcf.total_footprint}, null, 2));
       app.quit();
     } catch (error) {
       fs.writeFileSync(reportPath, JSON.stringify({status:'failed', error:error.stack}, null, 2));
