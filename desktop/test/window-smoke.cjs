@@ -64,9 +64,14 @@ app.on('browser-window-created', (_event, main) => {
       assert.ok(confirmed.application_id && confirmed.revision_id);
       const workspace = await call(oneOrigin, `/api/v1/applications/${confirmed.application_id}/workspace/${confirmed.revision_id}`);
       assert.ok(workspace.fields.some(field => field.port_id === addedPort.id));
-      const snapshot = await call(oneOrigin, `/api/v1/applications/${confirmed.application_id}/system-revisions/${confirmed.revision_id}/solve`, {
-        demand:workspace.demand, analysis_task:'pcf', calculation_purpose:'lca', climate_default:true});
-      assert.equal(snapshot.system_revision_id, confirmed.revision_id);
+      const inputs = await call(oneOrigin, `/api/v1/applications/${confirmed.application_id}/workspace/inputs`, {
+        revision_id:workspace.revision_id, expected_content_sha256:workspace.content_sha256,
+        demand_mode:'reference_output', amounts:workspace.demand.map(item => item.amount),
+        values:Object.fromEntries(workspace.fields.filter(field => !field.linked).map(field => [field.key,field.value])),
+        source:'Desktop returned exact CO2 acceptance'});
+      const snapshot = await call(oneOrigin, `/api/v1/applications/${confirmed.application_id}/system-revisions/${inputs.revision_id}/solve`, {
+        demand:inputs.demand, analysis_task:'pcf', calculation_purpose:'lca', climate_default:true});
+      assert.equal(snapshot.system_revision_id, inputs.revision_id);
       const resultPath = `/api/v1/solved-system-snapshots/${snapshot.id}`;
       const method = (await call(oneOrigin, resultPath + '/product-carbon-footprint/default-method')).reference;
       const pcf = await call(oneOrigin, resultPath + '/product-carbon-footprint', {method_package_ref:method});
