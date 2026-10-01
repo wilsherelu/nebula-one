@@ -509,6 +509,7 @@ export const MESSAGES = {
   'org.climateMethodHash': ['气候方法 SHA-256', 'Climate method SHA-256'],
   'org.referenceProduct': ['因子参照产品流 UUID', 'Factor reference product flow UUID'],
   'org.flowIdentity': ['查看技术流身份', 'View technical flow identity'],
+  'org.uncharacterized': ['有 {count} 项清单流未被本气候方法表征，已保留清单且未计入气候贡献。', '{count} inventory flows are not characterized by this climate method; they remain in the inventory without a climate contribution.'],
   'org.calculate': ['计算并保存生命周期归组', 'Calculate and save lifecycle groups'],
   'org.savedResults': ['已保存结果', 'Saved results'],
   'org.openReport': ['打开 HTML 报告', 'Open HTML report'],

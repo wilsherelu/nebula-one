@@ -15,6 +15,43 @@ MANIFEST = json.loads((Path(__file__).resolve().parents[1] / "src" / "nebula_one
                        "official_methods" / "organization-lifecycle-carbon-steel-1.0.5.json").read_text(encoding="utf-8"))["manifest"]
 OPTIONAL_MANIFEST = json.loads((Path(__file__).resolve().parents[1] / "src" / "nebula_one" / "resources" /
                                 "official_methods" / "organization-lifecycle-carbon-steel-1.0.6.json").read_text(encoding="utf-8"))["manifest"]
+NO_CF_MANIFEST = json.loads((Path(__file__).resolve().parents[1] / "src" / "nebula_one" / "resources" /
+                             "official_methods" / "organization-lifecycle-carbon-steel-1.0.7.json").read_text(encoding="utf-8"))["manifest"]
+
+
+def _add_no_cf_term(snapshot, flow_uuid="non-target-flow", contribution=0):
+    receipt = snapshot.lcia_results["indicator_contribution_receipts"][0]
+    receipt["terms"].append({"process_uuid": "supply-process", "exchange_id": "supplier::trace-out",
+        "flow_uuid": flow_uuid, "flow_version": "01.00.001", "amount": 0.25, "amount_unit": "kg",
+        "contribution_value": contribution, "contribution_unit": "kg CO2-Eq", "cf_method": "EF v3.1",
+        "cf_presence": "implicit_zero", "cf_value": 0, "cf_source_runtime_ids": [],
+        "cf_runtime_assets_hash": "b" * 64})
+    receipt["content_hash"] = canonical_json_sha256({k:v for k,v in receipt.items() if k != "content_hash"})
+    snapshot.lcia_results["contribution_receipts_hash"] = canonical_json_sha256([receipt])
+
+
+def test_non_target_no_cf_keeps_inventory_identity_without_blocking_characterized_result():
+    snapshot, revision = _source()
+    _add_no_cf_term(snapshot)
+    foreground, background, _, _, source, _ = project_supply_climate(snapshot, revision, NO_CF_MANIFEST)
+    assert foreground == 1941.739734
+    assert background == 101.66666666666667
+    assert source["uncharacterized_terms"] == [{"process_uuid": "supply-process",
+        "exchange_id": "supplier::trace-out", "flow_uuid": "non-target-flow", "flow_version": "01.00.001",
+        "amount": 0.25, "amount_unit": "kg", "status": "method_has_no_cf", "numeric_contribution": None}]
+    assert len(snapshot.lcia_results["indicator_contribution_receipts"][0]["terms"]) == 3
+    with pytest.raises(DomainError) as caught:
+        project_supply_climate(snapshot, revision, OPTIONAL_MANIFEST)
+    assert caught.value.code == "ORGANIZATION_PROJECT_SUPPLY_CF_INVALID"
+
+
+@pytest.mark.parametrize('flow, contribution', [('08a91e70-3ddc-11dd-923d-0050c2490048', 0), ('non-target-flow', 1)])
+def test_required_climate_flow_or_nonzero_no_cf_cannot_be_accepted_as_zero(flow, contribution):
+    snapshot, revision = _source()
+    _add_no_cf_term(snapshot, flow, contribution)
+    with pytest.raises(DomainError) as caught:
+        project_supply_climate(snapshot, revision, NO_CF_MANIFEST)
+    assert caught.value.code == "ORGANIZATION_PROJECT_SUPPLY_CF_INVALID"
 
 
 def _source():

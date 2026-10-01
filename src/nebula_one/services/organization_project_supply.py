@@ -61,16 +61,37 @@ def project_supply_climate(snapshot, revision, manifest):
     foreground_value = background_value = 0.0
     contributions = {process_id: 0.0 for process_id in sources}
     characterized_suppliers = set()
+    uncharacterized_terms = []
+    allow_no_cf = formula.get("no_cf_policy") == "record_uncharacterized_no_numeric_contribution"
+    required_flows = set(formula.get("required_characterized_flow_uuids") or [])
     for term in terms:
         process_id = term.get("process_uuid")
+        if process_id not in controlled and process_id not in sources:
+            raise DomainError(code="ORGANIZATION_PROJECT_SUPPLY_UNCLASSIFIED",
+                              message="climate term belongs to an unclassified process", status_code=422)
         try:
             value = float(term["contribution_value"])
         except (KeyError, TypeError, ValueError):
             value = float("nan")
         if (not isfinite(value) or term.get("contribution_unit") != unit
                 or term.get("cf_method") != method
-                or term.get("cf_presence") not in {"explicit_nonzero", "explicit_zero"}
                 or term.get("cf_runtime_assets_hash") != lcia.get("runtime_assets_hash")):
+            raise DomainError(code="ORGANIZATION_PROJECT_SUPPLY_CF_INVALID",
+                              message="climate term lacks an explicit compatible factor", status_code=422)
+        presence = term.get("cf_presence")
+        if presence not in {"explicit_nonzero", "explicit_zero"}:
+            if (allow_no_cf and presence == "implicit_zero" and value == 0
+                    and term.get("cf_value") == 0 and term.get("flow_uuid")
+                    and term["flow_uuid"] not in required_flows
+                    and term.get("exchange_id") and not term.get("cf_source_runtime_ids")):
+                # Keep absence distinct from an explicitly characterized zero. The complete
+                # frozen inventory and term remain available through this exact receipt.
+                uncharacterized_terms.append({"process_uuid": process_id,
+                    "exchange_id": term["exchange_id"], "flow_uuid": term["flow_uuid"],
+                    "flow_version": term.get("flow_version"), "amount": term.get("amount"),
+                    "amount_unit": term.get("amount_unit"), "status": "method_has_no_cf",
+                    "numeric_contribution": None})
+                continue
             raise DomainError(code="ORGANIZATION_PROJECT_SUPPLY_CF_INVALID",
                               message="climate term lacks an explicit compatible factor", status_code=422)
         if process_id in controlled:
@@ -108,4 +129,6 @@ def project_supply_climate(snapshot, revision, manifest):
                                      "process_uuid": row["source_process_uuid"],
                                      "contribution_value": contributions[row["source_process_uuid"]]}
                                     for row in source_rows]}
+    if allow_no_cf:
+        climate_source["uncharacterized_terms"] = uncharacterized_terms
     return foreground_value, background_value, unit, climate_method, climate_source, [pin["consumer_exchange_id"] for pin in pins]

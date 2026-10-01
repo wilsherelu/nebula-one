@@ -4,6 +4,19 @@ from __future__ import annotations
 from html import escape
 
 
+def _uncharacterized_html(result: dict, *, english: bool = False) -> str:
+    terms = (result.get("climate_source") or {}).get("uncharacterized_terms") or []
+    if not terms:
+        return ""
+    message = (f"{len(terms)} inventory flows are not characterized by this climate method; no numeric contribution is assigned."
+               if english else f"有 {len(terms)} 项清单流未被本气候方法表征，未计入气候贡献。")
+    title = "Flow identities" if english else "流身份详情"
+    rows = "".join(f"<li>{escape(str(term['flow_uuid']))}@{escape(str(term.get('flow_version') or ''))} · "
+                   f"{escape(str(term['exchange_id']))} · {escape(str(term.get('amount')))} "
+                   f"{escape(str(term.get('amount_unit') or ''))}</li>" for term in terms)
+    return f"<p>{message}</p><details><summary>{title}</summary><ul>{rows}</ul></details>"
+
+
 def render_organization_lifecycle_html(record: dict, *, english_labels: dict | None = None) -> str:
     if english_labels is not None:
         return _render_english(record, english_labels)
@@ -44,7 +57,8 @@ def render_organization_lifecycle_html(record: dict, *, english_labels: dict | N
             "该合计不代表完整生命周期排放。</p><h2>其他上下游活动</h2><ul>{categories}</ul>"
             "<p>这是 Nebula 自定义的 LCA 一致型组织归组方法，不是 GHG Protocol 范围 1–3，"
             "也不代表 ILCD 认可本分类。覆盖由当前模型、供应路径及已提供因子决定。</p>"
-            f"<small>方法 {escape(result['method_package']['reference'])} · 方法哈希 "
+            + _uncharacterized_html(result)
+            + f"<small>方法 {escape(result['method_package']['reference'])} · 方法哈希 "
             f"{escape(result['method_package']['content_sha256'])}<br>快照 "
             f"{escape(result['source_snapshot']['id'])} · 快照哈希 "
             f"{escape(result['source_snapshot']['content_sha256'])}<br>结果哈希 "
@@ -98,7 +112,8 @@ def _render_english(record: dict, labels: dict) -> str:
             f"<h2>Other upstream and downstream activities</h2><ul>{categories}</ul>"
             "<p>These Nebula authored lifecycle groups are not GHG Protocol scopes 1–3 or an ILCD endorsed "
             "classification. Coverage depends on the current model, supplier paths, and provided factors.</p>"
-            f"<small>Method {escape(result['method_package']['reference'])} · method hash "
+            + _uncharacterized_html(result, english=True)
+            + f"<small>Method {escape(result['method_package']['reference'])} · method hash "
             f"{escape(result['method_package']['content_sha256'])}<br>Snapshot "
             f"{escape(result['source_snapshot']['id'])} · snapshot hash "
             f"{escape(result['source_snapshot']['content_sha256'])}<br>Result hash "

@@ -459,6 +459,7 @@ export interface OrganizationLifecycleResult {
   solved_snapshot_id: string;
   content_sha256: string;
   result: {
+    climate_source?: { uncharacterized_terms?: Array<{process_uuid: string; exchange_id: string; flow_uuid: string; flow_version: string | null; amount: number; amount_unit: string; status: string; numeric_contribution: null}> };
     reporting_period: { name: string; start_date?: string; end_date?: string };
     facility: string;
     activity_basis: { mode: string; baseline_output: number; period_output: number; unit: string; scale_factor: number };

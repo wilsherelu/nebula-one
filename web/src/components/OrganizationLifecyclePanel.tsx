@@ -152,6 +152,12 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     {!recordId ? <h4>{t('org.savedResults')}</h4> : null}
     {matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
       <strong>{periodName(record.result.reporting_period)} · {record.result.facility}</strong>
+      {record.result.climate_source?.uncharacterized_terms?.length ? <>
+        <p>{t('org.uncharacterized', {count: record.result.climate_source.uncharacterized_terms.length})}</p>
+        <details><summary>{t('org.flowIdentity')}</summary><ul>{record.result.climate_source.uncharacterized_terms.map(term =>
+          <li key={`${term.process_uuid}:${term.exchange_id}`}>{term.flow_uuid}@{term.flow_version} · {term.exchange_id} · {format(term.amount)} {term.amount_unit}</li>
+        )}</ul></details>
+      </> : null}
       <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></p>
       <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
       <Table rowKey="key" pagination={false} data={[

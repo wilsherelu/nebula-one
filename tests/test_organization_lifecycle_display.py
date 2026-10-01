@@ -30,8 +30,9 @@ def test_english_display_covers_exact_immutable_method():
     assert organization_lifecycle_display(method, "zh")["labels"]["categories"]["purchased_iron_ore"] == "采购铁矿石上游"
 
 
-def test_optional_supply_method_has_its_own_exact_display_projection():
-    method = _method("1.0.6")
+@pytest.mark.parametrize('version', ['1.0.6', '1.0.7'])
+def test_optional_supply_method_has_its_own_exact_display_projection(version):
+    method = _method(version)
     display = organization_lifecycle_display(method, "en")
     assert display["method_package"]["content_sha256"] == method.content_sha256
     assert display["labels"]["group_status"]["missing_energy_path"] == "Energy supply not linked; value unknown"
