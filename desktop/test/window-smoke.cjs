@@ -34,6 +34,8 @@ app.on('browser-window-created', (_event, main) => {
       assert.ok(editor);
       const editorUrl = new URL(handoff.editor_url);
       assert.equal(editor.webContents.getURL(), handoff.editor_url);
+      assert.ok(await editor.webContents.executeJavaScript('document.getElementById("root")?.childElementCount > 0'),
+        'Deep editor route must mount the renderer before handoff acceptance');
       assert.equal(await editor.webContents.executeJavaScript('window.__NEBULA_DESKTOP__.oneOrigin'), oneOrigin);
       const projectId = editorUrl.pathname.split('/').pop();
       const baseVersion = Number(editorUrl.searchParams.get('version'));

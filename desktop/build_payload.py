@@ -4,13 +4,42 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
+from html.parser import HTMLParser
 from pathlib import Path
 
 
-def run(command, cwd):
-    subprocess.run(command, cwd=cwd, check=True)
+def run(command, cwd, *, env=None):
+    subprocess.run(command, cwd=cwd, env=env, check=True)
+
+
+class EditorAssets(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.urls = []
+
+    def handle_starttag(self, tag, attributes):
+        attrs = dict(attributes)
+        if tag == 'script' and attrs.get('src'):
+            self.urls.append(attrs['src'])
+        if tag == 'link' and attrs.get('rel') in {'stylesheet', 'modulepreload'}:
+            self.urls.append(attrs['href'])
+
+
+def validate_editor_assets(editor):
+    assets = EditorAssets()
+    assets.feed((editor / 'index.html').read_text(encoding='utf-8'))
+    if not assets.urls:
+        raise ValueError('Editor build has no script or stylesheet assets')
+    for url in assets.urls:
+        if not url.startswith('/assets/'):
+            raise ValueError(f'Desktop HTTP editor needs root asset URLs: {url}')
+        file = (editor / url.lstrip('/')).resolve()
+        file.relative_to(editor.resolve())
+        if not file.is_file():
+            raise FileNotFoundError(file)
 
 
 def main():
@@ -23,7 +52,9 @@ def main():
     target = root / 'desktop/resources'
     if not args.skip_web_build:
         run(['npm.cmd', 'run', 'build'], root / 'web')
-        run(['npm.cmd', 'run', 'build'], lca / 'nebula-lca-web')
+        run(['npm.cmd', 'run', 'build'], lca / 'nebula-lca-web',
+            env={**os.environ, 'VITE_WEB_ASSET_BASE': '/'})
+    validate_editor_assets(lca / 'nebula-lca-web/dist')
     copies = [
         (root / 'build/desktop-backends/nebula-one-api', target / 'backends/nebula-one-api'),
         (lca / 'build/desktop-backends/nebula-lca-api', target / 'backends/nebula-lca-api'),
