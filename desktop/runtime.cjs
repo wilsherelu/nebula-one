@@ -105,6 +105,7 @@ class DesktopRuntime {
       AUTO_STARTUP_MAINTENANCE_ON_STARTUP: 'true',
       NEBULA_LCA_EF31_DIR: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/EF3.1'),
       NEBULA_PROVIDER_ELEMENTARY_CATALOG_PATH: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_elementary_catalog.v1.csv'),
+      NEBULA_REFERENCE_BOOTSTRAP_PROFILE: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_elementary_catalog.v1.provenance.json'),
       NEBULA_LCA_ENGINE_COMMIT: payload.lca_commit,
       NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_tiangong_open_flows.v2.json'),
       NEBULA_PROVIDER_TIDAS_REFERENCE_DEPENDENCY_SNAPSHOT_PATH: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_tiangong_open_references.v1.json')
