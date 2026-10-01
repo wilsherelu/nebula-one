@@ -15,8 +15,14 @@ async function accept(origin, directory) {
     if (!response.ok) throw new Error(`${route}: ${response.status} ${text.slice(0, 2000)}`);
     return result;
   }
-  const application = (await call('GET', '/api/v1/applications')).find(item => item.context.resource_purpose === 'demo_project');
-  assert.ok(application, 'Official demo must exist');
+  const demo = (await call('GET', '/api/v1/applications')).find(item => item.context.resource_purpose === 'demo_project');
+  assert.ok(demo, 'Official demo must exist');
+  const templates = (await call('GET', '/api/v1/project-templates')).items;
+  const template = templates.find(item => item.seed_id === demo.context.seed_template.seed_id);
+  assert.ok(template);
+  const created = await call('POST', `/api/v1/project-templates/${template.id}/projects`, {
+    name:'Desktop runtime acceptance', project_key:randomUUID(), expected_template_sha256:template.template_sha256});
+  const application = await call('GET', `/api/v1/applications/${created.application_id}`);
   const prefix = `/api/v1/applications/${application.id}`;
   const model = (await call('GET', prefix + '/system-models'))[0];
   const revisions = await call('GET', `/api/v1/system-models/${model.id}/revisions`);
@@ -57,6 +63,11 @@ async function accept(origin, directory) {
       const method = (await call('GET', route + '/product-carbon-footprint/default-method')).reference;
       result = await call('POST', route + '/product-carbon-footprint', {method_package_ref:method});
       assert.ok(result.total_footprint.value > 0);
+      const exported = await fetch(origin + route + '/product-carbon-footprint/export.xlsx?method_package_ref=' + encodeURIComponent(method));
+      assert.ok(exported.ok);
+      const bytes = Buffer.from(await exported.arrayBuffer());
+      assert.equal(bytes.subarray(0,2).toString(), 'PK');
+      fs.writeFileSync(path.join(directory, 'product-carbon-footprint.xlsx'), bytes);
     }
     if (task === 'cbam') {
       const hash = snapshot.provider_receipt.calculation_basis.source_model.graph_sha256;
@@ -75,6 +86,13 @@ async function accept(origin, directory) {
         method_package_ref:`${method.package_id}@${method.version}`, reporting_period_id:periods[0].id,
         facility:'Desktop steel acceptance', controlled_process_ids:workspace.process_graph.nodes.map(node => node.id),
         input_basis:'annual_total', period_product_output:workspace.demand[0].amount, other_activities:[]});
+      const persisted = await call('GET', prefix + '/organization-lifecycle-inventories/' + result.id);
+      assert.deepEqual(persisted.result, result.result);
+      assert.equal(persisted.content_sha256, result.content_sha256);
+      assert.equal(persisted.solved_snapshot_id, result.solved_snapshot_id);
+      const report = await call('GET', prefix + '/organization-lifecycle-inventories/' + result.id + '/report.html?lang=en');
+      assert.ok(report.includes('not characterized'));
+      fs.writeFileSync(path.join(directory, 'organization-report.html'), report);
     }
     outcomes[task] = {snapshot_id:snapshot.id, revision_id:workspace.revision_id, result};
   }
