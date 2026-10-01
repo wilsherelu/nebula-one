@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
+const { randomUUID } = require('node:crypto');
 const { DesktopRuntime } = require('./runtime.cjs');
 
 async function accept(origin, directory) {
@@ -44,7 +45,7 @@ async function accept(origin, directory) {
   for (const task of ['mfa', 'pcf', 'cbam', 'organization']) {
     const request = {demand:workspace.demand, analysis_task:task,
       calculation_purpose:task === 'cbam' ? 'cbam' : 'lca',
-      project_background_pins:pins, idempotency_key:`desktop-${task}-${workspace.content_sha256}`,
+      project_background_pins:pins, idempotency_key:`desktop-${task}-${randomUUID()}`,
       ...(['pcf','organization'].includes(task) ? {climate_default:true} : {})};
     const snapshot = await call('POST', prefix + `/system-revisions/${workspace.revision_id}/solve`, request);
     assert.deepEqual(await call('POST', prefix + `/system-revisions/${workspace.revision_id}/solve`, request), snapshot);
@@ -66,7 +67,7 @@ async function accept(origin, directory) {
         end_use_declaration:'sold_or_transferred_as_crude_steel'});
     }
     if (task === 'organization') {
-      const refs = application.context.method_package_refs;
+      const refs = (await call('GET', prefix)).context.method_package_refs;
       const method = refs.slice().reverse().map(ref => packages.find(item => `${item.package_id}@${item.version}` === ref))
         .find(item => item?.package_kind === 'organization_lifecycle_carbon');
       assert.ok(method);
