@@ -1,0 +1,33 @@
+{
+  "name": "nebula-one-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nebula One local desktop application",
+  "author": "Nebula One contributors",
+  "license": "Apache-2.0",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "build": "electron-builder --win nsis --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "org.nebula.one",
+    "productName": "Nebula One",
+    "directories": { "output": "../../nebula-one-desktop-release" },
+    "files": ["main.cjs", "preload.cjs", "runtime.cjs", "security.cjs", "package.json"],
+    "extraResources": [{ "from": "resources", "to": "runtime" }],
+    "asar": true,
+    "win": { "target": "nsis", "artifactName": "Nebula-One-${version}-windows-x64.exe" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

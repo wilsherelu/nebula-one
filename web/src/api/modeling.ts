@@ -6,6 +6,13 @@ export interface ModelingCandidate {
   base_version?: number; saved_version: number; upstream_graph_hash: string;
 }
 export interface ModelingResult { application_id: string; system_model_id: string; revision_id: string }
+declare global {
+  interface Window {
+    __NEBULA_ONE_DESKTOP__?: {
+      openEditor(payload: {url: string; handoff_id: string; state: string; confirmation_token: string}): Promise<boolean>;
+    };
+  }
+}
 export interface ModelingPreview {
   name: string; project_id: string; version: number; upstream_graph_hash: string;
   hydrated_graph_sha256: string; node_count: number; status: string; result: Partial<ModelingResult>;
@@ -31,5 +38,9 @@ export function withLanguage(url: string, lang: Lang): string {
 export async function openModelingHandoff(name: string, baseModelId: string, baseRevisionId: string | undefined, lang: Lang) {
   const result = await modelingApi.start(name, baseModelId, baseRevisionId);
   sessionStorage.setItem(handoffStorageKey(result.handoff_id), JSON.stringify({state: result.state, confirmation_token: result.confirmation_token}));
-  window.location.assign(withLanguage(result.editor_url, lang));
+  const url = withLanguage(result.editor_url, lang);
+  if (window.__NEBULA_ONE_DESKTOP__ && await window.__NEBULA_ONE_DESKTOP__.openEditor({
+    url, handoff_id: result.handoff_id, state: result.state, confirmation_token: result.confirmation_token,
+  })) return;
+  window.location.assign(url);
 }

@@ -161,6 +161,10 @@ class NebulaLCAClient:
             raise ValueError("Nebula LCA base URL cannot be blank")
         self.base_url = normalized
         self.timeout_seconds = timeout_seconds
+        if transport is None and normalized == "http://nebula-lca.desktop.invalid":
+            import os
+            from ..desktop_transport import DesktopEngineTransport
+            transport = DesktopEngineTransport(os.environ.get("NEBULA_ONE_DESKTOP_ENGINE_ENDPOINT", ""))
         self._client = httpx.Client(
             base_url=normalized,
             timeout=timeout_seconds,
