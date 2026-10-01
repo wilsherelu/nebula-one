@@ -6,7 +6,7 @@ This first public candidate includes the steel blast furnace–BOF template and 
 
 ## Start the local steel example
 
-Install Docker with Compose. Check out a compatible Nebula LCA source tree separately, then set `NEBULA_LCA_SOURCE_DIR` to its absolute path. The tested source revision for this candidate is `8730ba4`. From this repository root, run:
+Install Docker with Compose. Check out Nebula LCA revision `d60a893d391511ec74bf9e3d248ed05c154b9623` in a clean source tree, then set `NEBULA_LCA_SOURCE_DIR` to its absolute path. Verify `git -C <engine-path> rev-parse HEAD` and `git -C <engine-path> status --porcelain` before building. Compose reads this directory; `deploy/engine.env` declares the receipt identity and does not select or verify the source checkout. From this repository root, run:
 
 ```sh
 docker compose -f deploy/compose.yml -f deploy/compose.steel-demo.local.example.yml up --build -d
@@ -19,6 +19,8 @@ The steel startup profile imports only two exact shared product Flow rows needed
 The local Compose stack uses separate named volumes. Keep those volumes if you want to retain projects and results. A new installation gets a new database; it does not use any development or demonstration database from another checkout.
 
 ## Work with a model
+
+For the Windows local preview, see [desktop installation and data backup](docs/DESKTOP.md) and [candidate release notes and artifact whitelist](docs/RELEASE_CANDIDATE.md). The accepted desktop binary keeps its original source manifest; subsequent release documentation does not replace that binary or its evidence.
 
 The One workbench edits quantities and compatible background associations on a fixed model structure. Structural changes open the Nebula LCA editor; saving there creates an exact new model version that One can import. Results always point to a selected revision and frozen solve, never to `latest`. Product climate and organizational totals include linked background contributions only when the required identity and contribution receipts exist. CBAM output is a trial, not an official declaration.
 

@@ -1,6 +1,6 @@
 # Bundled reference data and redistribution
 
-The local Compose image builds from Nebula LCA commit `d650153d2e8bf80a87638a4f4829832db9b95c63`. All engine reference files named below are tracked at that commit; the build does not read a developer database, local runtime volume, or uncommitted engine file. Nebula One's Apache-2.0 license covers its application code and authored seed structure, not third-party data.
+The accepted desktop payload uses Nebula LCA commit `d60a893d391511ec74bf9e3d248ed05c154b9623`. The local Compose candidate declares that same revision in `deploy/engine.env`; its actual source is the operator's `NEBULA_LCA_SOURCE_DIR`, which must be verified as a clean checkout of that revision before building. Updating this declaration does not update an existing container. All engine reference files named below are tracked at that commit. Nebula One's Apache-2.0 license covers its application code and authored seed structure, not third-party data. See the [exact desktop data inventory](DESKTOP_DATA_INVENTORY.md) for all selected data paths and hashes, including legacy TianGong bootstrap assets.
 
 | Asset | Identity | SHA-256 |
 | --- | --- | --- |
