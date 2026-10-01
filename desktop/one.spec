@@ -3,7 +3,8 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 root = Path(SPECPATH).parent
 a = Analysis([str(root / "desktop/backend_entry.py")], pathex=[str(root / "src")],
-             binaries=[], datas=collect_data_files("nebula_one"),
+             binaries=[], datas=[item for item in collect_data_files("nebula_one")
+                                    if Path(item[0]).name != "china-grid-co2-2023.v1.json"],
              hiddenimports=collect_submodules("nebula_one") + collect_submodules("uvicorn"),
              hookspath=[], runtime_hooks=[], excludes=["pytest", "tkinter"], noarchive=False)
 pyz = PYZ(a.pure)

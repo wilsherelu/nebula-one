@@ -12,7 +12,7 @@ from ..errors import DomainError
 RESOURCE_DIR = Path(__file__).resolve().parents[1] / "resources" / "public_supply"
 PIN_PATH = RESOURCE_DIR / "tiangong-alternating-current-01.01.003.pin.json"
 CO2_PIN_PATH = RESOURCE_DIR / "tiangong-carbon-dioxide-fossil-03.00.004.pin.json"
-SUPPLY_PATH = RESOURCE_DIR / "china-grid-co2-2023.v1.json"
+SUPPLY_PATH = RESOURCE_DIR / "tiangong-china-grid-2022.v1.json"
 
 
 def open_flow_pins() -> list[dict[str, str]]:
@@ -98,8 +98,9 @@ def _ensure_pinned_open_flow(client: Any, pin_path: Path, port: dict[str, Any]) 
 
 def ensure_open_supply_flow(client: Any) -> dict[str, Any]:
     supply = json.loads(SUPPLY_PATH.read_text(encoding="utf-8"))["graph"]["nodes"][0]
-    electricity = supply["outputs"][0]
-    co2 = supply["outputs"][1]
+    ports = {port["flowUuid"]: port for port in supply["outputs"]}
+    electricity = ports[json.loads(PIN_PATH.read_text(encoding="utf-8"))["flow_uuid"]]
+    co2 = ports[json.loads(CO2_PIN_PATH.read_text(encoding="utf-8"))["flow_uuid"]]
     result = _ensure_pinned_open_flow(client, PIN_PATH, electricity)
     result["co2_flow"] = _ensure_versioned_open_flow(client, CO2_PIN_PATH, co2)
     return result

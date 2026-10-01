@@ -42,6 +42,15 @@ def validate_editor_assets(editor):
             raise FileNotFoundError(file)
 
 
+def validate_public_payload(target):
+    forbidden = {'ILCD_Unit_Groups.xlsx', 'elementary_flows_sample.csv',
+                 'intermediate_flows_sample.csv', 'tiangong_processes.zip',
+                 'china-grid-co2-2023.v1.json'}
+    for file in target.rglob('*'):
+        if file.is_file() and (file.name in forbidden or 'solver-data' in file.parts):
+            raise ValueError(f'Unneeded legacy asset in desktop payload: {file.relative_to(target)}')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lca-root', type=Path, required=True)
@@ -71,9 +80,12 @@ def main():
         destination.resolve().relative_to(target.resolve())
         if destination.exists():
             shutil.rmtree(destination)
-        shutil.copytree(source, destination)
+        shutil.copytree(source, destination, ignore=shutil.ignore_patterns('china-grid-co2-2023.v1.json'))
     (target / 'config').mkdir(parents=True, exist_ok=True)
-    shutil.copy2(root / 'deploy/seeds/steel-demo.json', target / 'config/steel-demo.json')
+    seed_config = json.loads((root / 'deploy/seeds/steel-demo.json').read_text(encoding='utf-8'))
+    seed_config['steps'] = [step for step in seed_config['steps']
+                            if step.get('seed_id') != 'china-national-grid-co2-2023']
+    (target / 'config/steel-demo.json').write_text(json.dumps(seed_config, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     shutil.copy2(root / 'deploy/public-catalog.v1.json', target / 'config/public-catalog.v1.json')
     (target / 'licenses').mkdir(exist_ok=True)
     shutil.copy2(root / 'LICENSE', target / 'licenses/nebula-one.txt')
@@ -81,6 +93,7 @@ def main():
     shutil.copy2(root / 'docs/DATA_PROVENANCE.md', target / 'licenses/DATA_PROVENANCE.md')
     run([str(root / 'build/desktop-venv/Scripts/python.exe'), str(root / 'desktop/dependency_notices.py'),
          str(target / 'licenses/python')], root)
+    validate_public_payload(target)
     records = []
     for file in sorted(target.rglob('*')):
         if file.is_file() and file.name != 'payload-manifest.json':
