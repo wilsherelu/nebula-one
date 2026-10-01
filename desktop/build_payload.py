@@ -92,6 +92,7 @@ def main():
     shutil.copy2(lca / 'LICENSE', target / 'licenses/nebula-lca.txt')
     shutil.copy2(root / 'docs/DATA_PROVENANCE.md', target / 'licenses/DATA_PROVENANCE.md')
     shutil.copy2(root / 'docs/RETAINED_SOURCE_DECLARATIONS.md', target / 'licenses/RETAINED_SOURCE_DECLARATIONS.md')
+    shutil.copy2(root / 'docs/DESKTOP_DATA_INVENTORY.md', target / 'licenses/DESKTOP_DATA_INVENTORY.md')
     mapping = lca / 'nebula-lca-api/data/flow_mappings/nebula-flow-mapping-v1'
     for name in ('LICENSE', 'NOTICE.md'):
         shutil.copy2(mapping / name, target / 'licenses' / f'flow-mapping-{name}')
