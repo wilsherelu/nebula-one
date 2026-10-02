@@ -233,6 +233,8 @@ def resolve_purpose_derivation(
     rules = _resolve_rules(template, pinned,
                            canonical_json_sha256(_identity_graph(revision.graph_snapshot)),
                            revision.graph_snapshot)
+    from .inventory_derivation import derive_inventory, recipe_of
+    derive_inventory(revision.graph_snapshot, recipe_of(revision.application_context), validate_only=True)
     intent = rules.purpose(purpose)
     packages = _load_method_packages(db, _cited_packages(intent))
     derived = derive_calculation_model(

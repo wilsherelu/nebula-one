@@ -190,6 +190,7 @@ export function CbamRuleTrialPanel(props: Props) {
   const simple = result && result.schema_version !== 'nebula_one.cbam.complex-trial.v1' ? result : undefined;
   const direct = complex?.attributed_emissions.total_direct_component ?? simple?.attributed_emissions.direct;
   const partial = simple?.specific_embedded_emissions.partial_result === true;
+  const includedValue = partial ? (simple?.specific_embedded_emissions.partial_value ?? result?.specific_embedded_emissions.value) : result?.specific_embedded_emissions.value;
   const counted = (value: string | null | undefined): string | null =>
     value != null && value.trim() !== '' ? formatDecimal(value) : null;
   // The indirect line is a real business state, never a fabricated zero: a method that only returns
@@ -265,9 +266,9 @@ export function CbamRuleTrialPanel(props: Props) {
       {!activeResult.isLoading && !activeResult.error && result ? <>
         <div className="pcf-result__summary">
           <div className="cbam-headline">
-            <MetricCard label={simple?.attributed_emissions.indirect?.value == null ? t('cbam.directIntensity') : partial ? t('cbam.partialEmbedded') : t('cbam.specificEmbedded')}
-              value={counted(result.specific_embedded_emissions.value) ?? t('cbam.notCalculated')}
-              unit={counted(result.specific_embedded_emissions.value) ? result.specific_embedded_emissions.unit : undefined} />
+            <MetricCard label={partial ? t('cbam.partialEmbedded') : simple?.attributed_emissions.indirect?.value == null ? t('cbam.directIntensity') : t('cbam.specificEmbedded')}
+              value={counted(includedValue) ?? t('cbam.notCalculated')}
+              unit={counted(includedValue) ? result.specific_embedded_emissions.unit : undefined} />
             <MetricCard label={t('cbam.directIncluded')}
               value={counted(direct?.value) ?? t('cbam.notCalculated')}
               unit={counted(direct?.value) ? direct?.unit : undefined} />
@@ -277,7 +278,7 @@ export function CbamRuleTrialPanel(props: Props) {
         {simple?.coverage ? <p className="cbam-result__coverage">
           {openItemCount ? <Button type="text" size="small" onClick={() => setAuditVisible(true)}>{t('cbam.gaps', { count: openItemCount })}</Button> : <span>{t('cbam.closedCoverage')}</span>}
         </p> : null}
-        <p className="result-coverage-note">{t('cbam.notDeclaration')}</p>
+        <p className="result-coverage-note">{partial ? t('cbam.incompleteSubtotal') : t('cbam.notDeclaration')}</p>
         {activeChart.isLoading ? <div className="pcf-result__chart-state"><LoadingState rows={5} /></div> : null}
         {activeChart.error ? <div className="pcf-result__chart-state"><ErrorState error={activeChart.error} onRetry={() => activeChart.refetch()} /></div> : null}
         {chartUrl ? <div className="pcf-result__chart" role="region" aria-label={t('cbam.chart')}>

@@ -151,10 +151,23 @@ def apply_inventory_inputs(container, parent, payload, demand, *, idempotency_pr
         fail('PROJECT_INPUT_INVALID', '请完整填写核算规模和数据来源。', 422)
     if any(f['reference_product'] and payload.values[f['key']] <= 0 for f in fields):
         fail('PROJECT_REFERENCE_AMOUNT_INVALID', '参考产品数量必须大于零。', 422)
+    from .inventory_derivation import derive_inventory, recipe_of
+    submitted_graph = deepcopy(parent.graph_snapshot)
+    for node in submitted_graph.get('nodes', []):
+        for group in ('inputs', 'outputs', 'emissions'):
+            for port in node.get(group, []):
+                field = next(f for f in fields if f['process_id'] == node['id'] and f['port_id'] == port['id'])
+                port['amount'] = payload.values[field['key']]
+    submitted_graph, derived_values = derive_inventory(submitted_graph, recipe_of(parent.application_context))
+    effective_values = {**payload.values}
+    for field in fields:
+        derived = derived_values.get(f"{field['process_id']}::{field['port_id']}")
+        if derived is not None:
+            effective_values[field['key']] = float(derived)
     operations = [ModelOperationItem(operation_type='flow.update_port', payload={
         'process_id': f['process_id'], 'port_id': f['port_id'],
-        'changes': {'amount': payload.values[f['key']]}}) for f in fields]
-    amounts = {(f['process_id'], f['port_id']): payload.values[f['key']] for f in fields}
+        'changes': {'amount': effective_values[f['key']]}}) for f in fields]
+    amounts = {(f['process_id'], f['port_id']): effective_values[f['key']] for f in fields}
     for edge in parent.graph_snapshot.get('exchanges', []):
         supply = amounts[(edge['fromNode'], edge['sourcePortId'])]
         consumer = amounts[(edge['toNode'], edge['targetPortId'])]
@@ -199,7 +212,7 @@ def apply_inventory_inputs(container, parent, payload, demand, *, idempotency_pr
     effective_amounts = demand_for_inventory(fields, demand, payload)
     data = {'demand': [{**d, 'amount': n} for d, n in zip(demand, effective_amounts)],
         'demand_mode': payload.demand_mode,
-        'values': payload.values, 'source': payload.source.strip(),
+        'values': effective_values, 'source': payload.source.strip(),
         'background_process_pins': [p.model_dump(mode='json') for p in pins]}
     if mapped_pins:
         data['mapped_background_process_pins'] = [p.model_dump(mode='json') for p in mapped_pins]
@@ -268,7 +281,13 @@ class SeedProjectService:
             'method_replacements': replacements,
             'profile': {'id': profile[0]['id'], 'version': profile[0]['version'], 'content_sha256': profile[1]} if profile else None}
         upgrade = profile[0].get('identity_revision') if profile else None
+        if profile:
+            for key in ('inventory_derivation', 'boundary_revision'):
+                if profile[0].get(key):
+                    content[key] = deepcopy(profile[0][key])
         derived_graph = apply_template_revision(model.graph_snapshot, upgrade)
+        from .inventory_derivation import derive_inventory
+        derived_graph, _ = derive_inventory(derived_graph, content.get('inventory_derivation'))
         manifests = {f'{p.package_id}@{p.version}': p for p in packages}
         manifests |= {f'{package.package_id}@{package.version}': package for package, _ in registrations}
         for ref in sorted(pins):
@@ -285,6 +304,7 @@ class SeedProjectService:
             content['identity_revision'] = deepcopy(upgrade)
             content['derived_graph_sha256'] = canonical_json_sha256(derived_graph)
         editor_pin = (row.stage_receipts or {}).get('editor_source') or {}
+        editor_current = not content.get('inventory_derivation') or editor_pin.get('template_profile') == content.get('profile')
         editor_model = db.get(SystemModel, editor_pin.get('system_model_id')) if editor_pin else None
         editor_revision = db.get(SystemRevision, editor_pin.get('revision_id')) if editor_pin else None
         if editor_pin and (not editor_model or not editor_revision or
@@ -293,8 +313,10 @@ class SeedProjectService:
                            editor_model.upstream_project_id != editor_pin.get('engine_project_id') or
                            editor_model.upstream_version != editor_pin.get('engine_version') or
                            editor_revision.content_sha256 != editor_pin.get('revision_content_sha256') or
-                           not same_pinned_model(editor_revision.graph_snapshot, derived_graph)):
+                           (editor_current and not same_pinned_model(editor_revision.graph_snapshot, derived_graph))):
             fail('SEED_TEMPLATE_EDITOR_SOURCE_CHANGED', '模板编辑源版本的固定身份已变化。')
+        if not editor_current:
+            editor_pin, editor_model, editor_revision = {}, None, None
         item = {'id': row.id, 'title': profile[0]['title'] if profile else app.name, 'version': profile[0]['version'] if profile else row.seed_version,
             'template_sha256': canonical_json_sha256(content), 'seed_id': row.seed_id,
             'installed_application_id': app.id,
@@ -319,7 +341,9 @@ class SeedProjectService:
             row, source, _, definition, item, _ = self._source(db, installation_id)
             if not definition.get('identity_revision'):
                 return 'replayed', {'installation_id': row.id, 'system_model_id': source.id}
-            if (row.stage_receipts or {}).get('editor_source'):
+            if ((row.stage_receipts or {}).get('editor_source') and
+                    (not definition.get('inventory_derivation') or
+                     row.stage_receipts['editor_source'].get('template_profile') == definition.get('profile'))):
                 editor = (row.stage_receipts or {})['editor_source']
                 exact = self.c.client.get_provider_model_snapshot(editor['engine_project_id'], editor['engine_version']).payload
                 model = db.get(SystemModel, editor['system_model_id'])
@@ -357,12 +381,16 @@ class SeedProjectService:
                        'system_model_id': model.id, 'revision_id': revision.id,
                        'revision_content_sha256': revision.content_sha256,
                        'engine_project_id': project_id, 'engine_version': exact['version'],
-                       'engine_graph_hash': exact['graph_hash']}
+                       'engine_graph_hash': exact['graph_hash'], 'template_profile': definition.get('profile')}
             model.upstream_version = exact['version']
             model.graph_snapshot = deepcopy(exact['graph'])
             model.graph_sha256 = canonical_graph_sha256(exact['graph'])
             pin_editor_model_receipt(model, exact, receipt)
-            row.stage_receipts = {**(row.stage_receipts or {}), 'editor_source': deepcopy(receipt)}
+            previous_receipts = deepcopy(row.stage_receipts or {})
+            previous_editor = previous_receipts.get('editor_source')
+            if previous_editor and previous_editor != receipt:
+                previous_receipts['editor_source_history'] = [*previous_receipts.get('editor_source_history', []), previous_editor]
+            row.stage_receipts = {**previous_receipts, 'editor_source': deepcopy(receipt)}
             db.commit()
             return 'executed', receipt
 
@@ -444,6 +472,8 @@ class SeedProjectService:
             app = Application(id=app_id, name=payload.name, application_type=source_app.application_type,
                 description=source_app.name, context=context)
             graph = apply_template_revision(source.graph_snapshot, definition.get('identity_revision'))
+            from .inventory_derivation import derive_inventory
+            graph, _ = derive_inventory(graph, definition.get('inventory_derivation'))
             revision_graph_hash = canonical_json_sha256(graph) if definition.get('identity_revision') else source.graph_sha256
             receipt = {**deepcopy(source.upstream_receipt), 'base_revision_id': revision_id,
                 'template_source_model_id': source.id, 'seed_template_sha256': item['template_sha256']}
@@ -479,6 +509,8 @@ class SeedProjectService:
                 content = {k: deepcopy(getattr(b, k)) for k in BOUNDARY_FIELDS}
                 content['period_id'] = period_map.get(b.period_id)
                 content['method_package_ref'] = definition['method_replacements'].get(b.method_package_ref, b.method_package_ref)
+                if content['boundary_type'] == 'cbam_trial' and definition.get('boundary_revision'):
+                    content['consolidation_policy'] = {**content.get('consolidation_policy', {}), **deepcopy(definition['boundary_revision'])}
                 if content['geographic_scope'].get('graph_sha256'):
                     content['geographic_scope']['graph_sha256'] = revision_graph_hash
                 boundary_id = new_id()

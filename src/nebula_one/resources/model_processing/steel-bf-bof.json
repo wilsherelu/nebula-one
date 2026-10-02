@@ -1,13 +1,13 @@
 {
   "schema_version": "nebula_one.model-processing-rules.v1",
   "package_id": "steel-bf-bof.model-processing",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "license": "Apache-2.0",
   "content": {
     "applicable_template": {
       "id": "steel-bf-bof-inventory",
-      "version": "1.1.2",
-      "content_sha256": "df91eaf3c96638d1f20bbec40c544f046fe1107bb78282ba532da95fd2dbbe35"
+      "version": "1.1.3",
+      "content_sha256": "947f445b0aa19aa3a706f227ed230faf856effd3a1471aeb6a537165011bf23c"
     },
     "purposes": {
       "lca": {
@@ -33,8 +33,8 @@
           "mode": "method_package_boundary",
           "method_package": {
             "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
-            "version": "1.1.1",
-            "content_sha256": "fa4eb13171aedbf297a33838ca3ccd2aa4df1759a1534334eaace13c2216ea13"
+            "version": "1.2.0",
+            "content_sha256": "3627afbbd3b319de4f1c2bc8cace600afea87b0917c0ec27838bb97ba10b858c"
           },
           "process_uuids_path": "boundary_schema.production_process_boundary.in_boundary_process_uuids"
         },
@@ -43,12 +43,12 @@
           "evidence": {
             "method_package": {
               "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
-              "version": "1.1.1",
-              "content_sha256": "fa4eb13171aedbf297a33838ca3ccd2aa4df1759a1534334eaace13c2216ea13"
+              "version": "1.2.0",
+              "content_sha256": "3627afbbd3b319de4f1c2bc8cace600afea87b0917c0ec27838bb97ba10b858c"
             },
             "manifest_path": "boundary_schema.annex_ii_direct_only",
             "required_value": true,
-            "clause": "ANNEX II direct emissions only, so an embedded supply chain is not part of this calculation model"
+            "clause": "Selected direct component excludes background lifecycle burdens; sinter precursor indirect activity is separately retained for CBAM review."
           }
         },
         "cross_boundary_connections": {
@@ -60,8 +60,8 @@
           "evidence": {
             "method_package": {
               "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
-              "version": "1.1.1",
-              "content_sha256": "fa4eb13171aedbf297a33838ca3ccd2aa4df1759a1534334eaace13c2216ea13"
+              "version": "1.2.0",
+              "content_sha256": "3627afbbd3b319de4f1c2bc8cace600afea87b0917c0ec27838bb97ba10b858c"
             },
             "manifest_path": "classification_rules.direct_emissions",
             "applicable_gases_path": "boundary_schema.greenhouse_gases"
@@ -73,5 +73,5 @@
       }
     }
   },
-  "content_sha256": "59f1388b52b1a07c157590b27d4f82d73ee05c5e0d4e16afb754cc92207a59c9"
+  "content_sha256": "1e541e25a9bb17a51437f2279713788a3e6f97efbf831cbe9d7f6f0e1048bc7d"
 }

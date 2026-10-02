@@ -40,16 +40,18 @@ def test_steel_inventory_profile_changes_demo_validation_and_the_revised_flow_id
     previous, package, package_hash = replacements[0]
     new = package.model_dump(mode='json')
     old = json.loads(OLD_PACKAGE.read_text(encoding='utf-8'))
-    assert new['version'] == '1.1.1' and previous.endswith('@1.0.1')
+    assert new['version'] == '1.2.0' and previous.endswith('@1.0.1')
+    assert profile['version'] == '1.1.3'
     assert digest == canonical_json_sha256(profile)
     assert package_hash == canonical_json_sha256(new)
     assert old['manifest']['validation_rules']['expected_direct_emissions_kg']['value'] == '1940.739734'
     assert 'expected_direct_emissions_kg' not in new['manifest']['validation_rules']
-    for section in ('formula_graph', 'boundary_schema', 'classification_rules',
-                    'default_value_rules', 'accepted_units'):
+    for section in ('formula_graph', 'classification_rules', 'default_value_rules'):
         assert new['manifest'][section] == old['manifest'][section]
-    assert new['manifest']['validation_rules']['limitations'] == (
-        old['manifest']['validation_rules']['limitations'])
+    assert new['manifest']['boundary_schema']['goods_complexity'] == 'complex'
+    assert new['manifest']['boundary_schema']['calculation_scope'] == 'direct_component_only'
+    assert new['manifest']['boundary_schema']['end_use']['not_a_cbam_good'] == []
+    assert not any('conservative upper bound' in item for item in new['manifest']['validation_rules']['limitations'])
     assert _membership_drift(old['manifest'], new['manifest']) == [('grid_electricity', 'flow_uuid')]
 
 

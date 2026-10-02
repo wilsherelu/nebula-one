@@ -98,7 +98,9 @@ export function CbamPartialReviewPanel({ applicationId, snapshot, snapshots, met
         {missingItems.length ? <Button type="primary" size="small" onClick={() => setShowInputs(true)}>{t('cbam.supply')}</Button> : null}</div>
       {review.data.components.user_supply_electricity_trial ? <Alert type="info" title={t('cbam.localSupply')}
         content={t('cbam.localSupplyNote', { value: number(Number(review.data.components.user_supply_electricity_trial.value)), unit: review.data.components.user_supply_electricity_trial.unit, project: review.data.components.user_supply_electricity_trial.source_project_id, version: review.data.components.user_supply_electricity_trial.source_version })} /> : null}
-      <details className="result-details"><summary>{t('cbam.components')}</summary><p>{t('cbam.sinterElectricity')}：{number(Number(review.data.components.sinter_precursor_indirect.electricity_activity.value))} {review.data.components.sinter_precursor_indirect.electricity_activity.unit}</p></details>
+      <details className="result-details"><summary>{t('cbam.components')}</summary><p>{t('cbam.sinterElectricity')}：{number(Number(review.data.components.sinter_precursor_indirect.electricity_activity.value))} {review.data.components.sinter_precursor_indirect.electricity_activity.unit}</p>
+        {review.data.coverage.source_streams?.length ? <><p>{t('cbam.sourceCoverage')}</p><ul>{review.data.coverage.source_streams.map(item => <li key={item.item}>{item.item} · {item.state}{item.effect ? ` · ${item.effect}` : ''}</li>)}</ul></> : null}
+      </details>
     </> : null}
     {review.isLoading ? <p role="status">{t('cbam.loading')}</p> : null}
     {!sourceSnapshot || !boundary ? <p>{t('cbam.noBoundary')}</p> : null}

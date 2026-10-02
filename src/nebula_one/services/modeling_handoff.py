@@ -98,6 +98,11 @@ class ModelingHandoffService:
                     return None
                 display_metadata = deepcopy((definition.get("identity_revision") or {}).get("content", {}).get("display_metadata", []))
         binding = {"profile": profile, "bound_model_id": model.id}
+        from .inventory_derivation import recipe_of
+        source_context = revision.application_context if revision is not None else (application.context if application else {})
+        recipe = recipe_of(source_context) or (definition.get("inventory_derivation") if installation is not None else None)
+        if recipe:
+            binding["inventory_derivation"] = deepcopy(recipe)
         if installation is not None:
             binding["source_installation_id"] = installation.id
             binding["template_sha256"] = item["template_sha256"]

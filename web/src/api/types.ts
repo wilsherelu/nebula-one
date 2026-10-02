@@ -511,7 +511,7 @@ export interface CbamPartialReviewResult {
     };
   };
   specific_embedded_emissions: { value: string | null; unit: string; status: string; partial_direct_value: string };
-  coverage: { status: string; missing: string[]; default_values: string };
+  coverage: { status: string; missing: string[]; default_values: string; source_streams?: { item: string; state: string; effect?: string }[] };
   content_sha256: string;
 }
 
@@ -564,10 +564,10 @@ export interface CbamTrialResult {
     };
     precursors: unknown[];
   };
-  specific_embedded_emissions: { value: string; unit: string; formula: string; partial_result?: boolean };
+  specific_embedded_emissions: { value: string | null; unit: string; formula: string; partial_result?: boolean; partial_value?: string };
   nitrogen_basis?: null | { applies: boolean; label: string; value: string; unit: string };
   coverage?: CbamBoundaryCoverage;
-  status: 'trial_passed';
+  status: 'trial_passed' | 'partial_calculated';
   audit: Record<string, unknown>;
   claim_boundary: Record<string, boolean>;
   content_sha256: string;

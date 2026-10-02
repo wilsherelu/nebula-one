@@ -58,14 +58,14 @@ def test_versioned_identity_selector_uses_actual_returned_port_and_excludes_outs
     outside = deepcopy(graph["nodes"][0])
     outside.update(id="external-process", process_uuid="outside-cbam-boundary")
     graph["nodes"].append(outside)
-    path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.1.3.json")
+    path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.2.2.json")
     package = MethodPackageCreate.model_validate(json.loads(path.read_text(encoding="utf-8")))
     method = package.model_dump(mode="json")
     method["content_sha256"] = canonical_json_sha256(method)
     rules = load_model_processing_rules_for_template(
         _template_identity(), graph_identity_sha256=canonical_json_sha256(_identity_graph(graph)),
         graph=graph)
-    assert rules.version == "1.0.4"
+    assert rules.version == "1.0.8"
     derived = derive_calculation_model(
         graph=graph, demand=[{"process_uuid": secondary["process_uuid"], "amount": 1, "unit": "kg"}],
         rules=rules, purpose="cbam", method_packages=[method])
@@ -245,7 +245,7 @@ def test_cbam_purpose_unlinks_both_associations_and_keeps_both_input_exchanges()
     assert sorted(unlinked) == sorted(source_ports)
     assert {action["kind"] for action in unlinked.values()} == {"background", "mapped"}
     assert all(
-        action["clause"].startswith("ANNEX II direct emissions only")
+        action["clause"].startswith("Selected direct component")
         for action in unlinked.values()
     )
 

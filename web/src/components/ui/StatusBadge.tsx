@@ -7,6 +7,7 @@ const semantics: Record<string, { color: string; label: readonly [string, string
   passed_with_warnings: { color: 'orange', label: ['通过并有警告', 'Passed with warnings'] },
   pass_with_warnings: { color: 'orange', label: ['通过并有警告', 'Passed with warnings'] },
   trial_passed: { color: 'orange', label: ['试算通过', 'Trial passed'] },
+  partial_calculated: { color: 'orange', label: ['部分分项已计算', 'Components partly calculated'] },
   frozen: { color: 'blue', label: ['已冻结', 'Frozen'] },
   published: { color: 'blue', label: ['已发布', 'Published'] },
   running: { color: 'arcoblue', label: ['运行中', 'Running'] },

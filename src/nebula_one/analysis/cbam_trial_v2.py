@@ -228,7 +228,9 @@ def _check_package(manifest: dict[str, Any]) -> dict[str, Any]:
     else:
         if (
             boundary.get("annex_ii_direct_only") is not True
-            or boundary.get("goods_complexity") != "simple"
+            or (boundary.get("goods_complexity") != "simple"
+                and not (boundary.get("goods_complexity") == "complex"
+                         and boundary.get("calculation_scope") == "direct_component_only"))
         ):
             _fail(
                 "CBAM_TRIAL_BOUNDARY_UNSUPPORTED",
@@ -1050,6 +1052,8 @@ def _resolve_end_use(
             clause=clause,
             declared=authoritative,
         )
+    if authoritative in declaration.get("unsupported_model_boundaries", []):
+        _fail("CBAM_TRIAL_MODEL_BOUNDARY_UNSUPPORTED", "该生产边界需要当前案例未覆盖的工序和排放，不能只更改用途标签。", declared=authoritative)
     return {
         "clause": clause,
         "declared": authoritative,
@@ -1382,7 +1386,7 @@ def _verify_precursor_result(
     basis = {key: value for key, value in result.items() if key != "content_sha256"}
     if canonical_json_sha256(basis) != result.get("content_sha256"):
         refuse("the precursor result's content hash does not match its own content")
-    if result.get("status") != "trial_passed":
+    if result.get("status") not in {"trial_passed", "partial_calculated"}:
         refuse("the precursor result did not pass its own audit")
     method = result.get("method_package") or {}
     if method.get("ref") != source["method_package_ref"]:
@@ -1429,7 +1433,8 @@ def _verify_precursor_result(
             "the precursor result states its specific emissions on an unsupported unit",
             observed=specific.get("unit"),
         )
-    return _decimal(specific.get("value"), field="precursor.specific_embedded_emissions.value")
+    value = specific.get("partial_value") if result.get("status") == "partial_calculated" else specific.get("value")
+    return _decimal(value, field="precursor.specific_embedded_emissions.value")
 
 
 def _loss_amounts(
@@ -1672,6 +1677,7 @@ def _precursor_term(
                 },
                 "method_package_ref": source["method_package_ref"],
                 "result_content_sha256": result["content_sha256"],
+                "source_coverage_status": "partial" if result.get("status") == "partial_calculated" else "selected_boundary_calculated",
                 "source_snapshot": (result.get("source_snapshot") or {}),
                 "reporting_period": result.get("reporting_period") or {},
                 "attribution": source.get("attribution"),
@@ -2780,7 +2786,8 @@ def build_cbam_trial_v2(
     direct_tonnes = direct_kg / KG_PER_TONNE
     direct_specific = direct_tonnes / production_tonnes
     total_unrounded = direct_specific + (precursor_tonnes if three_component else Decimal("0"))
-    partial_result = three_component and indirect_term.get("value") is None
+    partial_result = three_component and (indirect_term.get("value") is None
+        or any(row.get("source_coverage_status") == "partial" for row in precursor_rows))
     specific = total_unrounded.quantize(
         Decimal("0.000000000001"), rounding=ROUND_HALF_EVEN
     )
@@ -2855,6 +2862,8 @@ def build_cbam_trial_v2(
         "reporting_period": reporting_period,
         "goods": {
             "cn_code": package["boundary"].get("cn_code"),
+            "goods_complexity": package["boundary"].get("goods_complexity"),
+            "calculation_scope": package["boundary"].get("calculation_scope"),
             "aggregated_goods_category": package["boundary"].get("aggregated_goods_category"),
             "product_flow": {field: product[field] for field in TEN_FIELDS},
             "production_process_uuid": reference_process,
@@ -3093,4 +3102,27 @@ def build_cbam_trial_v2(
             specific=content["specific_embedded_emissions"],
         ))
 
+    # Port classification is a technical check, not evidence that all required
+    # source streams are represented by the model. Keep the subtotal available
+    # while withholding the complete value whenever coverage remains open.
+    incomplete = bool(open_items) or bool(
+        content["specific_embedded_emissions"].get("partial_result")
+    )
+    content["claim_boundary"].update({
+        "complete_cbam_total": False,
+        "verification_status": "not_verified",
+        "declaration_available": False,
+        "coverage_status": "partial" if incomplete else "selected_boundary_calculated",
+        "data_period_coverage": "not_established_by_solved_snapshot",
+        "no_conservative_upper_bound_claim": True,
+    })
+    if incomplete:
+        specific_result = content["specific_embedded_emissions"]
+        specific_result["partial_value"] = specific_result["value"]
+        specific_result["value"] = None
+        specific_result["partial_result"] = True
+        specific_result["status"] = "incomplete"
+        content["status"] = "partial_calculated"
+        content["audit"]["status"] = "technical_checks_passed"
+        content["audit"]["checks_scope"] = "declared_ports_only_not_regulatory_completeness"
     return {**content, "content_sha256": canonical_json_sha256(content)}

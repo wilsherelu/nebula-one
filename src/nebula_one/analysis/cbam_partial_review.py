@@ -31,7 +31,7 @@ def build_cbam_partial_review(*, snapshot: dict[str, Any], direct: dict[str, Any
     if (direct.get("source_snapshot") or {}).get("id") != snapshot["id"] or (
         direct.get("source_snapshot") or {}).get("content_sha256") != snapshot["content_sha256"]:
         raise DomainError(code="CBAM_PARTIAL_SNAPSHOT_MISMATCH", message="direct term and electricity activity have different frozen snapshots", status_code=422)
-    if direct.get("status") != "trial_passed" or direct.get("schema_version") != "nebula_one.cbam.trial.v2":
+    if direct.get("status") not in {"trial_passed", "partial_calculated"} or direct.get("schema_version") != "nebula_one.cbam.trial.v2":
         raise DomainError(code="CBAM_PARTIAL_DIRECT_UNVERIFIED", message="source direct term did not pass its historical trial", status_code=422)
     rule = formula.get("indirect_activity") or {}
     exchange_id = rule.get("consumer_exchange_id")
@@ -47,7 +47,10 @@ def build_cbam_partial_review(*, snapshot: dict[str, Any], direct: dict[str, Any
     if amount <= 0 or product_kg <= 0 or mj_per_mwh != Decimal("3600"):
         raise DomainError(code="CBAM_PARTIAL_ACTIVITY_INVALID", message="electricity and product activity require positive values and the exact MJ/MWh conversion", status_code=422)
     activity_per_t = amount / product_kg * Decimal("1000") / mj_per_mwh
-    direct_value = Decimal(str((direct.get("specific_embedded_emissions") or {}).get("value")))
+    specific = direct.get("specific_embedded_emissions") or {}
+    # The partial source exposes its calculated component separately from the
+    # unavailable complete value. Historical sources retain their original field.
+    direct_value = Decimal(str(specific.get("partial_value") if direct.get("status") == "partial_calculated" else specific.get("value")))
     if direct_value < 0 or (direct.get("specific_embedded_emissions") or {}).get("unit") != "t CO2e/t product":
         raise DomainError(code="CBAM_PARTIAL_DIRECT_UNIT_INVALID", message="historical direct term has another unit", status_code=422)
     factor_value = None
@@ -104,6 +107,12 @@ def build_cbam_partial_review(*, snapshot: dict[str, Any], direct: dict[str, Any
     total_value = direct_value + indirect_value if indirect_value is not None and conditions_complete else None
     missing = (["eligible_sinter_electricity_factor"] if factor_value is None else [])
     missing.extend(key for key in required if key not in declared)
+    source_stream_coverage = manifest.get('source_stream_coverage') or []
+    uncovered = [row['item'] for row in source_stream_coverage
+                 if row.get('state') not in ('modelled', 'not_applicable_with_basis')]
+    missing.extend(uncovered)
+    if uncovered:
+        total_value = None
     if legacy:
         missing = ["eligible_sinter_electricity_factor", "article_4_9_same_installation_no_sale_no_other_use_evidence",
                    "waste_gas_attribution", "flue_gas_cleaning_declaration"]
@@ -141,6 +150,7 @@ def build_cbam_partial_review(*, snapshot: dict[str, Any], direct: dict[str, Any
                                         "partial_direct_value": str(direct_value)},
         "coverage": {"status": "declared_boundary_calculated" if total_value is not None else "partial",
                      "missing": missing, "condition_declarations": declared,
+                     "source_streams": source_stream_coverage,
                      "external_precursor_status": "declared" if "external_precursor" in declared else "not_demonstrated_by_this_model",
                      "default_values": "published_but_not_connected"},
         "claim_boundary": {"trial_only": True, "complete_cbam_total": False,

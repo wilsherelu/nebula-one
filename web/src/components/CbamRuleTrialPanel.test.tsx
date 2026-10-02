@@ -140,7 +140,7 @@ describe('CBAM rule trial panel', () => {
     mockReads();
     vi.spyOn(api, 'cbamTrial').mockResolvedValue({
       ...v2Result,
-      specific_embedded_emissions: { ...v2Result.specific_embedded_emissions, partial_result: true },
+      specific_embedded_emissions: { ...v2Result.specific_embedded_emissions, value: null, partial_value: '1.940739734000', partial_result: true },
       attributed_emissions: { ...v2Result.attributed_emissions, indirect: {
         state: 'formula_only', value: null, unit: null,
         activity: { value: '12.5', unit: 'kWh' }, missing_factor_package: 'reviewed-electricity-factor',
@@ -155,8 +155,8 @@ describe('CBAM rule trial panel', () => {
       }] },
     });
     renderPanel('/applications/app-1/results?view=cbam&cbam-tab=simple', <Panel boundaryRequiredFor={['cbam.simple@1.0.0']} cbamBoundaries={[cbamBoundary]} />);
-    // the first screen names the partial total as "已计入…" and never dresses the partial as complete
-    expect(await screen.findByText('已计入直接排放强度')).toBeInTheDocument();
+    expect(await screen.findByText('已计算分项小计')).toBeInTheDocument();
+    expect(screen.getByText(/完整嵌入排放尚未计算/)).toBeInTheDocument();
     expect(screen.getByText('待补因子')).toBeInTheDocument();
     // the逐端口/间接/氮基 technical detail lives behind the single 计算依据 entry
     await userEvent.click(screen.getByRole('button', { name: '详情' }));
@@ -434,7 +434,7 @@ describe('CBAM rule trial panel', () => {
       <Panel boundaryRequiredFor={['cbam.simple@1.0.0']} cbamBoundaries={[cbamBoundary]} />);
 
     expect(await screen.findByText('Crude steel')).toBeInTheDocument();
-    expect(screen.getByText('Included direct emissions intensity')).toBeInTheDocument();
+    expect(screen.getByText('Calculated component subtotal')).toBeInTheDocument();
     expect(screen.getByText('No eligible emission factor')).toBeInTheDocument();
     expect(screen.getByText('1 missing items')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Details' }));

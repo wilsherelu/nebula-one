@@ -1,7 +1,7 @@
 {
   "schema_version": "nebula_one.project-template.v1",
   "id": "steel-bf-bof-inventory",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "title": "高炉—转炉钢铁 · 过程清单填报",
   "source_seed": {
     "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
@@ -17,13 +17,13 @@
   "method_replacements": [
     {
       "replaces": "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1",
-      "content_sha256": "fa4eb13171aedbf297a33838ca3ccd2aa4df1759a1534334eaace13c2216ea13",
+      "content_sha256": "3627afbbd3b319de4f1c2bc8cace600afea87b0917c0ec27838bb97ba10b858c",
       "package": {
         "jurisdiction": "EU",
         "manifest": {
           "accepted_units": {
             "excluded_energy_inputs": [
-              "MJ, kept unconverted as an excluded_with_clause_basis port (ST-12)"
+              "MJ: retained physical activity; only final crude-steel process electricity is excluded. Sinter precursor electricity requires a separate eligible indirect factor."
             ],
             "result": [
               "t CO2e/t product"
@@ -43,16 +43,18 @@
             "cn_code": "7207",
             "end_use": {
               "clause": "ST-07",
-              "not_a_cbam_good": [
-                "further_rolling_or_forging"
-              ],
+              "not_a_cbam_good": [],
               "values": [
                 "sold_or_transferred_as_crude_steel",
                 "primary_hot_rolling_or_rough_forging",
                 "further_rolling_or_forging"
+              ],
+              "unsupported_model_boundaries": [
+                "primary_hot_rolling_or_rough_forging",
+                "further_rolling_or_forging"
               ]
             },
-            "goods_complexity": "simple",
+            "goods_complexity": "complex",
             "greenhouse_gases": [
               "CO2"
             ],
@@ -67,7 +69,9 @@
               ],
               "reference_process_uuid": "ea66dbd3-03e1-5ff8-a1d0-9662604392c0",
               "schema": "nebula_one.cbam.multi-process-boundary.v1"
-            }
+            },
+            "calculation_scope": "direct_component_only",
+            "joint_process_conditions": "same_installation_no_sale_no_other_process_use_requires_evidence"
           },
           "classification_rules": {
             "direct_emissions": [
@@ -299,7 +303,7 @@
             "application_contract": {
               "source_method_ref": "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1",
               "source_method_sha256": "57a2910cbd5bd7969905e297494c1540dfa305b34d404a3107c1c119f8e56595",
-              "change": "Separate the demonstration fixed-total assertion from the unchanged boundary and emissions classification, and re-pin the grid-electricity membership evidence to the flow identity this template revision actually writes into the model."
+              "change": "Round-2 correction: complex-good direct component, separate sinter indirect activity, finite-case coverage, and live input-to-CO2 dependencies."
             }
           },
           "report_mapping": {
@@ -329,22 +333,30 @@
             "a boundary frozen against another model graph is refused",
             "an undecided or undeclared required item refuses the full result instead of returning a smaller one",
             "a counted greenhouse gas other than CO2 for this good is refused rather than summed in",
-            "a declared end use of further_rolling_or_forging refuses the result instead of reporting the quantity as crude steel"
+            "unsupported on-site rolling needs model data; customer further processing does not remove imported slab from CBAM"
           ],
           "validation_rules": {
             "limitations": [
-              "direct emissions only; Annex II makes electricity indirect emissions non-attributable for this good (ST-12)",
-              "no precursor is counted, because none of the eight boundary-crossing inputs of this model is a good of Annex I once the 7204 scrap exclusion of ST-14 and the in-house sinter and hot metal of ST-15 are read (modeling gap MG-S08 covers the purchased-precursor strand that is absent by design)",
-              "the route's secondary gases are netted inside the boundary and all of their carbon is charged to the numerator, so the result is a conservative upper bound for an installation that sells gas out (modeling gap MG-S11)",
-              "flue gas cleaning reagents and the carbonate they decompose are an open coverage item rather than a counted or excluded exchange (modeling gap MG-S09)"
+              "This finite demonstration computes declared CO2 components, not complete verified CBAM emissions.",
+              "Sinter precursor electricity is applicable and pending an eligible CBAM factor; casting electricity is excluded from this crude-steel component.",
+              "Internal sinter and hot metal are precursors. Joint monitoring requires same-installation, no-sale and no-other-use evidence; graph membership alone is insufficient.",
+              "Waste-gas transfer, power and heat attribution are not implemented. The net direction of omitted effects is unknown; no conservative-upper-bound claim is made.",
+              "Purchased heat, steam, cleaning reagents, auxiliary carbon and slag residual carbon are not fully covered by this case. An absent port does not establish non-applicability.",
+              "Electrodes are not categorically forbidden by the BF-BOF label. Actual use requires an applicable source-stream method; this case does not cover it.",
+              "The selected calendar period is a demonstration label, not completed annual monitoring data."
             ]
+          },
+          "inventory_derivation_ref": {
+            "package_id": "steel-bf-bof.demonstration-carbon-book",
+            "version": "1.0.0",
+            "content_sha256": "0301e796d34d72ae7f4d435a755c4b8ce21cf157e8348f58dc66f80b3e8a4d9c"
           }
         },
         "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
         "package_kind": "cbam_trial",
         "valid_from": "2026-01-01",
         "valid_to": null,
-        "version": "1.1.1"
+        "version": "1.2.0"
       }
     }
   ],
@@ -469,5 +481,291 @@
       ]
     },
     "content_sha256": "705aae5f376711886ce692667c940835d60819d90f6ea0cc1716f28ba34db8cd"
+  },
+  "inventory_derivation": {
+    "content": {
+      "schema_version": "nebula_one.linear-inventory-derivation.v1",
+      "package_id": "steel-bf-bof.demonstration-carbon-book",
+      "version": "1.0.0",
+      "decimal_places": 6,
+      "claim_level": "demonstration",
+      "source_parameter_record_sha256": "5316de1ada960fda42924e2aab9ffd58e8eba50f865fd0ad4270c319bfcd5314",
+      "source": "parameters/carbon-content.json published constants and demonstration compositions; methane fraction corrected to 12.011/16.043",
+      "assumptions": [
+        "Unallocated burden gas carbon is expressed as CO2 for this limited case; waste-gas attribution is not covered.",
+        "Slag residual carbon is an explicit unmeasured demonstration assumption of zero, not an evidenced actual zero."
+      ],
+      "compositions": {
+        "coke_breeze": "0.88",
+        "metallurgical_coke": "0.86",
+        "pci_bituminous_coal": "0.78",
+        "natural_gas": "0.7486754347690581562051985290",
+        "blast_furnace_hot_metal": "0.045",
+        "steel_scrap": "0.004",
+        "converter_liquid_steel": "0.0005",
+        "crude_steel_slab": "0.0005",
+        "continuous_casting_crop": "0.0005"
+      },
+      "outputs": [
+        {
+          "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+          "unit": "kg",
+          "terms": [
+            {
+              "exchange_id": "ore-sintering::coke-breeze-in",
+              "unit": "kg",
+              "coefficient": "3.22432",
+              "flow_uuid": "89e07856-8713-57ff-b4a8-104b0119975c",
+              "flow_version": "1.1.0"
+            }
+          ],
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "flow_version": "03.00.004"
+        },
+        {
+          "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+          "unit": "kg",
+          "terms": [
+            {
+              "exchange_id": "ore-sintering::limestone-in",
+              "unit": "kg",
+              "coefficient": "0.41360",
+              "flow_uuid": "ca40b889-cf9a-5aac-89c6-45f820da3b65",
+              "flow_version": "1.1.0"
+            }
+          ],
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "flow_version": "03.00.004"
+        },
+        {
+          "exchange_id": "blast-furnace::co2-bf-reduction-out",
+          "unit": "kg",
+          "terms": [
+            {
+              "exchange_id": "ore-sintering::iron-ore-in",
+              "unit": "kg",
+              "coefficient": "0.1190024857125971728289625200",
+              "flow_uuid": "fdba4f91-bbc9-5ea8-86d9-2ecb831afe09",
+              "flow_version": "1.1.0"
+            },
+            {
+              "exchange_id": "blast-furnace::hot-metal-out",
+              "unit": "kg",
+              "coefficient": "0.3762990823216447712821604844",
+              "flow_uuid": "df1c5ffd-830d-52f4-b600-9a28e8c73013",
+              "flow_version": "1.1.0"
+            }
+          ],
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "flow_version": "03.00.004"
+        },
+        {
+          "exchange_id": "blast-furnace::co2-bf-raceway-out",
+          "unit": "kg",
+          "terms": [
+            {
+              "exchange_id": "blast-furnace::coke-in",
+              "unit": "kg",
+              "coefficient": "3.15104",
+              "flow_uuid": "1b8ac953-3db1-5fef-8fa7-7112ed40aeb3",
+              "flow_version": "1.1.0"
+            },
+            {
+              "exchange_id": "blast-furnace::pci-coal-in",
+              "unit": "kg",
+              "coefficient": "2.85792",
+              "flow_uuid": "abf85061-0371-5ab5-9426-942df477cd84",
+              "flow_version": "1.1.0"
+            },
+            {
+              "exchange_id": "blast-furnace::natural-gas-in",
+              "unit": "kg",
+              "coefficient": "2.743146792993829084335847410",
+              "flow_uuid": "345ca664-03ac-55d0-b66b-141c91029812",
+              "flow_version": "1.3.0"
+            },
+            {
+              "exchange_id": "blast-furnace::hot-metal-out",
+              "unit": "kg",
+              "coefficient": "-0.164880",
+              "flow_uuid": "df1c5ffd-830d-52f4-b600-9a28e8c73013",
+              "flow_version": "1.1.0"
+            },
+            {
+              "exchange_id": "blast-furnace::co2-bf-reduction-out",
+              "unit": "kg",
+              "coefficient": "-1",
+              "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+              "flow_version": "03.00.004"
+            }
+          ],
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "flow_version": "03.00.004"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+          "unit": "kg",
+          "terms": [
+            {
+              "exchange_id": "basic-oxygen-converter::hot-metal-in",
+              "unit": "kg",
+              "coefficient": "0.164880",
+              "flow_uuid": "df1c5ffd-830d-52f4-b600-9a28e8c73013",
+              "flow_version": "1.1.0"
+            },
+            {
+              "exchange_id": "basic-oxygen-converter::scrap-in",
+              "unit": "kg",
+              "coefficient": "0.014656",
+              "flow_uuid": "74d988a9-b09d-5549-9672-64234caa6f0a",
+              "flow_version": "1.1.0"
+            },
+            {
+              "exchange_id": "basic-oxygen-converter::liquid-steel-out",
+              "unit": "kg",
+              "coefficient": "-0.0018320",
+              "flow_uuid": "af57ba56-81ba-58f9-a753-c50d578dc816",
+              "flow_version": "1.1.0"
+            }
+          ],
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "flow_version": "03.00.004"
+        },
+        {
+          "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+          "unit": "kg",
+          "terms": [
+            {
+              "exchange_id": "basic-oxygen-converter::limestone-in",
+              "unit": "kg",
+              "coefficient": "0.41360",
+              "flow_uuid": "ca40b889-cf9a-5aac-89c6-45f820da3b65",
+              "flow_version": "1.1.0"
+            }
+          ],
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "flow_version": "03.00.004"
+        }
+      ]
+    },
+    "content_sha256": "0301e796d34d72ae7f4d435a755c4b8ce21cf157e8348f58dc66f80b3e8a4d9c"
+  },
+  "boundary_revision": {
+    "coverage_open_items": [
+      {
+        "item": "sinter electricity",
+        "clause": "ST-12",
+        "state": "missing_data",
+        "effect": "600 MJ activity exists; applicable CBAM electricity factor is absent, not zero.",
+        "method_role": "precursor_indirect"
+      },
+      {
+        "item": "joint internal sinter and hot metal",
+        "clause": "ST-05",
+        "state": "applicability_unknown",
+        "effect": "No separate precursor sum is added to the already modelled internal direct emissions. Article 4(9) conditions need evidence.",
+        "method_role": "internal_precursor_count_once"
+      },
+      {
+        "item": "purchased heat and steam",
+        "clause": "ST-06",
+        "state": "case_not_modelled",
+        "effect": "Heat-related emissions are not legally excluded; no reliable heat quantity or attribution is provided.",
+        "method_role": "heat_attribution"
+      },
+      {
+        "item": "waste gas self-use/import/export/power/heat",
+        "clause": "ST-10",
+        "state": "case_not_modelled",
+        "effect": "Dedicated attribution mechanism is unsupported; never subtract all exported carbon and a correction twice. Net bias direction unknown.",
+        "method_role": "waste_gas_attribution"
+      },
+      {
+        "item": "cleaning carbonates and auxiliary carbon/electrodes",
+        "clause": "ST-18",
+        "state": "case_not_modelled",
+        "effect": "Graph omission does not establish non-applicability; no blanket electrode prohibition.",
+        "method_role": "additional_source_stream"
+      },
+      {
+        "item": "slag residual carbon",
+        "clause": "ST-08",
+        "state": "demonstration_assumption",
+        "effect": "Zero residual carbon is an unmeasured case assumption. Actual zero and missing data are distinct.",
+        "method_role": "retained_carbon"
+      }
+    ],
+    "source_stream_coverage": [
+      {
+        "item": "declared fuel and carbonate CO2",
+        "clause": "ST-08",
+        "state": "modelled",
+        "method_role": "direct_component"
+      },
+      {
+        "item": "sinter electricity",
+        "clause": "ST-12",
+        "state": "missing_data",
+        "effect": "600 MJ activity exists; applicable CBAM electricity factor is absent, not zero.",
+        "method_role": "precursor_indirect"
+      },
+      {
+        "item": "casting electricity",
+        "clause": "ST-12",
+        "state": "not_applicable_with_basis",
+        "effect": "Final crude-steel process electricity excluded in this purpose; retained in source model.",
+        "method_role": "excluded_final_good_indirect"
+      },
+      {
+        "item": "joint internal sinter and hot metal",
+        "clause": "ST-05",
+        "state": "applicability_unknown",
+        "effect": "No separate precursor sum is added to the already modelled internal direct emissions. Article 4(9) conditions need evidence.",
+        "method_role": "internal_precursor_count_once"
+      },
+      {
+        "item": "purchased heat and steam",
+        "clause": "ST-06",
+        "state": "case_not_modelled",
+        "effect": "Heat-related emissions are not legally excluded; no reliable heat quantity or attribution is provided.",
+        "method_role": "heat_attribution"
+      },
+      {
+        "item": "waste gas self-use/import/export/power/heat",
+        "clause": "ST-10",
+        "state": "case_not_modelled",
+        "effect": "Dedicated attribution mechanism is unsupported; never subtract all exported carbon and a correction twice. Net bias direction unknown.",
+        "method_role": "waste_gas_attribution"
+      },
+      {
+        "item": "cleaning carbonates and auxiliary carbon/electrodes",
+        "clause": "ST-18",
+        "state": "case_not_modelled",
+        "effect": "Graph omission does not establish non-applicability; no blanket electrode prohibition.",
+        "method_role": "additional_source_stream"
+      },
+      {
+        "item": "product and crop carbon",
+        "clause": "ST-08",
+        "state": "modelled",
+        "effect": "Shared steel carbon fraction 0.0005; 1000 kg product and 20 kg crop retain 0.500 and 0.010 kg carbon.",
+        "method_role": "retained_carbon"
+      },
+      {
+        "item": "slag residual carbon",
+        "clause": "ST-08",
+        "state": "demonstration_assumption",
+        "effect": "Zero residual carbon is an unmeasured case assumption. Actual zero and missing data are distinct.",
+        "method_role": "retained_carbon"
+      }
+    ],
+    "goods_complexity": "complex",
+    "data_period_coverage": "demonstration_batch_not_complete_annual_monitoring",
+    "quantity_basis": {
+      "reference_batch_kg": "1000",
+      "solve_demand": "explicit_request",
+      "normalization": "engine_activity_vector_once",
+      "intensity": "kg CO2/kg product numerically equals t CO2/t product"
+    }
   }
 }

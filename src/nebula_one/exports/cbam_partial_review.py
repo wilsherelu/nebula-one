@@ -18,8 +18,10 @@ def render_cbam_partial_review_markdown(result: dict) -> str:
     declarations = (result["coverage"].get("condition_declarations") or {})
     declaration_note = "".join(f"- {key}：{value['status']}，证据 SHA-256 `{value['evidence_sha256']}`\n"
                                for key, value in sorted(declarations.items()))
+    coverage_note = ''.join(f"- {row['item']}：{row['state']}。{row.get('effect', '')}\n"
+                            for row in result['coverage'].get('source_streams', []))
     return (
-        "# 钢铁 CBAM 计量复核\n\n"
+        "# 钢铁 CBAM 计量复核\n\n演示数据；结果不完整；未核查；不可正式申报。\n\n"
         f"本次复核对应冻结快照 `{result['source_snapshot']['id']}`、数据修订 "
         f"`{result['source_snapshot']['system_revision_id']}` 和方法 "
         f"`{result['method_package']['reference']}`。已核算的直接排放分项为 "
@@ -28,6 +30,7 @@ def render_cbam_partial_review_markdown(result: dict) -> str:
         f"按本次产品产量归一化后为 **{electricity['value']} {electricity['unit']}**。"
         f"{factor_note}{total_note}不能以 LCA 生命周期电力 GWP 代替该因子。\n\n"
         f"条件声明：\n{declaration_note or '尚无完整条件声明。'}\n"
+        f"案例源流覆盖：\n{coverage_note or '以所列冻结边界及缺项为准。'}\n"
         "同设施联合生产的前体归属、煤气跨过程或外供、烟气净化排放仍需逐项证明。"
         "旧版直接排放试算的通过状态不代表这些事项已被验证，也不构成所谓保守上界。"
         "当前公开方法不附带商业或法律因子数值。\n\n"

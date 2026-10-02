@@ -1,0 +1,101 @@
+{
+  "package_id": "ghg.iron-steel.organization-period-model",
+  "version": "1.0.3",
+  "package_kind": "organization_period_inventory",
+  "jurisdiction": null,
+  "valid_from": null,
+  "valid_to": null,
+  "manifest": {
+    "template_profile": {
+      "id": "steel-bf-bof-inventory",
+      "version": "1.1.3",
+      "content_sha256": "947f445b0aa19aa3a706f227ed230faf856effd3a1471aeb6a537165011bf23c"
+    },
+    "required_entity_types": [
+      "application",
+      "system_revision",
+      "solved_system_snapshot",
+      "reporting_period"
+    ],
+    "required_data_fields": [
+      "controlled process identities",
+      "period product output",
+      "supplier factor evidence for each calculated Scope 3 category"
+    ],
+    "accepted_units": {
+      "climate": [
+        "kg CO2-Eq"
+      ],
+      "product": [
+        "kg"
+      ]
+    },
+    "boundary_schema": {
+      "control_approach": "operational_control_of_solved_foreground",
+      "complete_corporate_inventory": false
+    },
+    "formula_graph": {
+      "scope_1": "native foreground domain times period output divided by solve output",
+      "scope_2": "generation-only purchased-energy contribution required; absent in native lifecycle background total, so value remains unavailable",
+      "scope_3": "supplier statement activity quantity times its separately versioned supplier factor; excluded from the solved model"
+    },
+    "classification_rules": {
+      "scope2_purchase_exchange_ids": [
+        "continuous-casting::grid-electricity-in"
+      ],
+      "scope2_allocation": "generation_only_evidence_required",
+      "scope3_categories": {
+        "purchased_goods_and_services": {
+          "name": "采购的商品和服务",
+          "source_type": "supplier_statement_outside_model",
+          "eligible_consumer_exchange_ids": [
+            "ore-sintering::iron-ore-in"
+          ],
+          "factor_boundary": "supplier_cradle_to_gate_excluding_modelled_operations",
+          "source": "https://ghgprotocol.org/sites/default/files/standards/Scope3_Calculation_Guidance_0.pdf#page=19"
+        },
+        "fuel_and_energy_related_activities": {
+          "name": "燃料和能源相关活动",
+          "source_type": "supplier_statement_outside_model",
+          "eligible_consumer_exchange_ids": [
+            "blast-furnace::natural-gas-in"
+          ],
+          "factor_boundary": "upstream_fuel_excluding_combustion",
+          "source": "https://ghgprotocol.org/sites/default/files/standards/Scope3_Calculation_Guidance_0.pdf#page=39"
+        }
+      }
+    },
+    "default_value_rules": {
+      "allowed": false
+    },
+    "validation_rules": {
+      "limitations": [
+        "Controlled foreground emissions are calculated from the frozen model; its electricity background is a lifecycle total and is not a generation-only Scope 2 factor.",
+        "The electricity lifecycle background remains an unclassified reference until generation-only and upstream contributions can be evidenced separately.",
+        "Other Scope 3 categories require separate supplier activity and factor evidence; missing activity never becomes zero.",
+        "The model and example inputs are not a verified enterprise inventory."
+      ]
+    },
+    "output_schema": {
+      "schema_version": "nebula_one.organization-period.v1"
+    },
+    "report_mapping": {
+      "period": "reporting_period",
+      "scopes": "scopes",
+      "coverage": "coverage"
+    },
+    "test_cases": [
+      "period output scales foreground and unclassified background reference",
+      "full lifecycle electricity background cannot become Scope 2",
+      "Scope 3 supplier statement remains independent",
+      "missing Scope 3 activity leaves combined total unavailable"
+    ],
+    "provenance": {
+      "owner": "Nebula One open-source reference",
+      "category_source": "https://ghgprotocol.org/standards/scope-3-standard",
+      "scope2_source": "https://ghgprotocol.org/sites/default/files/GHG%20Protocol%20Scope%202%20Guidance.pdf",
+      "license": "Apache-2.0 for authored method structure"
+    },
+    "assurance_level": "demonstration"
+  }
+}

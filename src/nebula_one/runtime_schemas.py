@@ -915,6 +915,8 @@ class CbamTrialOut(BaseModel):
 class CbamTrialV2Out(CbamTrialOut):
     model_config = ConfigDict(extra="forbid")
 
+    status: Literal["trial_passed", "partial_calculated"]
+
     schema_version: Literal["nebula_one.cbam.trial.v2"]
     capability_key: Literal["cbam.trial.v2"]
     coverage: dict[str, Any]

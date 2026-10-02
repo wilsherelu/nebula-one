@@ -25,6 +25,10 @@ def render_cbam_trial_html(result: dict) -> str:
     snapshot = result["source_snapshot"]
     goods = result["goods"]
     activity = result["activity_level"]
+    partial = specific.get("partial_result") is True
+    displayed_value = specific.get("partial_value", specific.get("value")) if partial else specific.get("value")
+    label = "已量化排放小计" if partial else "所选边界试算值"
+    complete_note = "演示数据；结果不完整；未核查；不可正式申报。完整嵌入排放：未计算。" if partial else "未核查；不可正式申报。"
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>CBAM 规则试算报告</title>
 <style>body{{font:15px/1.55 system-ui,sans-serif;max-width:940px;margin:40px auto;padding:0 24px;color:#17243b}}
@@ -34,7 +38,8 @@ th{{background:#f4f7fb}}.value{{font-size:28px;font-weight:700}}.identity{{overf
 @media print{{body{{margin:0;max-width:none}}}}</style></head><body>
 <h1>CBAM 规则试算报告</h1>
 <p class="note">本结果按所列模型、方法和冻结边界计算，属于规则试算，不是申报结论。未决事项见文末。</p>
-<p class="value">{_text(specific.get('value'))} {_text(specific.get('unit'))}</p>
+<p class="note">{complete_note}</p>
+<p class="value">{label}：{_text(displayed_value)} {_text(specific.get('unit'))}</p>
 <table><tbody><tr><th>商品 / CN 编码</th><td>{_text(goods.get('aggregated_goods_category'))} / {_text(goods.get('cn_code'))}</td></tr>
 <tr><th>活动水平</th><td>{_text(activity.get('value'))} {_text(activity.get('unit'))}</td></tr>
 <tr><th>归属直接排放</th><td>{_text(direct.get('value'))} {_text(direct.get('unit'))}</td></tr>
