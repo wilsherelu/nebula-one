@@ -2,7 +2,8 @@ import { Alert, Button, Select, Table } from '@arco-design/web-react';
 import { IconExpand } from '@arco-design/web-react/icon';
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import type { ProductCarbonFootprint } from '../api/types';
+import type { ProductCarbonFootprint, ProjectWorkspace } from '../api/types';
+import { CalculationTarget } from './CalculationTarget';
 import { useI18n } from '../i18n';
 import { MetricCard } from './ui/MetricCard';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
@@ -15,6 +16,7 @@ interface MethodPackageOption {
 }
 
 interface ProductCarbonFootprintPanelProps {
+  workspace?: ProjectWorkspace;
   snapshotId: string;
   processNodes?: Array<Record<string, unknown>>;
   exchangeNames?: Record<string, string>;
@@ -50,6 +52,7 @@ function useObjectUrl(blob: Blob | undefined): string | undefined {
 }
 
 export function ProductCarbonFootprintPanel({
+  workspace,
   snapshotId,
   processNodes = [],
   exchangeNames = {},
@@ -146,6 +149,8 @@ export function ProductCarbonFootprintPanel({
       {artifactError ? <ErrorState error={artifactError} onRetry={failedAction ? () => runArtifactAction(failedAction) : undefined} /> : null}
 
       <div className="pcf-result__summary">
+        <CalculationTarget workspace={workspace} demand={result.functional_unit.reference_flow_uuid
+          ? [{ ...result.functional_unit, reference_flow_uuid: result.functional_unit.reference_flow_uuid }] : undefined} />
         <MetricCard
           label={resultLabel}
           value={formatNumber(result.total_footprint.value)}

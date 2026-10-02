@@ -50,9 +50,9 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
                 and isfinite(value) and value > 0 for value in (baseline_output, period_output))
             or climate_unit != "kg CO2-Eq"):
         raise DomainError(code="ORGANIZATION_LIFECYCLE_BASIS_INVALID", message="product basis or climate unit is invalid", status_code=422)
-    if input_basis == "annual_total":
+    if input_basis in {"annual_total", "current_model_total"}:
         if not isclose(period_output, baseline_output, rel_tol=1e-9, abs_tol=1e-9):
-            raise DomainError(code="ORGANIZATION_LIFECYCLE_ANNUAL_RESCALE", message="annual totals must match the frozen annual product output", status_code=422)
+            raise DomainError(code="ORGANIZATION_LIFECYCLE_ANNUAL_RESCALE" if input_basis == "annual_total" else "ORGANIZATION_LIFECYCLE_MODEL_RESCALE", message="total basis must match the frozen product output", status_code=422)
         scale = 1.0
     elif input_basis == "per_unit_product":
         scale = period_output / baseline_output
@@ -153,6 +153,13 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
         result["native_climate_method"] = native_method
     else:
         result["climate_source"] = climate_source
+    if input_basis == "current_model_total":
+        result["reporting_period"]["role"] = "project_context_not_annual_inventory"
+    if (climate_source or {}).get("unassigned_suppliers"):
+        result["combined_total"] = None
+        result["coverage"]["status"] = "partial"
+        result["coverage"]["unassigned_supplier_exchange_ids"] = [row["consumer_exchange_id"]
+            for row in climate_source["unassigned_suppliers"]]
     if selection == "declared_subset_v1":
         result["coverage"]["missing_energy_paths"] = missing_energy_paths
     if not explicit_boundary:

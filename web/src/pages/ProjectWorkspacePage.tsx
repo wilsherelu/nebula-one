@@ -157,6 +157,7 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
       {reviewCbam.isError ? <ErrorState error={reviewCbam.error} /> : null}
     </>}
     <CalculationMethodDialog visible={calculationOpen} choices={[...choices]} selected={selectedTask} onSelect={setSelectedTask}
+      workspace={workspace.data}
       dirty={draftDirty || !workspace.data?.saved} pending={solve.isPending || saving} error={solve.error}
       onCancel={() => { if (!solve.isPending && !saving) setCalculationOpen(false); }} onStart={() => solve.mutate(selectedTask)} />
     <Modal

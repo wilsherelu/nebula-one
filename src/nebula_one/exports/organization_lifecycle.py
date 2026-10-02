@@ -6,15 +6,23 @@ from html import escape
 
 def _uncharacterized_html(result: dict, *, english: bool = False) -> str:
     terms = (result.get("climate_source") or {}).get("uncharacterized_terms") or []
+    unassigned = (result.get("climate_source") or {}).get("unassigned_suppliers") or []
+    supply_html = ""
+    if unassigned:
+        message = ("These supplies are not grouped by this method and are excluded from the results and total."
+                   if english else "以下背景贡献尚不支持归组，未计入三组结果或合计。")
+        supply_html = f"<p>{message}</p><ul>" + "".join(
+            f"<li>{escape(row['consumer_exchange_id'])}: {row['contribution_value']:.9g} kg CO2-Eq</li>"
+            for row in unassigned) + "</ul>"
     if not terms:
-        return ""
+        return supply_html
     message = (f"{len(terms)} inventory flows are not characterized by this climate method; no numeric contribution is assigned."
                if english else f"有 {len(terms)} 项清单流未被本气候方法表征，未计入气候贡献。")
     title = "Flow identities" if english else "流身份详情"
     rows = "".join(f"<li>{escape(str(term['flow_uuid']))}@{escape(str(term.get('flow_version') or ''))} · "
                    f"{escape(str(term['exchange_id']))} · {escape(str(term.get('amount')))} "
                    f"{escape(str(term.get('amount_unit') or ''))}</li>" for term in terms)
-    return f"<p>{message}</p><details><summary>{title}</summary><ul>{rows}</ul></details>"
+    return supply_html + f"<p>{message}</p><details><summary>{title}</summary><ul>{rows}</ul></details>"
 
 
 def render_organization_lifecycle_html(record: dict, *, english_labels: dict | None = None) -> str:
@@ -23,8 +31,8 @@ def render_organization_lifecycle_html(record: dict, *, english_labels: dict | N
     result = record["result"]
     groups = result["groups"]
     labels = (("on_site_direct", "范围 1：厂内直接排放"),
-              ("purchased_energy_lifecycle", "LC-Scope 2：外购二次能源生命周期排放"),
-              ("other_value_chain", "LC-Scope 3：其他价值链排放"))
+              ("purchased_energy_lifecycle", "范围 2：外购能源相关排放"),
+              ("other_value_chain", "范围 3：其他上下游排放"))
     def amount(value: float | None, missing: str) -> str:
         return missing if value is None else f"{value:.9g} kg CO2-Eq"
 
@@ -44,13 +52,15 @@ def render_organization_lifecycle_html(record: dict, *, english_labels: dict | N
     excluded = [item["name"] for item in groups["other_value_chain"]["categories"]
                 if item.get("boundary_status") == "not_in_boundary"]
     basis = result["activity_basis"]
+    period_name = "基于当前生产模型" if basis["mode"] == "current_model_total" else result['reporting_period']['name']
+    basis_label = "当前模型总量" if basis["mode"] == "current_model_total" else basis['mode']
     return ("<!doctype html><html lang='zh-CN'><meta charset='utf-8'><title>LCA 一致型组织碳核算</title>"
             "<style>body{font:16px/1.7 sans-serif;max-width:850px;margin:40px auto;color:#182b3a}"
             "table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd6df;padding:10px;text-align:left}"
             "small{overflow-wrap:anywhere}</style>"
             f"<h1>LCA 一致型组织碳核算</h1><p>{escape(result['facility'])} · "
-            f"{escape(result['reporting_period']['name'])}</p>"
-            f"<p>输入基准：{escape(basis['mode'])}；模型产量 {basis['baseline_output']:.9g} kg，"
+            f"{escape(period_name)}</p>"
+            f"<p>输入基准：{escape(basis_label)}；模型产量 {basis['baseline_output']:.9g} kg，"
             f"期间产量 {basis['period_output']:.9g} kg，缩放系数 {basis['scale_factor']:.9g}。</p>"
             f"<table><thead><tr><th>归组</th><th>排放量</th><th>状态</th></tr></thead><tbody>{rows}</tbody></table>"
             f"<p>所选边界合计：{escape(total)}；本次边界外：{escape('、'.join(excluded) or '无')}。"
@@ -71,8 +81,8 @@ def _render_english(record: dict, labels: dict) -> str:
     def amount(value: float | None, missing: str) -> str:
         return missing if value is None else f"{value:.9g} kg CO2-Eq"
     group_names = (("on_site_direct", "Scope 1: on site direct emissions"),
-                   ("purchased_energy_lifecycle", "LC-Scope 2: lifecycle emissions from purchased secondary energy"),
-                   ("other_value_chain", "LC-Scope 3: other value chain emissions"))
+                   ("purchased_energy_lifecycle", "Scope 2: purchased energy related emissions"),
+                   ("other_value_chain", "Scope 3: other upstream and downstream emissions"))
     rows = "".join(
         f"<tr><th>{escape(name)}</th><td>{amount(groups[key]['value'], 'Not calculated')}</td>"
         f"<td>{escape(labels['group_status'].get(groups[key]['status'], groups[key]['status']))}</td></tr>"
@@ -97,13 +107,16 @@ def _render_english(record: dict, labels: dict) -> str:
     period = result["reporting_period"]
     period_name = (f"{period['start_date']}—{period['end_date']}"
                    if period.get("start_date") and period.get("end_date") else period["name"])
+    if basis["mode"] == "current_model_total":
+        period_name = "Based on the current production model"
+    basis_label = "Current model total" if basis["mode"] == "current_model_total" else labels['input_basis'][basis['mode']]
     return ("<!doctype html><html lang='en'><meta charset='utf-8'><title>Organizational lifecycle carbon accounting</title>"
             "<style>body{font:16px/1.7 sans-serif;max-width:850px;margin:40px auto;color:#182b3a}"
             "table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd6df;padding:10px;text-align:left}"
             "small{overflow-wrap:anywhere}</style>"
             f"<h1>Organizational lifecycle carbon accounting</h1><p>{escape(result['facility'])} · "
             f"{escape(period_name)}</p>"
-            f"<p>Input basis: {escape(labels['input_basis'][basis['mode']])}; model output "
+            f"<p>Input basis: {escape(basis_label)}; model output "
             f"{basis['baseline_output']:.9g} kg; period output {basis['period_output']:.9g} kg; "
             f"scale factor {basis['scale_factor']:.9g}.</p>"
             f"<table><thead><tr><th>Group</th><th>Emissions</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table>"

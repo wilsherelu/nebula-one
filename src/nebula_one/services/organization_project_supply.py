@@ -6,7 +6,7 @@ from ..errors import DomainError
 from ..hashing import canonical_json_sha256
 
 
-def project_supply_climate(snapshot, revision, manifest):
+def project_supply_climate(snapshot, revision, manifest, *, retain_unsupported_paths=False):
     receipt = snapshot.provider_receipt or {}
     basis = receipt.get("calculation_basis") or {}
     pins = basis.get("project_background_pins") or []
@@ -131,4 +131,16 @@ def project_supply_climate(snapshot, revision, manifest):
                                     for row in source_rows]}
     if allow_no_cf:
         climate_source["uncharacterized_terms"] = uncharacterized_terms
-    return foreground_value, background_value, unit, climate_method, climate_source, [pin["consumer_exchange_id"] for pin in pins]
+    mapped = [pin["consumer_exchange_id"] for pin in pins]
+    if retain_unsupported_paths:
+        energy_paths = set(rules.get("energy_purchase_exchange_ids") or [])
+        unsupported = [row for row in climate_source["suppliers"] if row["consumer_exchange_id"] not in energy_paths]
+        if unsupported:
+            climate_source["unassigned_suppliers"] = [dict(row, status="method_grouping_not_supported", numeric_contribution=None)
+                                                       for row in unsupported]
+            # Reconciliation above includes every supplier. Only method-declared energy
+            # paths enter group 2; valid but unsupported paths remain visible, unassigned.
+            background_value = sum(row["contribution_value"] for row in climate_source["suppliers"]
+                                   if row["consumer_exchange_id"] in energy_paths)
+            mapped = [exchange_id for exchange_id in mapped if exchange_id in energy_paths]
+    return foreground_value, background_value, unit, climate_method, climate_source, mapped

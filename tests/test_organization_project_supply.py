@@ -99,6 +99,24 @@ def _source():
     return snapshot, revision
 
 
+def test_valid_unsupported_supply_keeps_direct_results_and_audited_contribution():
+    snapshot, revision = _source()
+    manifest = deepcopy(MANIFEST)
+    # The source remains valid, but this method has no classification for its path.
+    manifest["classification_rules"]["energy_purchase_exchange_ids"] = []
+    foreground, background, _, _, source, exchange_ids = project_supply_climate(
+        snapshot, revision, manifest, retain_unsupported_paths=True)
+    assert foreground == 1941.739734
+    assert background == 0
+    assert exchange_ids == []
+    assert source["unassigned_suppliers"][0]["contribution_value"] == pytest.approx(101.66666666666667)
+    assert source["unassigned_suppliers"][0]["numeric_contribution"] is None
+    snapshot.lcia_results["contribution_receipts_hash"] = "invalid"
+    with pytest.raises(DomainError) as error:
+        project_supply_climate(snapshot, revision, manifest, retain_unsupported_paths=True)
+    assert error.value.code == "ORGANIZATION_PROJECT_SUPPLY_CLIMATE_INVALID"
+
+
 def test_project_supply_groups_exact_climate_once_and_keeps_scope_3_missing():
     snapshot, revision = _source()
     foreground, background, unit, method, source, exchange_ids = project_supply_climate(snapshot, revision, MANIFEST)

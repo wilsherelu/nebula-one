@@ -56,6 +56,16 @@ def test_annual_total_is_not_scaled_again():
     assert error.value.code == "ORGANIZATION_LIFECYCLE_ANNUAL_RESCALE"
 
 
+def test_current_model_total_does_not_annualize_or_scale_twice():
+    result = _build(input_basis="current_model_total", baseline=2000, output=2000)
+    assert result["activity_basis"]["scale_factor"] == 1
+    assert result["groups"]["on_site_direct"]["value"] == 1.9
+    assert result["reporting_period"]["role"] == "project_context_not_annual_inventory"
+    with pytest.raises(DomainError) as error:
+        _build(input_basis="current_model_total", baseline=1000, output=2000)
+    assert error.value.code == "ORGANIZATION_LIFECYCLE_MODEL_RESCALE"
+
+
 def test_non_energy_background_and_double_counted_activity_fail_closed():
     with pytest.raises(DomainError) as error:
         _build(mapped=["continuous-casting::grid-electricity-in", "ore-sintering::iron-ore-in"])

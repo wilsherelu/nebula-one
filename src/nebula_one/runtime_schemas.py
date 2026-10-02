@@ -1297,6 +1297,12 @@ class OrganizationLifecycleActivity(OrganizationSupplierActivity):
     factor_reference_product: str | None = None
 
 
+class OrganizationCurrentModelCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    solved_snapshot_id: str = Field(min_length=1)
+    method_package_ref: str = Field(min_length=3, max_length=320)
+
+
 class OrganizationLifecycleCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     solved_snapshot_id: str = Field(min_length=1)
@@ -1304,7 +1310,7 @@ class OrganizationLifecycleCreate(BaseModel):
     reporting_period_id: str = Field(min_length=1)
     facility: str = Field(min_length=1)
     controlled_process_ids: list[str] = Field(min_length=1)
-    input_basis: Literal["per_unit_product", "annual_total"]
+    input_basis: Literal["per_unit_product", "annual_total", "current_model_total"]
     period_product_output: float = Field(gt=0, allow_inf_nan=False)
     other_activities: list[OrganizationLifecycleActivity] = Field(default_factory=list)
 

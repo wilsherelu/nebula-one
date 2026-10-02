@@ -215,6 +215,10 @@ export const api = {
       method: 'POST', body: JSON.stringify(payload),
     }),
   organizationLifecycleInventories: (applicationId: string) => requestJson<OrganizationLifecycleResult[]>(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories`),
+  createOrganizationCurrentModel: (applicationId: string, payload: { solved_snapshot_id: string; method_package_ref: string }) =>
+    requestJson<OrganizationLifecycleResult>(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/current-model`, {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
   createOrganizationLifecycleInventory: (applicationId: string, payload: OrganizationLifecycleRequest) =>
     requestJson<OrganizationLifecycleResult>(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories`, {
       method: 'POST', body: JSON.stringify(payload),

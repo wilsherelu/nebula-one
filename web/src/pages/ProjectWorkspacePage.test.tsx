@@ -147,11 +147,13 @@ it('keeps unsaved inventory edits when a background binding mints the next data 
   mount('data', [revision, revision3], '&revision=r2');
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
   await userEvent.click(screen.getByRole('button', { name: '选择背景数据' }));
-  fireEvent.click(await screen.findByRole('button', { name: '关联背景过程' }));
+  await userEvent.click(await screen.findByRole('combobox', { name: '背景来源' }));
+  fireEvent.click(await screen.findByRole('option', { name: '精确引用' }));
   fireEvent.change(await screen.findByRole('textbox', { name: '背景过程 UUID' }), { target: { value: 'p-1' } });
   fireEvent.change(screen.getByRole('textbox', { name: '数据版本' }), { target: { value: '01.00.000' } });
   fireEvent.click(screen.getByRole('button', { name: '校验背景数据' }));
-  fireEvent.click(await screen.findByRole('button', { name: '确认关联并保存' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: '确认关联' })).toBeEnabled());
+  fireEvent.click(screen.getByRole('button', { name: '确认关联' }));
   await waitFor(() => expect(save).toHaveBeenCalledWith('app-steel', expect.objectContaining({ revision_id: 'r2' }), 'zh'));
   // The binding really did move the workbench to the next version; the edits have to survive that.
   await waitFor(() => expect(api.workspace).toHaveBeenCalledWith('app-steel', 'r3', 'zh'));
@@ -294,7 +296,7 @@ it('links saved task records back to their own result views', async () => {
 });
 
 it('computes organization lifecycle directly without requiring an earlier PCF snapshot', async () => {
-  const app: Application = { ...application, context: { ...application.context, method_package_refs: ['org.steel@1.0.5'] } };
+  const app: Application = { ...application, context: { ...application.context, seed_template: {}, method_package_refs: ['org.steel@1.0.5'] } };
   const organizationWorkspace: ProjectWorkspace = { ...workspace, capabilities: ['organization.lifecycle-carbon.v1'],
     project_background_pins: [{ schema_version: 'provider.project-background-pin.v1',
       consumer_exchange_id: 'p-steelmaking::e1', project_id: 'electricity-supply', version: 1,
@@ -311,7 +313,8 @@ it('computes organization lifecycle directly without requiring an earlier PCF sn
   fireEvent.click(await screen.findByRole('button', { name: '核算' }));
   fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
-  expect(solve.mock.calls[0][2]).toMatchObject({ climate_default: true });
+  expect(solve.mock.calls[0][2]).toMatchObject({ climate_default: true, calculation_purpose: 'lca',
+    project_background_pins: organizationWorkspace.project_background_pins });
 });
 
 it('keeps PCF and organization available without a background and hides the raw method ID', async () => {

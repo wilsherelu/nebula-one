@@ -10,6 +10,7 @@ import { projectResultViews } from '../api/projectViews';
 import type { MethodPackage, SolvedSystemSnapshot } from '../api/types';
 import { EnergyCarrierResultPanel } from '../components/EnergyCarrierResultPanel';
 import { ProductCarbonFootprintPanel } from '../components/ProductCarbonFootprintPanel';
+import { CalculationTarget } from '../components/CalculationTarget';
 import { ResultActionsTarget, ResultDetailsTarget } from '../components/ResultHeaderActions';
 import { processDisplayNodes } from '../components/ContributionChart';
 import { NativeClimatePanel } from '../components/NativeClimatePanel';
@@ -248,7 +249,7 @@ export function AnalysisResultsPage() {
   const resultWorkspace = useQuery({
     queryKey: ['workspace', applicationId, selected?.system_revision_id, lang],
     queryFn: () => api.workspace(applicationId!, selected!.system_revision_id, lang),
-    enabled: Boolean(applicationId && selected && activeResultTab === 'pcf' && application.data?.context.template_locked),
+    enabled: Boolean(applicationId && selected && ['pcf', 'cbam'].includes(activeResultTab) && application.data?.context.template_locked),
   });
   const pcfResolved = useQuery({
     queryKey: ['pcf-default-method', selected?.id],
@@ -553,6 +554,7 @@ export function AnalysisResultsPage() {
               <Tabs.TabPane key="pcf" title={t('task.pcf')}>
                 {pcfMethod.invalid ? <InvalidReferencesAlert references={[{ label: t('pcf.methodPackage'), requested: pcfMethod.requested, key: 'pcf-method' }]} note={t('results.pcfUnknownMethod')} /> : null}
                 <ProductCarbonFootprintPanel
+                  workspace={resultWorkspace.data}
                   snapshotId={selected.id}
                   exchangeNames={Object.fromEntries((resultWorkspace.data?.fields ?? []).filter(field => field.process_id && field.port_id).map(field => [`${field.process_id}::${field.port_id}`, field.label]))}
                   processNodes={processDisplayNodes({
@@ -616,6 +618,7 @@ export function AnalysisResultsPage() {
                 {!organizationLifecycleMethod ? <EmptyState description={t('results.noOrgMethod')} /> : !hasClimateAnswer(selected) ? <TaskComputePrompt applicationId={applicationId} revisionId={selected.system_revision_id} label={t('task.organization')} /> : <OrganizationLifecyclePanel applicationId={applicationId!} snapshot={selected} method={organizationLifecycleMethod} methodPackages={methodPackages.data ?? []} />}
               </Tabs.TabPane>
               <Tabs.TabPane key="cbam" title={t('task.cbam')}>
+                <CalculationTarget workspace={resultWorkspace.data} />
                 {!showCbamTrial && cbamPartialReviewMethod ? <CbamPartialReviewPanel applicationId={applicationId!} snapshot={selected} snapshots={snapshots.data ?? []} method={cbamPartialReviewMethod} boundaries={cbamTrialBoundaries} methodPackages={methodPackages.data ?? []} /> : null}
                 {showCbamTrial || !cbamPartialReviewMethod ? <CbamRuleTrialPanel applicationId={applicationId} snapshot={selected} snapshots={snapshots.data ?? []} simpleMethods={cbamMethods.simple} complexMethods={cbamMethods.complex} boundaryRequiredFor={cbamBoundaryRequiredFor} cbamBoundaries={cbamTrialBoundaries} boundariesLoading={boundaries.isLoading} boundariesError={boundaries.error} onBoundariesRetry={() => boundaries.refetch()} enabled={activeResultTab === 'cbam'} packagesLoading={methodPackages.isLoading} packagesError={methodPackages.error} onPackagesRetry={() => methodPackages.refetch()} /> : null}
               </Tabs.TabPane>

@@ -24,6 +24,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const [output, setOutput] = useState('');
   const [basisMode, setBasisMode] = useState<'per_unit_product' | 'annual_total'>('per_unit_product');
   const [entries, setEntries] = useState<Record<string, Entry>>({});
+  const [showSettings, setShowSettings] = useState(false);
   const rules = ((method.manifest.classification_rules as Record<string, unknown> | undefined)?.other_value_chain_categories ?? {}) as Record<string, CategoryRule>;
   const projectSupplyMethod = (method.manifest.classification_rules as Record<string, unknown> | undefined)?.energy_path_source === 'project_background_process_receipts';
   const optionalSupplyMethod = (method.manifest.classification_rules as Record<string, unknown> | undefined)?.energy_path_source === 'optional_project_background_process_receipts';
@@ -94,11 +95,12 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   if (lang === 'en' && display.isError) return <ErrorState error={display.error} />;
   return <div className="pcf-result">
     <h3>{t('org.title')}</h3>
-    {!recordId ? <><p>{t('org.intro')}</p>
-    <Alert type="info" content={t('org.scopeNote')} /></> : null}
+    <p>{t('org.currentModel')}</p>
+    <details><summary>{t('org.methodDetails')}</summary><p>{t('org.intro')}</p><p>{t('org.scopeNote')}</p></details>
+    {recordId ? <Button type="text" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button> : null}
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
-    {!recordId ? <><div className="project-period-form">
+    {!recordId || showSettings ? <><div className="project-period-form">
       <div className="project-field"><span>{t('org.period')}</span><Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${periodName(item)} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></div>
       <label>{t('org.facility')}<input aria-label={t('org.facilityAria')} value={facility} onChange={event => setFacility(event.target.value)} /></label>
       <div className="project-field"><span>{t('org.basis')}</span><Select aria-label={t('org.basis')} value={basisMode} onChange={value => setBasisMode(value as typeof basisMode)} options={[{ label: lang === 'zh' ? labels.input_basis?.per_unit_product ?? t('org.perProduct') : t('org.perProduct'), value: 'per_unit_product' }, { label: lang === 'zh' ? labels.input_basis?.annual_total ?? t('org.annual') : t('org.annual'), value: 'annual_total' }]} /></div>
@@ -151,7 +153,12 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     </> : null}
     {!recordId ? <h4>{t('org.savedResults')}</h4> : null}
     {matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
-      <strong>{periodName(record.result.reporting_period)} · {record.result.facility}</strong>
+      <strong>{record.result.activity_basis.mode === 'current_model_total' ? t('org.currentModel') : periodName(record.result.reporting_period)} · {record.result.facility}</strong>
+      {record.result.climate_source?.unassigned_suppliers?.length ? <div>
+        <p>{t('org.unassignedSupply')}</p><ul>{record.result.climate_source.unassigned_suppliers.map(row =>
+          <li key={row.consumer_exchange_id}>{workspace.data?.fields.find(field => `${field.process_id}::${field.port_id}` === row.consumer_exchange_id)?.label ?? row.consumer_exchange_id}
+            {' · '}{format(row.contribution_value)} kg CO2-Eq</li>)}</ul>
+      </div> : null}
       {record.result.climate_source?.uncharacterized_terms?.length ? <>
         <p>{t('org.uncharacterized', {count: record.result.climate_source.uncharacterized_terms.length})}</p>
         <details><summary>{t('org.flowIdentity')}</summary><ul>{record.result.climate_source.uncharacterized_terms.map(term =>
@@ -159,7 +166,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
         )}</ul></details>
       </> : null}
       <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></p>
-      <p>{t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
+      <p>{t('org.resultBasis', { basis: record.result.activity_basis.mode === 'current_model_total' ? t('org.currentTotal') : lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
       <Table rowKey="key" pagination={false} data={[
         { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
         { key: 'energy', ...record.result.groups.purchased_energy_lifecycle, label: t('org.groupEnergy') },

@@ -66,6 +66,7 @@ from .runtime_schemas import (
     OrganizationPeriodCreate,
     OrganizationPeriodOut,
     OrganizationLifecycleCreate,
+    OrganizationCurrentModelCreate,
     PeriodCreate,
     PeriodOut,
     ProductCarbonFootprintCreate,
@@ -1176,6 +1177,13 @@ def create_organization_lifecycle_inventory(
     application_id: str, payload: OrganizationLifecycleCreate, request: Request,
 ) -> dict:
     return _container(request).organization_lifecycle.create(application_id, payload)
+
+
+@router.post("/applications/{application_id}/organization-lifecycle-inventories/current-model", status_code=201)
+def create_organization_current_model(
+    application_id: str, payload: OrganizationCurrentModelCreate, request: Request,
+) -> dict:
+    return _container(request).organization_lifecycle.create_current_model(application_id, payload)
 
 
 @router.get("/applications/{application_id}/organization-lifecycle-inventories")

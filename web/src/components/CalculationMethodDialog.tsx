@@ -1,5 +1,7 @@
 import { Alert, Button, Modal, Radio } from '@arco-design/web-react';
 import { useI18n } from '../i18n';
+import type { ProjectWorkspace } from '../api/types';
+import { CalculationTarget } from './CalculationTarget';
 
 export type CalculationTask = 'pcf' | 'cbam' | 'organization' | 'mfa';
 
@@ -10,7 +12,8 @@ export interface CalculationChoice {
   method?: string;
 }
 
-export function CalculationMethodDialog({ visible, choices, selected, onSelect, dirty, pending, error, onCancel, onStart }: {
+export function CalculationMethodDialog({ visible, choices, selected, onSelect, dirty, pending, error, onCancel, onStart, workspace }: {
+  workspace?: ProjectWorkspace;
   visible: boolean;
   choices: CalculationChoice[];
   selected: CalculationTask;
@@ -27,6 +30,8 @@ export function CalculationMethodDialog({ visible, choices, selected, onSelect, 
   return <Modal visible={visible} title={t('workspace.chooseTask')} className="calculation-method-dialog"
     style={{ width: 560, maxWidth: 'calc(100vw - 32px)' }} footer={null} onCancel={onCancel}
     maskClosable={!pending} closable={!pending} escToExit={!pending} autoFocus>
+    <CalculationTarget workspace={workspace} />
+    {dirty ? <p>{t('calculation.savedTarget')}</p> : null}
     <Radio.Group className="calculation-method-choices" aria-label={t('workspace.chooseTask')} value={selected}
       onChange={value => onSelect(value as CalculationTask)} disabled={pending}>
       {choices.map(choice => <Radio key={choice.task} value={choice.task} disabled={!choice.available}>

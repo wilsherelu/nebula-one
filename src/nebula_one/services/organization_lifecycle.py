@@ -11,7 +11,7 @@ from ..errors import DomainError
 from ..hashing import canonical_json_sha256
 from ..models import Application, SystemRevision, new_id
 from ..runtime_models import OrganizationPeriodInventory, Period, SolvedSystemSnapshot
-from ..runtime_schemas import OrganizationLifecycleCreate
+from ..runtime_schemas import OrganizationLifecycleCreate, OrganizationCurrentModelCreate
 from .native_climate import NativeClimateArtifactService
 from .organization_project_supply import project_supply_climate
 from .runtime_support import require_method_package
@@ -23,6 +23,31 @@ class OrganizationLifecycleService:
     def __init__(self, database: Database) -> None:
         self.database = database
         self.native = NativeClimateArtifactService(database)
+
+    def create_current_model(self, application_id: str, payload: OrganizationCurrentModelCreate) -> dict:
+        """Use the frozen model once; an existing period is context, not annualization."""
+        with self.database.session() as db:
+            app = db.get(Application, application_id)
+            snapshot = db.get(SolvedSystemSnapshot, payload.solved_snapshot_id)
+            if app is None or snapshot is None or snapshot.application_id != application_id:
+                raise DomainError(code="ORGANIZATION_LIFECYCLE_SOURCE_NOT_FOUND", message="application or frozen snapshot is absent", status_code=404)
+            revision = db.get(SystemRevision, snapshot.system_revision_id)
+            method = require_method_package(db, payload.method_package_ref)
+            if revision is None or (method.manifest.get("classification_rules") or {}).get("controlled_process_mode") != "all_solved_foreground_processes":
+                raise DomainError(code="ORGANIZATION_LIFECYCLE_CONTROL_INVALID", message="method must explicitly declare controlled foreground", status_code=422)
+            demand = ((snapshot.provider_receipt or {}).get("calculation_basis") or {}).get("demand") or []
+            if len(demand) != 1 or demand[0].get("unit") != "kg":
+                raise DomainError(code="ORGANIZATION_LIFECYCLE_PRODUCT_INVALID", message="source solve must have one kilogram product demand", status_code=422)
+            periods = db.scalars(select(Period).where(Period.application_id == application_id)).all()
+            if len(periods) != 1:
+                raise DomainError(code="ORGANIZATION_LIFECYCLE_PERIOD_SELECTION_REQUIRED", message="select an existing project period in additional settings", status_code=422)
+            inputs = OrganizationLifecycleCreate(
+                solved_snapshot_id=snapshot.id, method_package_ref=payload.method_package_ref,
+                reporting_period_id=periods[0].id, facility=app.name,
+                controlled_process_ids=[str(node["id"]) for node in revision.graph_snapshot.get("nodes", [])],
+                input_basis="current_model_total", period_product_output=float(demand[0]["amount"]),
+            )
+        return self.create(application_id, inputs)
 
     def create(self, application_id: str, payload: OrganizationLifecycleCreate) -> dict:
         inputs = payload.model_dump(mode="json")
@@ -56,7 +81,8 @@ class OrganizationLifecycleService:
             if (method.manifest.get("classification_rules") or {}).get("energy_path_source") in {
                     "project_background_process_receipts", "optional_project_background_process_receipts"}:
                 foreground_value, background_value, climate_unit, climate_method, climate_source, mapped = (
-                    project_supply_climate(snapshot, revision, method.manifest))
+                    project_supply_climate(snapshot, revision, method.manifest,
+                                           retain_unsupported_paths=payload.input_basis == "current_model_total"))
             else:
                 mapped = [item.get("consumer_exchange_id") for item in basis.get("mapped_background_process_pins") or []]
                 if not mapped or any(not item for item in mapped):
@@ -84,6 +110,9 @@ class OrganizationLifecycleService:
                 raise DomainError(code="ORGANIZATION_LIFECYCLE_INTERNAL_ENERGY_PATH", message="a mapped energy path is an internal product link", status_code=422)
             factor_hashes = {}
             for activity in payload.other_activities:
+                if any(activity.consumer_exchange_id == row["consumer_exchange_id"]
+                       for row in (climate_source or {}).get("suppliers", [])):
+                    raise DomainError(code="ORGANIZATION_LIFECYCLE_OVERLAP", message="supplementary factor overlaps an already solved supplier", status_code=422)
                 if not activity.factor_package_ref:
                     continue
                 factor_package = require_method_package(db, activity.factor_package_ref)
