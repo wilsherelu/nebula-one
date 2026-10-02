@@ -35,6 +35,21 @@ def _membership_drift(old_manifest: dict, new_manifest: dict) -> list[tuple[str,
             for field in sorted(set(before) | set(after)) if before.get(field) != after.get(field)]
 
 
+def test_current_steel_profile_binds_partial_review_without_a_returned_graph(client):
+    from nebula_one.models import Application
+    from nebula_one.services.official_product_method import bind_official_cbam_partial_method
+    profile, digest, _ = load_profile(['cases'], _installation())
+    with client.app.state.container.database.session() as db:
+        application = Application(id='round2-partial-binding', name='Steel case binding',
+            application_type='process_system', context={'seed_template': {'profile': {
+                'id': profile['id'], 'version': profile['version'], 'content_sha256': digest}}})
+        db.add(application)
+        db.flush()
+        reference = bind_official_cbam_partial_method(db, application)
+        assert reference == 'cbam.eu.iron-steel.bf-bof-partial-review@1.0.6'
+        assert reference in application.context['method_package_refs']
+
+
 def test_steel_inventory_profile_changes_demo_validation_and_the_revised_flow_identity():
     profile, digest, replacements = load_profile(['cases'], _installation())
     previous, package, package_hash = replacements[0]
