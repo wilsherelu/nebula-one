@@ -50,6 +50,28 @@ def test_current_steel_profile_binds_partial_review_without_a_returned_graph(cli
         assert reference in application.context['method_package_refs']
 
 
+def test_current_profile_binds_new_organization_method_and_preserves_old_reference(client):
+    from nebula_one.models import Application
+    from nebula_one.runtime_models import MethodPackage
+    from nebula_one.organization_lifecycle_display import organization_lifecycle_display
+    from nebula_one.services.official_product_method import bind_official_organization_lifecycle_method
+    from sqlalchemy import select
+    profile, digest, _ = load_profile(['cases'], _installation())
+    old = 'nebula.organization-lifecycle-carbon.steel-model@1.0.8'
+    with client.app.state.container.database.session() as db:
+        application = Application(id='organization-category-binding', name='Steel', application_type='process_system',
+            context={'method_package_refs': [old], 'seed_template': {'profile': {
+                'id': profile['id'], 'version': profile['version'], 'content_sha256': digest}}})
+        db.add(application)
+        db.flush()
+        reference = bind_official_organization_lifecycle_method(db, application)
+        assert reference == 'nebula.organization-lifecycle-carbon.steel-model@1.0.9'
+        assert old in application.context['method_package_refs']
+        method = db.scalar(select(MethodPackage).where(MethodPackage.package_id == reference.split('@')[0], MethodPackage.version == '1.0.9'))
+        display = organization_lifecycle_display(method, 'en')
+        assert display['method_package']['content_sha256'] == method.content_sha256
+
+
 def test_steel_inventory_profile_changes_demo_validation_and_the_revised_flow_identity():
     profile, digest, replacements = load_profile(['cases'], _installation())
     previous, package, package_hash = replacements[0]

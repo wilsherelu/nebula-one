@@ -12,6 +12,7 @@ def project_supply_climate(snapshot, revision, manifest, *, retain_unsupported_p
     pins = basis.get("project_background_pins") or []
     source_rows = receipt.get("project_background_process_receipts") or []
     rules = manifest.get("classification_rules") or {}
+    category_receipts = rules.get("non_energy_path_source") == "project_background_category_receipts_v1"
     formula = manifest.get("formula_graph") or {}
     optional_supply = rules.get("energy_path_source") == "optional_project_background_process_receipts"
     if ((not pins and not optional_supply) or len(pins) != len(source_rows) or basis.get("mapped_background_process_pins")
@@ -110,7 +111,7 @@ def project_supply_climate(snapshot, revision, manifest, *, retain_unsupported_p
         receipt_total = float(climate["contribution_total"])
     except (KeyError, TypeError, ValueError):
         climate_total = reported_total = receipt_total = float("nan")
-    if (characterized_suppliers != set(sources)
+    if ((not category_receipts and characterized_suppliers != set(sources))
             or not all(isfinite(value) for value in (total, climate_total, reported_total, receipt_total))
             or not isclose(total, receipt_total, rel_tol=1e-9, abs_tol=1e-9)
             or not isclose(total, climate_total, rel_tol=1e-9, abs_tol=1e-9)
@@ -132,7 +133,37 @@ def project_supply_climate(snapshot, revision, manifest, *, retain_unsupported_p
     if allow_no_cf:
         climate_source["uncharacterized_terms"] = uncharacterized_terms
     mapped = [pin["consumer_exchange_id"] for pin in pins]
-    if retain_unsupported_paths:
+    if category_receipts:
+        energy_paths = set(rules.get("energy_purchase_exchange_ids") or [])
+        categories = rules.get("other_value_chain_categories") or {}
+        assignments = {}
+        for category, rule in categories.items():
+            for exchange_id in rule.get("eligible_consumer_exchange_ids") or []:
+                if exchange_id in energy_paths or exchange_id in assignments:
+                    raise DomainError(code="ORGANIZATION_LIFECYCLE_OVERLAP", message="method assigns one supply port to multiple groups", status_code=422)
+                assignments[exchange_id] = category
+        category_rows, unassigned, energy_rows = [], [], []
+        for row in climate_source["suppliers"]:
+            exchange_id = row["consumer_exchange_id"]
+            process_id = row["process_uuid"]
+            no_cf = any(term["process_uuid"] == process_id for term in uncharacterized_terms)
+            row["status"] = (("method_has_no_cf" if no_cf else "contribution_terms_missing") if process_id not in characterized_suppliers else
+                             "partial_characterization" if no_cf else "calculated")
+            if process_id not in characterized_suppliers:
+                row["contribution_value"] = None
+            if exchange_id in energy_paths:
+                energy_rows.append(row)
+            elif exchange_id in assignments and categories[assignments[exchange_id]].get("boundary_status") == "selected":
+                category_rows.append({**row, "category": assignments[exchange_id]})
+            else:
+                unassigned.append(dict(row, status="method_grouping_not_supported", numeric_contribution=None))
+        climate_source["category_suppliers"] = category_rows
+        climate_source["energy_suppliers"] = energy_rows
+        if unassigned:
+            climate_source["unassigned_suppliers"] = unassigned
+        background_value = sum(row["contribution_value"] for row in energy_rows if row["contribution_value"] is not None)
+        mapped = [row["consumer_exchange_id"] for row in energy_rows if row["contribution_value"] is not None]
+    elif retain_unsupported_paths:
         energy_paths = set(rules.get("energy_purchase_exchange_ids") or [])
         unsupported = [row for row in climate_source["suppliers"] if row["consumer_exchange_id"] not in energy_paths]
         if unsupported:

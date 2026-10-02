@@ -12,7 +12,7 @@ def _uncharacterized_html(result: dict, *, english: bool = False) -> str:
         message = ("These supplies are not grouped by this method and are excluded from the results and total."
                    if english else "以下背景贡献尚不支持归组，未计入三组结果或合计。")
         supply_html = f"<p>{message}</p><ul>" + "".join(
-            f"<li>{escape(row['consumer_exchange_id'])}: {row['contribution_value']:.9g} kg CO2-Eq</li>"
+            f"<li>{escape(row['consumer_exchange_id'])}: {escape(str(row['contribution_value']))} kg CO2-Eq</li>"
             for row in unassigned) + "</ul>"
     if not terms:
         return supply_html
@@ -23,6 +23,15 @@ def _uncharacterized_html(result: dict, *, english: bool = False) -> str:
                    f"{escape(str(term['exchange_id']))} · {escape(str(term.get('amount')))} "
                    f"{escape(str(term.get('amount_unit') or ''))}</li>" for term in terms)
     return supply_html + f"<p>{message}</p><details><summary>{title}</summary><ul>{rows}</ul></details>"
+
+
+def _category_supply_html(item: dict) -> str:
+    return "".join(
+        f"<br><small>{escape(row['consumer_exchange_id'])} · "
+        f"{escape(str(row['contribution_value']))} kg CO2-Eq · {escape(row['status'])} · "
+        f"{escape(row['project_id'])}@{row['version']} · SHA-256 {escape(row['source_graph_hash'])}</small>"
+        for row in item.get("supply_receipts", [])) + "".join(
+        f"<br><small>{escape(exchange_id)}: —</small>" for exchange_id in item.get("missing_exchange_ids", []))
 
 
 def render_organization_lifecycle_html(record: dict, *, english_labels: dict | None = None) -> str:
@@ -44,6 +53,7 @@ def render_organization_lifecycle_html(record: dict, *, english_labels: dict | N
         f"<li>{escape(item['name'])}：{('本次边界外' if item.get('boundary_status') == 'not_in_boundary' else amount(item['value'], '缺活动数据'))}"
         + "".join(f"<br><small>因子来源 {escape(activity['factor_source'])}，版本 {escape(activity['factor_version'])}，"
                   f"SHA-256 {escape(activity['evidence_sha256'])}</small>" for activity in item["activities"])
+        + _category_supply_html(item)
         + (f"<br><small>公开示例代理参考量 {amount(item.get('proxy_reference_value'), '无')}；不计入已核算值或合计。</small>"
            if item.get("proxy_reference_value") is not None else "")
         + "</li>" for item in groups["other_value_chain"]["categories"]
@@ -64,7 +74,7 @@ def render_organization_lifecycle_html(record: dict, *, english_labels: dict | N
             f"期间产量 {basis['period_output']:.9g} kg，缩放系数 {basis['scale_factor']:.9g}。</p>"
             f"<table><thead><tr><th>归组</th><th>排放量</th><th>状态</th></tr></thead><tbody>{rows}</tbody></table>"
             f"<p>所选边界合计：{escape(total)}；本次边界外：{escape('、'.join(excluded) or '无')}。"
-            "该合计不代表完整生命周期排放。</p><h2>其他上下游活动</h2><ul>{categories}</ul>"
+            f"该合计不代表完整生命周期排放。</p><h2>其他上下游活动</h2><ul>{categories}</ul>"
             "<p>这是 Nebula 自定义的 LCA 一致型组织归组方法，不是 GHG Protocol 范围 1–3，"
             "也不代表 ILCD 认可本分类。覆盖由当前模型、供应路径及已提供因子决定。</p>"
             + _uncharacterized_html(result)
@@ -95,6 +105,7 @@ def _render_english(record: dict, labels: dict) -> str:
         + "".join(f"<br><small>Factor source {escape(activity['factor_source'])}, version "
                   f"{escape(activity['factor_version'])}, SHA-256 {escape(activity['evidence_sha256'])}</small>"
                   for activity in item["activities"])
+        + _category_supply_html(item)
         + (f"<br><small>Public example proxy reference {amount(item.get('proxy_reference_value'), 'None')}; "
            "excluded from the calculated amount and total.</small>"
            if item.get("proxy_reference_value") is not None else "")

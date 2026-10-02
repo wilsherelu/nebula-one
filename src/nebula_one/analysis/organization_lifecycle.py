@@ -62,7 +62,10 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
         raise DomainError(code="ORGANIZATION_LIFECYCLE_CLIMATE_INVALID", message="climate domains must be finite", status_code=422)
     grouped: dict[str, list[dict[str, Any]]] = {key: [] for key in categories}
     proxy_rows: dict[str, list[dict[str, Any]]] = {key: [] for key in categories}
-    seen: set[str] = set()
+    receipt_grouping = rules.get("non_energy_path_source") == "project_background_category_receipts_v1"
+    receipt_rows = (climate_source or {}).get("category_suppliers", []) if receipt_grouping else []
+    solved_ports = {row["consumer_exchange_id"] for row in (climate_source or {}).get("suppliers", [])}
+    seen: set[str] = set(solved_ports) if receipt_grouping else set()
     for item in activities:
         category = item["category"]
         rule = categories.get(category)
@@ -101,18 +104,32 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
             raise DomainError(code="ORGANIZATION_LIFECYCLE_BOUNDARY_INVALID", message="category needs an explicit, consistent boundary status", status_code=422)
         expected = [exchange_id for exchange_id in rule.get("eligible_consumer_exchange_ids", [])
                     if exchange_id in external_exchanges]
+        supplied = [row for row in receipt_rows if row["category"] == key]
+        if (len({row["consumer_exchange_id"] for row in supplied}) != len(supplied)
+                or any(row["consumer_exchange_id"] not in expected
+                       or external_exchanges[row["consumer_exchange_id"]].get("direction") != rule.get("direction")
+                       for row in supplied)):
+            raise DomainError(code="ORGANIZATION_LIFECYCLE_OVERLAP", message="category receipt is duplicated or outside the selected model boundary", status_code=422)
+        covered_ports = {row["consumer_exchange_id"] for row in grouped[key]}
+        covered_ports.update(row["consumer_exchange_id"] for row in supplied if row["status"] == "calculated")
+        values = [row["emissions"]["value"] for row in grouped[key]] + [row["contribution_value"] * scale
+            for row in supplied if row["contribution_value"] is not None]
         status = ("not_in_boundary" if boundary_status == "not_in_boundary" else
                   "required_missing" if boundary_status == "required_missing" else
-                  "proxy_reference_only" if proxy_rows[key] and not grouped[key] else
-                  "missing_activity" if not grouped[key] else
-                  "partial_activity" if len(grouped[key]) < len(expected) else "calculated")
+                  "proxy_reference_only" if proxy_rows[key] and not values else
+                  "missing_activity" if not values else
+                  "partial_activity" if (set(expected) - covered_ports if receipt_grouping else len(grouped[key]) < len(expected)) else "calculated")
         category_rows.append({"category": key, "name": rule.get("name", key),
                               "status": status,
                               **({"boundary_status": boundary_status} if explicit_boundary else {}),
-                              "value": sum(row["emissions"]["value"] for row in grouped[key]) if grouped[key] else None,
+                              "value": sum(values) if values else None,
                               "activities": grouped[key],
                               "proxy_reference_value": sum(row["emissions"]["value"] for row in proxy_rows[key]) if proxy_rows[key] else None,
                               "proxy_activities": proxy_rows[key]})
+        if receipt_grouping:
+            category_rows[-1].update({"supply_receipts": [{**row, "contribution_value": row["contribution_value"] * scale
+                if row["contribution_value"] is not None else None} for row in supplied],
+                "missing_exchange_ids": sorted(set(expected) - covered_ports)})
     missing = [row["category"] for row in category_rows if row["status"] not in {"calculated", "not_in_boundary"}]
     excluded = [row["category"] for row in category_rows if row["status"] == "not_in_boundary"]
     proxies = [row["activity_id"] for items in proxy_rows.values() for row in items]
@@ -160,6 +177,10 @@ def build_organization_lifecycle(*, application_id: str, revision_id: str,
         result["coverage"]["status"] = "partial"
         result["coverage"]["unassigned_supplier_exchange_ids"] = [row["consumer_exchange_id"]
             for row in climate_source["unassigned_suppliers"]]
+    if receipt_grouping and any(row["status"] != "calculated" for row in (climate_source or {}).get("energy_suppliers", [])):
+        result["combined_total"] = None
+        result["coverage"]["status"] = "partial"
+        result["groups"]["purchased_energy_lifecycle"]["status"] = "partial_activity"
     if selection == "declared_subset_v1":
         result["coverage"]["missing_energy_paths"] = missing_energy_paths
     if not explicit_boundary:

@@ -173,6 +173,15 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
         { key: 'other', ...record.result.groups.other_value_chain, label: t('org.groupOther') },
       ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => row.value == null ? t('org.unknown') : `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
       <p>{t(record.result.combined_total == null ? 'org.coveragePartial' : 'org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
+      {record.result.groups.other_value_chain.categories.filter(item => item.supply_receipts?.length).map(item => <details key={`supply:${item.category}`}>
+        <summary>{categoryName(item.category)} · {format(item.value)} kg CO2-Eq</summary>
+        <ul>{item.supply_receipts?.map(row => <li key={row.consumer_exchange_id}>
+          {workspace.data?.fields.find(field => `${field.process_id}::${field.port_id}` === row.consumer_exchange_id)?.label ?? row.consumer_exchange_id}
+          {' · '}{format(row.contribution_value)} kg CO2-Eq
+          <small> · {row.project_id}@{row.version} · {row.source_graph_hash}</small>
+        </li>)}</ul>
+        {item.missing_exchange_ids?.length ? <p>{t('org.unknown')} · {item.missing_exchange_ids.join(', ')}</p> : null}
+      </details>)}
       {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: categoryName(item.category), value: format(item.proxy_reference_value) })}</p>)}
       <small>{t('org.methodEvidence', { method: record.result.method_package.reference, hash: record.content_sha256 })}</small>
     </section>) : <EmptyState description={t('org.noResults')} />}

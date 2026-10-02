@@ -459,7 +459,7 @@ export interface OrganizationLifecycleResult {
   solved_snapshot_id: string;
   content_sha256: string;
   result: {
-    climate_source?: { unassigned_suppliers?: Array<{ consumer_exchange_id: string; contribution_value: number; project_id: string; version: number }>; uncharacterized_terms?: Array<{process_uuid: string; exchange_id: string; flow_uuid: string; flow_version: string | null; amount: number; amount_unit: string; status: string; numeric_contribution: null}> };
+    climate_source?: { unassigned_suppliers?: Array<{ consumer_exchange_id: string; contribution_value: number | null; project_id: string; version: number }>; uncharacterized_terms?: Array<{process_uuid: string; exchange_id: string; flow_uuid: string; flow_version: string | null; amount: number; amount_unit: string; status: string; numeric_contribution: null}> };
     reporting_period: { name: string; start_date?: string; end_date?: string };
     facility: string;
     activity_basis: { mode: string; baseline_output: number; period_output: number; unit: string; scale_factor: number };
@@ -467,7 +467,7 @@ export interface OrganizationLifecycleResult {
     groups: {
       on_site_direct: { value: number; unit: string; status: string };
       purchased_energy_lifecycle: { value: number; unit: string; status: string; exchange_ids: string[] };
-      other_value_chain: { value: number | null; unit: string; status: string; categories: Array<{ category: string; name: string; value: number | null; status: string; boundary_status?: string; activities: OrganizationLifecycleActivity[]; proxy_reference_value?: number | null; proxy_activities?: OrganizationLifecycleActivity[] }> };
+      other_value_chain: { value: number | null; unit: string; status: string; categories: Array<{ category: string; name: string; value: number | null; status: string; boundary_status?: string; activities: OrganizationLifecycleActivity[]; proxy_reference_value?: number | null; proxy_activities?: OrganizationLifecycleActivity[]; supply_receipts?: Array<{consumer_exchange_id: string; contribution_value: number | null; project_id: string; version: number; source_graph_hash: string; status: string}>; missing_exchange_ids?: string[] }> };
     };
     combined_total: number | null;
     coverage: { status: string; missing_categories: string[]; not_in_boundary_categories?: string[]; demonstration_proxy_activity_ids: string[] };
