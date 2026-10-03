@@ -1,0 +1,191 @@
+{
+  "package_id": "nebula.organization-lifecycle-carbon.steel-model",
+  "version": "1.0.10",
+  "package_kind": "organization_lifecycle_carbon",
+  "jurisdiction": null,
+  "valid_from": null,
+  "valid_to": null,
+  "manifest": {
+    "template_profile": {
+      "id": "steel-bf-bof-inventory",
+      "version": "1.1.4",
+      "content_sha256": "70a62e4442d8fa127d25fce2b19c1110ec6bd82afaa47fa2df6b5ca93caa8829"
+    },
+    "required_entity_types": [
+      "application",
+      "system_revision",
+      "solved_system_snapshot",
+      "reporting_period"
+    ],
+    "required_data_fields": [
+      "controlled processes",
+      "model input basis",
+      "period product output",
+      "separate evidence for other upstream activities",
+      "supplier factor climate method id/version/hash and reference flow identity",
+      "frozen EF climate contribution receipt; project supply pins are optional and independently identified"
+    ],
+    "accepted_units": {
+      "climate": [
+        "kg CO2-Eq"
+      ],
+      "product": [
+        "kg"
+      ]
+    },
+    "boundary_schema": {
+      "definition": "Nebula LCA-consistent organizational carbon method",
+      "complete_lifecycle_coverage": false,
+      "ghg_protocol_scopes": false
+    },
+    "formula_graph": {
+      "scope_1": "characterized GHG contribution of controlled foreground times input-basis scale",
+      "lc_scope_2": "exact purchased energy supply contributions when linked; otherwise unknown",
+      "lc_scope_3": "exact category-assigned frozen supplier contributions plus nonoverlapping compatible external activities, times input-basis scale",
+      "source_contract": "provider.lcia.indicator-contribution-receipt.v1",
+      "lcia_method": "EF v3.1",
+      "total_indicator_key": "climate change|climate change - radiative forcing as global warming potential (gwp100)",
+      "result_unit": "kg CO2-Eq",
+      "no_cf_policy": "record_uncharacterized_no_numeric_contribution",
+      "required_characterized_flow_uuids": [
+        "08a91e70-3ddc-11dd-923d-0050c2490048"
+      ]
+    },
+    "classification_rules": {
+      "controlled_process_mode": "all_solved_foreground_processes",
+      "energy_path_selection": "declared_subset_v1",
+      "energy_path_source": "optional_project_background_process_receipts",
+      "accepted_project_claim_role": "user_declared_partial_background_leaf",
+      "energy_purchase_exchange_ids": [
+        "ore-sintering::grid-electricity-in",
+        "continuous-casting::grid-electricity-in"
+      ],
+      "energy_purchase_types": {
+        "ore-sintering::grid-electricity-in": "purchased_electricity",
+        "continuous-casting::grid-electricity-in": "purchased_electricity"
+      },
+      "allowed_lc_scope_2_types": [
+        "purchased_electricity",
+        "purchased_steam",
+        "purchased_heat",
+        "purchased_cooling"
+      ],
+      "other_value_chain_categories": {
+        "purchased_iron_ore": {
+          "name": "采购铁矿石上游",
+          "direction": "input",
+          "eligible_consumer_exchange_ids": [
+            "ore-sintering::iron-ore-in"
+          ],
+          "exchange_labels": {
+            "ore-sintering::iron-ore-in": "烧结工序外购铁矿石"
+          },
+          "factor_boundary": "supplier_cradle_to_gate_excluding_modelled_operations",
+          "boundary_status": "selected"
+        },
+        "purchased_coke_upstream": {
+          "name": "直接外购焦炭上游",
+          "direction": "input",
+          "eligible_consumer_exchange_ids": [
+            "blast-furnace::coke-in",
+            "ore-sintering::coke-breeze-in"
+          ],
+          "exchange_labels": {
+            "blast-furnace::coke-in": "高炉外购焦炭",
+            "ore-sintering::coke-breeze-in": "烧结工序外购焦粉"
+          },
+          "factor_boundary": "upstream_fuel_to_delivery_excluding_onsite_use",
+          "boundary_status": "selected"
+        },
+        "purchased_coal_upstream": {
+          "name": "直接外购煤炭上游",
+          "direction": "input",
+          "eligible_consumer_exchange_ids": [
+            "blast-furnace::pci-coal-in"
+          ],
+          "exchange_labels": {
+            "blast-furnace::pci-coal-in": "高炉喷吹外购煤"
+          },
+          "factor_boundary": "upstream_fuel_to_delivery_excluding_onsite_use",
+          "boundary_status": "selected"
+        },
+        "natural_gas_upstream": {
+          "name": "直接外购天然气上游",
+          "direction": "input",
+          "eligible_consumer_exchange_ids": [
+            "blast-furnace::natural-gas-in"
+          ],
+          "exchange_labels": {
+            "blast-furnace::natural-gas-in": "高炉外购天然气"
+          },
+          "factor_boundary": "upstream_fuel_to_delivery_excluding_onsite_use",
+          "boundary_status": "selected"
+        },
+        "external_waste_treatment": {
+          "name": "外部废物处理",
+          "direction": "output",
+          "eligible_consumer_exchange_ids": [],
+          "factor_boundary": "external_treatment_excluding_modelled_operations",
+          "boundary_status": "not_in_boundary"
+        },
+        "downstream_use": {
+          "name": "下游使用",
+          "direction": "output",
+          "eligible_consumer_exchange_ids": [],
+          "factor_boundary": "downstream_use_excluding_modelled_operations",
+          "boundary_status": "not_in_boundary"
+        }
+      },
+      "category_boundary_contract": "explicit_selection_v1",
+      "non_energy_path_source": "project_background_category_receipts_v1"
+    },
+    "default_value_rules": {
+      "allowed": false
+    },
+    "validation_rules": {
+      "limitations": [
+        "This is a Nebula authored LCA-consistent organizational grouping, not GHG Protocol Scope 1-3 reporting or an ILCD-endorsed classification.",
+        "Only purchased electricity, steam, heat and cooling may enter LC-Scope 2; directly purchased fuel upstream belongs to LC-Scope 3.",
+        "Each frozen supplier contribution enters exactly one declared energy or non-energy category by consumer port; different ports may share the same exact supplier project. Missing characterization and uncovered ports remain unknown.",
+        "Supplier-specific factors need the same pinned climate method and exact reference flow; a public proxy is a reference value outside the LC-Scope 3 counted amount and cannot establish a complete organizational total."
+      ]
+    },
+    "output_schema": {
+      "schema_version": "nebula_one.organization-lifecycle-carbon.v2"
+    },
+    "display_labels": {
+      "input_basis": {
+        "per_unit_product": "单位产品模型",
+        "annual_total": "年度总量模型"
+      },
+      "group_status": {
+        "calculated_from_controlled_foreground": "已按模型计算",
+        "calculated_from_exclusive_energy_background_paths": "已按声明路径计算",
+        "missing_energy_path": "未关联能源供应，数值未知",
+        "partial": "部分数据已提供",
+        "configured_categories": "已按所选边界计算",
+        "partial_activity": "部分流尚未表征或端口覆盖不完整"
+      }
+    },
+    "report_mapping": {
+      "on_site": "groups.on_site_direct",
+      "energy": "groups.purchased_energy_lifecycle",
+      "other": "groups.other_value_chain"
+    },
+    "test_cases": [
+      "all pinned project supply paths belong to energy and reconcile with frozen contribution receipts",
+      "non-energy supplier receipts enter only their declared category; energy and category ports are mutually exclusive",
+      "annual totals are not scaled again",
+      "one input does not use both native background and supplier factor",
+      "without a linked energy supply, controlled foreground remains calculated and the complete total remains unknown",
+      "Known inventory flows outside the climate factor table stay uncharacterized; required fossil CO2 cannot become an implicit zero",
+      "explicit zero characterization remains zero; missing CF remains unknown",
+      "partially covered multi-port categories preserve known subtotal and missing ports"
+    ],
+    "provenance": {
+      "owner": "Nebula One open-source reference",
+      "license": "Apache-2.0 for authored classification and formulas"
+    },
+    "assurance_level": "demonstration"
+  }
+}

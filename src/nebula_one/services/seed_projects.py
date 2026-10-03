@@ -510,7 +510,15 @@ class SeedProjectService:
                 content['period_id'] = period_map.get(b.period_id)
                 content['method_package_ref'] = definition['method_replacements'].get(b.method_package_ref, b.method_package_ref)
                 if content['boundary_type'] == 'cbam_trial' and definition.get('boundary_revision'):
-                    content['consolidation_policy'] = {**content.get('consolidation_policy', {}), **deepcopy(definition['boundary_revision'])}
+                    boundary_revision = deepcopy(definition['boundary_revision'])
+                    exchange_revisions = boundary_revision.pop('exchange_revisions', [])
+                    for replacement in exchange_revisions:
+                        rows = [row for key in ('included_flow_rules', 'excluded_items') for row in content[key]
+                                if row.get('exchange_id') == replacement['exchange_id']]
+                        if len(rows) != 1:
+                            fail('SEED_TEMPLATE_BOUNDARY_EXCHANGE_MISMATCH', 'Boundary revision must match one exact exchange.')
+                        rows[0].update(deepcopy(replacement))
+                    content['consolidation_policy'] = {**content.get('consolidation_policy', {}), **boundary_revision}
                 if content['geographic_scope'].get('graph_sha256'):
                     content['geographic_scope']['graph_sha256'] = revision_graph_hash
                 boundary_id = new_id()

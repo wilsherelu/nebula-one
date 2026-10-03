@@ -294,7 +294,6 @@ export function CbamRuleTrialPanel(props: Props) {
 
       <Drawer className="audit-drawer" width="min(680px, 100vw)" visible={auditVisible} onCancel={() => setAuditVisible(false)} footer={null} title={t('results.details')} unmountOnExit>
         {result ? <>
-          {simple?.schema_version === 'nebula_one.cbam.trial.v2' ? <CbamBoundaryDetails result={simple} /> : null}
           {openItemCount ? <>
             <h3 className="audit-heading">{t('cbam.openItems')}</h3>
             <ul className="audit-open-items">
@@ -304,6 +303,7 @@ export function CbamRuleTrialPanel(props: Props) {
               </li>)}
             </ul>
           </> : null}
+          {simple?.schema_version === 'nebula_one.cbam.trial.v2' ? <CbamBoundaryDetails result={simple} /> : null}
           <Descriptions column={1} size="small" border data={[
             { label: t('cbam.cnCode'), value: <CopyableValue value={result.goods.cn_code} compact={false} /> },
             { label: t('cbam.auditStatus'), value: result.status },

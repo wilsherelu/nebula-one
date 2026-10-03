@@ -22,6 +22,11 @@ def render_cbam_trial_html(result: dict) -> str:
         for item in (result.get("coverage") or {}).get("open_items", [])
     )
     method = result["method_package"]
+    coverage_rows = "".join(
+        f"<tr><td>{_text(item.get('exchange_id'))}</td><td>{_text(item.get('disposition'))}</td>"
+        f"<td>{_text(item.get('clause'))}</td><td>{_text(item.get('basis'))}</td></tr>"
+        for item in (result.get('coverage') or {}).get('exchanges', [])
+    )
     snapshot = result["source_snapshot"]
     goods = result["goods"]
     activity = result["activity_level"]
@@ -51,4 +56,5 @@ th{{background:#f4f7fb}}.value{{font-size:28px;font-weight:700}}.identity{{overf
 快照哈希：{_text(snapshot.get('content_sha256'))}<br>
 试算结果哈希：{_text(result.get('content_sha256'))}</p>
 <h2>边界未决事项</h2>{f'<ul>{open_items}</ul>' if open_items else '<p>冻结边界未列出未决事项。</p>'}
+<h2>冻结交换分类</h2><table><thead><tr><th>交换</th><th>分类</th><th>条款</th><th>依据</th></tr></thead><tbody>{coverage_rows}</tbody></table>
 </body></html>"""

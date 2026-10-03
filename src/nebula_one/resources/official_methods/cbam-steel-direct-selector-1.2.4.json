@@ -1,0 +1,386 @@
+{
+  "jurisdiction": "EU",
+  "manifest": {
+    "accepted_units": {
+      "excluded_energy_inputs": [
+        "MJ: retained physical activity; only final crude-steel process electricity is excluded. Sinter precursor electricity requires a separate eligible indirect factor."
+      ],
+      "result": [
+        "t CO2e/t product"
+      ],
+      "source_direct_emissions": [
+        "kg CO2 from exact CO2 elementary Flow"
+      ],
+      "source_product_activity": [
+        "kg with exact Mass UnitGroup identity"
+      ]
+    },
+    "assurance_level": "trial",
+    "boundary_schema": {
+      "aggregated_goods_category": "Crude steel",
+      "annex_ii_direct_only": true,
+      "application": "cbam_trial",
+      "cn_code": "7207",
+      "end_use": {
+        "clause": "ST-07",
+        "not_a_cbam_good": [],
+        "values": [
+          "sold_or_transferred_as_crude_steel",
+          "primary_hot_rolling_or_rough_forging",
+          "further_rolling_or_forging"
+        ],
+        "unsupported_model_boundaries": [
+          "primary_hot_rolling_or_rough_forging",
+          "further_rolling_or_forging"
+        ]
+      },
+      "goods_complexity": "complex",
+      "greenhouse_gases": [
+        "CO2"
+      ],
+      "production_process_boundary": {
+        "clause": "ST-06",
+        "in_boundary_process_uuids": [
+          "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+          "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+          "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+          "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+          "ea66dbd3-03e1-5ff8-a1d0-9662604392c0"
+        ],
+        "reference_process_uuid": "ea66dbd3-03e1-5ff8-a1d0-9662604392c0",
+        "schema": "nebula_one.cbam.multi-process-boundary.v1"
+      },
+      "calculation_scope": "direct_component_only",
+      "joint_process_conditions": "same_installation_no_sale_no_other_process_use_requires_evidence"
+    },
+    "classification_rules": {
+      "direct_emissions": [
+        {
+          "compartment": "Emissions to air, unspecified",
+          "direction": "output",
+          "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+          "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+          "flow_property_version": "03.00.003",
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "greenhouse_gas": "CO2",
+          "process_uuid": "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+          "source_namespace": "tiangong_open_data",
+          "unit": "kg",
+          "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+          "unit_group_version": "03.00.003",
+          "version": "03.00.004"
+        },
+        {
+          "compartment": "Emissions to air, unspecified",
+          "direction": "output",
+          "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+          "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+          "flow_property_version": "03.00.003",
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "greenhouse_gas": "CO2",
+          "process_uuid": "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+          "source_namespace": "tiangong_open_data",
+          "unit": "kg",
+          "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+          "unit_group_version": "03.00.003",
+          "version": "03.00.004"
+        },
+        {
+          "compartment": "Emissions to air, unspecified",
+          "direction": "output",
+          "exchange_id": "blast-furnace::co2-bf-raceway-out",
+          "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+          "flow_property_version": "03.00.003",
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "greenhouse_gas": "CO2",
+          "process_uuid": "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+          "source_namespace": "tiangong_open_data",
+          "unit": "kg",
+          "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+          "unit_group_version": "03.00.003",
+          "version": "03.00.004"
+        },
+        {
+          "compartment": "Emissions to air, unspecified",
+          "direction": "output",
+          "exchange_id": "blast-furnace::co2-bf-reduction-out",
+          "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+          "flow_property_version": "03.00.003",
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "greenhouse_gas": "CO2",
+          "process_uuid": "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+          "source_namespace": "tiangong_open_data",
+          "unit": "kg",
+          "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+          "unit_group_version": "03.00.003",
+          "version": "03.00.004"
+        },
+        {
+          "compartment": "Emissions to air, unspecified",
+          "direction": "output",
+          "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+          "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+          "flow_property_version": "03.00.003",
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "greenhouse_gas": "CO2",
+          "process_uuid": "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+          "source_namespace": "tiangong_open_data",
+          "unit": "kg",
+          "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+          "unit_group_version": "03.00.003",
+          "version": "03.00.004"
+        },
+        {
+          "compartment": "Emissions to air, unspecified",
+          "direction": "output",
+          "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+          "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+          "flow_property_version": "03.00.003",
+          "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+          "greenhouse_gas": "CO2",
+          "process_uuid": "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+          "source_namespace": "tiangong_open_data",
+          "unit": "kg",
+          "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+          "unit_group_version": "03.00.003",
+          "version": "03.00.004"
+        }
+      ],
+      "product": {
+        "compartment": null,
+        "direction": "output",
+        "exchange_id": "continuous-casting::crude-steel-slab-out",
+        "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+        "flow_property_version": "03.00.003",
+        "flow_uuid": "e31064bf-4268-5617-b79d-8b7f326d966e",
+        "process_uuid": "ea66dbd3-03e1-5ff8-a1d0-9662604392c0",
+        "reference_exchange_id": "continuous-casting::crude-steel-slab-out",
+        "source_namespace": "nebula.standard-lca-seed",
+        "unit": "kg",
+        "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+        "unit_group_version": "03.00.003",
+        "version": "1.1.0"
+      },
+      "additional_direct_emission_selectors": [
+        {
+          "identity": {
+            "compartment": "Emissions to air, unspecified",
+            "direction": "output",
+            "flow_property_uuid": "93a60a56-a3c8-11da-a746-0800200b9a66",
+            "flow_property_version": "03.00.003",
+            "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+            "source_namespace": "tiangong_open_data",
+            "unit": "kg",
+            "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
+            "unit_group_version": "03.00.003",
+            "version": "03.00.004",
+            "process_uuid": "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+            "greenhouse_gas": "CO2"
+          },
+          "boundary_rule": {
+            "process_uuid": "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+            "clause": "Commission Implementing Regulation (EU) 2025/2547 Annex I 3.15.1 and 3.15.2.1",
+            "basis": "One measured fossil CO2 output of the already included secondary metallurgy process; counted once as a direct partial component.",
+            "source_group": null,
+            "counted_instead": null,
+            "counterpart": null,
+            "disposition": "counted",
+            "emission_kind": "process",
+            "parameter_refs": []
+          }
+        }
+      ],
+      "pending_activity_rules": {
+        "ore-sintering::grid-electricity-in": {
+          "clause": "ST-12",
+          "method_role": "precursor_indirect",
+          "reason": "Applicable sinter precursor electricity awaits an eligible CBAM factor; no numeric contribution is invented."
+        }
+      }
+    },
+    "default_value_rules": {
+      "allowed": false,
+      "basis": "ST-15 sends a quantity with incomplete or inconclusive external precursor data to the default values of Annex IV of the regulation, and the retrieved text states that rule without carrying the numbers, so this package cannot offer a default and refuses instead of inventing one (legal verification gap GS-01, modeling gap MG-S05)"
+    },
+    "formula_graph": {
+      "activity_unit": "t product",
+      "calculation": "actual_specific_embedded_emissions_multi_process_direct_only",
+      "result_decimal_places": 12,
+      "result_unit": "t CO2e/t product",
+      "rounding": "ROUND_HALF_EVEN"
+    },
+    "output_schema": {
+      "schema_version": "nebula_one.cbam.trial.v2"
+    },
+    "precursor_rules": {
+      "membership_evidence": [
+        {
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2601 11 00",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "iron_ore",
+          "flow_uuid": "fdba4f91-bbc9-5ea8-86d9-2ecb831afe09",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": false,
+          "clause": "ST-14",
+          "cn_code": "7204",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "steel_scrap",
+          "flow_uuid": "74d988a9-b09d-5549-9672-64234caa6f0a",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2704 00 00",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "coke_breeze",
+          "flow_uuid": "89e07856-8713-57ff-b4a8-104b0119975c",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2704 00 00",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "metallurgical_coke",
+          "flow_uuid": "1b8ac953-3db1-5fef-8fa7-7112ed40aeb3",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2701 11 00",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "pci_bituminous_coal",
+          "flow_uuid": "abf85061-0371-5ab5-9426-942df477cd84",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2711 21 00",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "natural_gas",
+          "flow_uuid": "345ca664-03ac-55d0-b66b-141c91029812",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": false,
+          "clause": "ST-13",
+          "cn_code": "2521",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "limestone_flux",
+          "flow_uuid": "ca40b889-cf9a-5aac-89c6-45f820da3b65",
+          "gap_ref": "GS-05",
+          "membership": "not_listed"
+        },
+        {
+          "annex_i_listed": true,
+          "clause": "ST-13",
+          "cn_code": "2716 00 00",
+          "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/boundaries/cbam.json#segments.precursors.checked_inputs",
+          "flow_role": "grid_electricity",
+          "flow_uuid": "3d76981f-964a-4865-b588-0e067a2a1163",
+          "gap_ref": "GS-05",
+          "membership": "listed_governed_elsewhere",
+          "governing_clause": "ST-12"
+        }
+      ],
+      "sources": []
+    },
+    "provenance": {
+      "rule_source": {
+        "clauses": [
+          "ST-01",
+          "ST-06",
+          "ST-07",
+          "ST-08",
+          "ST-12",
+          "ST-13",
+          "ST-14",
+          "ST-16",
+          "ST-18"
+        ],
+        "document": "Commission Implementing Regulation (EU) 2025/2547, Annex I section 3.15 'Crude steel', Annex II points C to G and Annex IV section 2 crude steel column",
+        "evidence_ref": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/eu-clause-mapping.json",
+        "rule_version": "definitive-2026",
+        "content_sha256": "7360f5a890040a1887ea0d1624f13d9f5d1106e63c5188653b15e6e7024acaba"
+      },
+      "application_contract": {
+        "source_method_ref": "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1",
+        "source_method_sha256": "57a2910cbd5bd7969905e297494c1540dfa305b34d404a3107c1c119f8e56595",
+        "change": "Separate the demonstration fixed-total assertion from the unchanged boundary and emissions classification, and re-pin the grid-electricity membership evidence to the flow identity this template revision actually writes into the model."
+      }
+    },
+    "report_mapping": {
+      "activity_level": "activity_level",
+      "attributed_emissions": "attributed_emissions",
+      "audit": "audit",
+      "claim_boundary": "claim_boundary",
+      "coverage": "coverage",
+      "goods": "goods",
+      "specific_embedded_emissions": "specific_embedded_emissions"
+    },
+    "required_data_fields": [
+      "activity_vector",
+      "scaled_technosphere_exchanges",
+      "scaled_elementary_exchanges",
+      "provider_receipt.elementary_flow_receipts"
+    ],
+    "required_entity_types": [
+      "system_revision",
+      "solved_system_snapshot",
+      "reporting_period",
+      "boundary_definition"
+    ],
+    "test_cases": [
+      "every port of the frozen multi-process boundary is disposed exactly once",
+      "The numerator sums the counted exchanges from the selected solved inventory; demonstration totals are regression fixtures, not constraints on measured input.",
+      "a boundary frozen against another model graph is refused",
+      "an undecided or undeclared required item refuses the full result instead of returning a smaller one",
+      "a counted greenhouse gas other than CO2 for this good is refused rather than summed in",
+      "a declared end use of further_rolling_or_forging refuses the result instead of reporting the quantity as crude steel"
+    ],
+    "validation_rules": {
+      "limitations": [
+        "This finite demonstration computes declared CO2 components, not complete verified CBAM emissions.",
+        "Sinter precursor electricity is applicable and pending an eligible CBAM factor; casting electricity is excluded from this crude-steel component.",
+        "Internal sinter and hot metal are precursors. Joint monitoring requires same-installation, no-sale and no-other-use evidence; graph membership alone is insufficient.",
+        "Waste-gas transfer, power and heat attribution are not implemented. The net direction of omitted effects is unknown; no conservative-upper-bound claim is made.",
+        "Purchased heat, steam, cleaning reagents, auxiliary carbon and slag residual carbon are not fully covered by this case. An absent port does not establish non-applicability.",
+        "Electrodes are not categorically forbidden by the BF-BOF label. Actual use requires an applicable source-stream method; this case does not cover it.",
+        "The selected calendar period is a demonstration label, not completed annual monitoring data."
+      ]
+    },
+    "reviewed_returned_selector": {
+      "source_method_ref": "cbam.eu.iron-steel.bf-bof-direct-trial@1.1.1",
+      "source_template": {
+        "id": "steel-bf-bof-inventory",
+        "version": "1.1.4",
+        "content_sha256": "70a62e4442d8fa127d25fce2b19c1110ec6bd82afaa47fa2df6b5ca93caa8829"
+      },
+      "selection_basis": "reviewed process and TianGong flow identity, direction and unit; each matched port is counted once",
+      "limit": "Measured model exchange only; carbon-source attribution and full CBAM conditions remain open."
+    },
+    "inventory_derivation_ref": {
+      "package_id": "steel-bf-bof.demonstration-carbon-book",
+      "version": "1.0.0",
+      "content_sha256": "0301e796d34d72ae7f4d435a755c4b8ce21cf157e8348f58dc66f80b3e8a4d9c"
+    }
+  },
+  "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+  "package_kind": "cbam_trial",
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "version": "1.2.4"
+}

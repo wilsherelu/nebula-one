@@ -46,7 +46,7 @@ def test_current_steel_profile_binds_partial_review_without_a_returned_graph(cli
         db.add(application)
         db.flush()
         reference = bind_official_cbam_partial_method(db, application)
-        assert reference == 'cbam.eu.iron-steel.bf-bof-partial-review@1.0.6'
+        assert reference == 'cbam.eu.iron-steel.bf-bof-partial-review@1.0.7'
         assert reference in application.context['method_package_refs']
 
 
@@ -65,9 +65,9 @@ def test_current_profile_binds_new_organization_method_and_preserves_old_referen
         db.add(application)
         db.flush()
         reference = bind_official_organization_lifecycle_method(db, application)
-        assert reference == 'nebula.organization-lifecycle-carbon.steel-model@1.0.9'
+        assert reference == 'nebula.organization-lifecycle-carbon.steel-model@1.0.10'
         assert old in application.context['method_package_refs']
-        method = db.scalar(select(MethodPackage).where(MethodPackage.package_id == reference.split('@')[0], MethodPackage.version == '1.0.9'))
+        method = db.scalar(select(MethodPackage).where(MethodPackage.package_id == reference.split('@')[0], MethodPackage.version == '1.0.10'))
         display = organization_lifecycle_display(method, 'en')
         assert display['method_package']['content_sha256'] == method.content_sha256
 
@@ -77,13 +77,13 @@ def test_steel_inventory_profile_changes_demo_validation_and_the_revised_flow_id
     previous, package, package_hash = replacements[0]
     new = package.model_dump(mode='json')
     old = json.loads(OLD_PACKAGE.read_text(encoding='utf-8'))
-    assert new['version'] == '1.2.0' and previous.endswith('@1.0.1')
-    assert profile['version'] == '1.1.3'
+    assert new['version'] == '1.2.3' and previous.endswith('@1.0.1')
+    assert profile['version'] == '1.1.4'
     assert digest == canonical_json_sha256(profile)
     assert package_hash == canonical_json_sha256(new)
     assert old['manifest']['validation_rules']['expected_direct_emissions_kg']['value'] == '1940.739734'
     assert 'expected_direct_emissions_kg' not in new['manifest']['validation_rules']
-    for section in ('formula_graph', 'classification_rules', 'default_value_rules'):
+    for section in ('formula_graph', 'default_value_rules'):
         assert new['manifest'][section] == old['manifest'][section]
     assert new['manifest']['boundary_schema']['goods_complexity'] == 'complex'
     assert new['manifest']['boundary_schema']['calculation_scope'] == 'direct_component_only'
@@ -113,3 +113,19 @@ def test_steel_inventory_profile_stops_matching_a_different_seed_bundle():
     installation = _installation()
     installation.bundle_content_sha256 = '0' * 64
     assert load_profile(['cases'], installation) is None
+
+
+def test_new_cbam_boundary_revision_separates_pending_sinter_from_excluded_casting():
+    profile = _template()
+    revisions = {row['exchange_id']: row for row in profile['boundary_revision']['exchange_revisions']}
+    sinter = revisions['ore-sintering::grid-electricity-in']
+    caster = revisions['continuous-casting::grid-electricity-in']
+    assert sinter['disposition'] == 'applicable_pending_factor'
+    assert caster['disposition'] == 'excluded_with_basis'
+    assert 'sinter precursor' in sinter['basis'] and 'casting electricity' in caster['basis']
+    assert 'same direct-only' not in caster['basis']
+    method = _replaced_package()
+    assert sinter['exchange_id'] in method['manifest']['classification_rules']['pending_activity_rules']
+    assert profile['boundary_revision']['coverage_open_items'][0]['exchange_id'] == sinter['exchange_id']
+    historic = json.loads(TEMPLATE_PATH.with_name('template-1.1.3.json').read_text(encoding='utf-8'))
+    assert historic['version'] == '1.1.3' and historic['method_replacements'][0]['package']['version'] == '1.2.0'

@@ -64,12 +64,17 @@ it('uses the versioned English projection for organization categories and exchan
   render(<I18nProvider><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
     <OrganizationLifecyclePanel applicationId="application" snapshot={snapshot} method={method} />
   </QueryClientProvider></I18nProvider>);
-  expect(await screen.findByText('Upstream purchased iron ore')).toBeInTheDocument();
-  expect(screen.getByText('Iron ore purchased for sintering')).toBeInTheDocument();
+  expect(await screen.findByText('2026-01-01—2026-12-31 · Steel')).toBeInTheDocument();
+  expect(screen.queryByText('Iron ore purchased for sintering')).not.toBeInTheDocument();
+  expect(screen.queryByRole('textbox', { name: 'Organization or facility name' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   expect(screen.getByText('Scope 1: on site direct emissions')).toBeInTheDocument();
   expect(screen.getByText('Some required data is missing')).toBeInTheDocument();
   expect(screen.getByText('2026-01-01—2026-12-31 · Steel')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Open HTML report' })).toHaveAttribute('href', expect.stringContaining('report.html?lang=en'));
   expect(screen.queryByText('采购铁矿石上游')).not.toBeInTheDocument();
   expect(screen.queryByText('范围 1：厂内直接排放')).not.toBeInTheDocument();
+  screen.getByRole('button', { name: 'Period scaling and additional activities' }).click();
+  expect(await screen.findByText('Iron ore purchased for sintering')).toBeInTheDocument();
+  expect(screen.getByRole('checkbox')).toBeInTheDocument();
 });

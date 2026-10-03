@@ -58,14 +58,14 @@ def test_versioned_identity_selector_uses_actual_returned_port_and_excludes_outs
     outside = deepcopy(graph["nodes"][0])
     outside.update(id="external-process", process_uuid="outside-cbam-boundary")
     graph["nodes"].append(outside)
-    path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.2.2.json")
+    path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.2.4.json")
     package = MethodPackageCreate.model_validate(json.loads(path.read_text(encoding="utf-8")))
     method = package.model_dump(mode="json")
     method["content_sha256"] = canonical_json_sha256(method)
     rules = load_model_processing_rules_for_template(
         _template_identity(), graph_identity_sha256=canonical_json_sha256(_identity_graph(graph)),
         graph=graph)
-    assert rules.version == "1.0.8"
+    assert rules.version == "1.0.9"
     derived = derive_calculation_model(
         graph=graph, demand=[{"process_uuid": secondary["process_uuid"], "amount": 1, "unit": "kg"}],
         rules=rules, purpose="cbam", method_packages=[method])
@@ -186,7 +186,7 @@ def test_bundled_rules_bind_the_committed_template_and_method_package_identities
 def test_rules_never_repeat_a_process_or_exchange_identity_the_method_package_owns():
     rules_text = json.dumps(
         json.loads(
-            Path("src/nebula_one/resources/model_processing/steel-bf-bof.json").read_text(
+            Path("src/nebula_one/resources/model_processing/steel-bf-bof-model-processing-1.0.11.json").read_text(
                 encoding="utf-8"
             )
         ),

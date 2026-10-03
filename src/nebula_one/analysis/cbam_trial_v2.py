@@ -31,9 +31,11 @@ LOSS_DISPOSITION = "loss_stream_of_an_already_counted_precursor"
 PRECURSOR_DISPOSITION = "precursor_mass_counted"
 INDIRECT_DISPOSITION = "indirect_electricity_counted"
 NOT_APPLICABLE_DISPOSITION = "not_applicable_with_basis"
+PENDING_FACTOR_DISPOSITION = "applicable_pending_factor"
 ZERO_DISPOSITIONS = (NOT_APPLICABLE_DISPOSITION, INTERNAL_DISPOSITION, DENOMINATOR_DISPOSITION)
 DISPOSITIONS = (
     "counted",
+    PENDING_FACTOR_DISPOSITION,
     PRECURSOR_DISPOSITION,
     INDIRECT_DISPOSITION,
     "excluded_with_basis",
@@ -49,6 +51,7 @@ DISPOSITIONS = (
 AMOUNT_REQUIRED_DISPOSITIONS = (PRECURSOR_DISPOSITION, INDIRECT_DISPOSITION)
 COMPONENT_BY_DISPOSITION = {
     "counted": "direct",
+    PENDING_FACTOR_DISPOSITION: "indirect",
     PRECURSOR_DISPOSITION: "precursor",
     INDIRECT_DISPOSITION: "indirect",
     "excluded_with_basis": "none",
@@ -2567,6 +2570,14 @@ def build_cbam_trial_v2(
                 exchange_id=exchange_id,
                 clause=disposition_entry.get("clause"),
             )
+        if disposition == PENDING_FACTOR_DISPOSITION:
+            pending_rule = (manifest.get('classification_rules', {}).get('pending_activity_rules', {})).get(exchange_id)
+            pending_item = next((item for item in policy['coverage_open_items']
+                                 if item.get('exchange_id') == exchange_id and item.get('state') == 'missing_data'), None)
+            if three_component or not pending_rule or not pending_item or not _non_empty(disposition_entry.get('basis')):
+                _fail('CBAM_TRIAL_PENDING_FACTOR_UNDECLARED',
+                      'Pending activity needs an exact method rule and disclosed missing-data item in a partial direct component.',
+                      exchange_id=exchange_id)
         row = solved_rows.get(exchange_id)
         if row is None:
             if disposition not in ZERO_DISPOSITIONS or not _non_empty(
@@ -2826,6 +2837,7 @@ def build_cbam_trial_v2(
             "ports": 0,
             "counted": 0,
             "excluded_with_basis": 0,
+            "applicable_pending_factor": 0,
             "not_applicable": 0,
             "undecided": 0,
         }
@@ -2840,6 +2852,8 @@ def build_cbam_trial_v2(
             counters["counted"] += 1
         elif row["disposition"] == "excluded_with_basis":
             counters["excluded_with_basis"] += 1
+        elif row["disposition"] == PENDING_FACTOR_DISPOSITION:
+            counters["applicable_pending_factor"] += 1
         elif row["disposition"] == "undecided":
             counters["undecided"] += 1
         else:

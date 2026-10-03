@@ -41,6 +41,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const matching = useMemo(() => (records.data ?? []).filter(item => item.solved_snapshot_id === snapshot.id
     && item.result.method_package.reference === `${method.package_id}@${method.version}`),
   [records.data, snapshot.id, method.package_id, method.version]);
+  const hasFrozenResult = Boolean(recordId || matching.length);
   const update = (key: string, patch: Partial<Entry>) => setEntries(previous => ({ ...previous, [key]: {
     ...(previous[key] ?? { enabled: false, factorRef: '', factor: '', version: '', source: '', hash: '', evidenceRole: 'demonstration_proxy', methodId: '', methodVersion: '', methodHash: '', referenceProduct: '' }),
     ...patch,
@@ -97,10 +98,10 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     <h3>{t('org.title')}</h3>
     <p>{t('org.currentModel')}</p>
     <details><summary>{t('org.methodDetails')}</summary><p>{t('org.intro')}</p><p>{t('org.scopeNote')}</p></details>
-    {recordId ? <Button type="text" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button> : null}
+    {hasFrozenResult ? <Button type="text" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button> : null}
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
-    {!recordId || showSettings ? <><div className="project-period-form">
+    {showSettings || (!records.isLoading && !hasFrozenResult) ? <><div className="project-period-form">
       <div className="project-field"><span>{t('org.period')}</span><Select aria-label={t('org.periodAria')} value={periodId} onChange={setPeriodId} options={(periods.data ?? []).map(item => ({ label: `${periodName(item)} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></div>
       <label>{t('org.facility')}<input aria-label={t('org.facilityAria')} value={facility} onChange={event => setFacility(event.target.value)} /></label>
       <div className="project-field"><span>{t('org.basis')}</span><Select aria-label={t('org.basis')} value={basisMode} onChange={value => setBasisMode(value as typeof basisMode)} options={[{ label: lang === 'zh' ? labels.input_basis?.per_unit_product ?? t('org.perProduct') : t('org.perProduct'), value: 'per_unit_product' }, { label: lang === 'zh' ? labels.input_basis?.annual_total ?? t('org.annual') : t('org.annual'), value: 'annual_total' }]} /></div>
@@ -151,8 +152,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     <Button type="primary" loading={create.isPending} onClick={() => create.mutate()}>{t('org.calculate')}</Button>
     {create.isError ? <ErrorState error={create.error} /> : null}
     </> : null}
-    {!recordId ? <h4>{t('org.savedResults')}</h4> : null}
-    {matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
+    {!recordId && !records.isLoading ? <h4>{t('org.savedResults')}</h4> : null}
+    {records.isLoading ? null : matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
       <strong>{record.result.activity_basis.mode === 'current_model_total' ? t('org.currentModel') : periodName(record.result.reporting_period)} · {record.result.facility}</strong>
       {record.result.climate_source?.unassigned_suppliers?.length ? <div>
         <p>{t('org.unassignedSupply')}</p><ul>{record.result.climate_source.unassigned_suppliers.map(row =>

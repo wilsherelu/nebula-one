@@ -867,7 +867,7 @@ def _synthetic_pruned_rules_and_package():
     content = deepcopy(
         json.loads(
             Path(
-                "src/nebula_one/resources/model_processing/steel-bf-bof.json"
+                "src/nebula_one/resources/model_processing/steel-bf-bof-model-processing-1.0.11.json"
             ).read_text(encoding="utf-8")
         )["content"]
     )
@@ -1070,7 +1070,7 @@ def _synthetic_classifying_rules_and_package():
     content = deepcopy(
         json.loads(
             Path(
-                "src/nebula_one/resources/model_processing/steel-bf-bof.json"
+                "src/nebula_one/resources/model_processing/steel-bf-bof-model-processing-1.0.11.json"
             ).read_text(encoding="utf-8")
         )["content"]
     )

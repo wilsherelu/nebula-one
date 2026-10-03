@@ -1,7 +1,7 @@
 {
   "schema_version": "nebula_one.project-template.v1",
   "id": "steel-bf-bof-inventory",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "title": "高炉—转炉钢铁 · 过程清单填报",
   "source_seed": {
     "seed_id": "nebula.iron-steel.bf-bof-crude-steel",
@@ -17,7 +17,7 @@
   "method_replacements": [
     {
       "replaces": "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1",
-      "content_sha256": "3627afbbd3b319de4f1c2bc8cace600afea87b0917c0ec27838bb97ba10b858c",
+      "content_sha256": "c40f3965569cd80196d61befdffcbea70b3d2a6e2f7a076e7a6ac47a9ab259ad",
       "package": {
         "jurisdiction": "EU",
         "manifest": {
@@ -180,6 +180,13 @@
               "unit_group_uuid": "93a60a57-a4c8-11da-a746-0800200c9a66",
               "unit_group_version": "03.00.003",
               "version": "1.1.0"
+            },
+            "pending_activity_rules": {
+              "ore-sintering::grid-electricity-in": {
+                "clause": "ST-12",
+                "method_role": "precursor_indirect",
+                "reason": "Applicable sinter precursor electricity awaits an eligible CBAM factor; no numeric contribution is invented."
+              }
             }
           },
           "default_value_rules": {
@@ -303,7 +310,7 @@
             "application_contract": {
               "source_method_ref": "cbam.eu.iron-steel.bf-bof-direct-trial@1.0.1",
               "source_method_sha256": "57a2910cbd5bd7969905e297494c1540dfa305b34d404a3107c1c119f8e56595",
-              "change": "Round-2 correction: complex-good direct component, separate sinter indirect activity, finite-case coverage, and live input-to-CO2 dependencies."
+              "change": "Versioned boundary correction: disclose applicable sinter electricity pending a factor, separately exclude final crude-steel casting electricity, and preserve the direct subtotal."
             }
           },
           "report_mapping": {
@@ -356,7 +363,7 @@
         "package_kind": "cbam_trial",
         "valid_from": "2026-01-01",
         "valid_to": null,
-        "version": "1.2.0"
+        "version": "1.2.3"
       }
     }
   ],
@@ -656,8 +663,9 @@
         "item": "sinter electricity",
         "clause": "ST-12",
         "state": "missing_data",
-        "effect": "600 MJ activity exists; applicable CBAM electricity factor is absent, not zero.",
-        "method_role": "precursor_indirect"
+        "effect": "Solved sinter electricity activity exists; an eligible CBAM factor is missing. The indirect contribution is unknown, not zero.",
+        "method_role": "precursor_indirect",
+        "exchange_id": "ore-sintering::grid-electricity-in"
       },
       {
         "item": "joint internal sinter and hot metal",
@@ -766,6 +774,20 @@
       "solve_demand": "explicit_request",
       "normalization": "engine_activity_vector_once",
       "intensity": "kg CO2/kg product numerically equals t CO2/t product"
-    }
+    },
+    "exchange_revisions": [
+      {
+        "exchange_id": "ore-sintering::grid-electricity-in",
+        "disposition": "applicable_pending_factor",
+        "clause": "ST-12",
+        "basis": "Applicable sinter precursor electricity awaits an eligible CBAM factor; no numeric contribution is invented."
+      },
+      {
+        "exchange_id": "continuous-casting::grid-electricity-in",
+        "disposition": "excluded_with_basis",
+        "clause": "ST-12",
+        "basis": "Final crude-steel casting electricity is excluded under the direct-only final-good boundary. This exclusion does not apply to sinter precursor electricity."
+      }
+    ]
   }
 }

@@ -70,7 +70,7 @@ def _seed_base(container, *, template_bound: bool) -> str:
     context = {"seed_template": {"profile": _profile_identity()}} if template_bound else {}
     application_id, model_id, revision_id = new_id(), new_id(), new_id()
     with container.database.session() as db:
-        selector_path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.2.2.json")
+        selector_path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.2.4.json")
         selector = MethodPackageCreate.model_validate(json.loads(selector_path.read_text(encoding="utf-8")))
         selector_package = selector.model_dump(mode="json")
         selector_package["content_sha256"] = canonical_json_sha256(selector_package)
