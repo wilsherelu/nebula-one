@@ -1,7 +1,7 @@
 import { Alert, Button, Descriptions, Drawer, Select, Table, Tabs } from '@arco-design/web-react';
-import { IconFile, IconInfoCircle } from '@arco-design/web-react/icon';
+import { IconFile } from '@arco-design/web-react/icon';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useUrlSelection } from '../hooks/useUrlSelection';
 import { api } from '../api/client';
@@ -11,7 +11,8 @@ import type { MethodPackage, SolvedSystemSnapshot } from '../api/types';
 import { EnergyCarrierResultPanel } from '../components/EnergyCarrierResultPanel';
 import { ProductCarbonFootprintPanel } from '../components/ProductCarbonFootprintPanel';
 import { CalculationTarget } from '../components/CalculationTarget';
-import { ResultActionsTarget, ResultDetailsTarget } from '../components/ResultHeaderActions';
+import { ResultMenuProvider, ResultMoreMenu, ResultDetailsTarget } from '../components/ResultHeaderActions';
+import { CalculationInputsDialog } from '../components/CalculationInputsDialog';
 import { processDisplayNodes } from '../components/ContributionChart';
 import { NativeClimatePanel } from '../components/NativeClimatePanel';
 import { PeriodEnergyTrendPanel } from '../components/PeriodEnergyTrendPanel';
@@ -152,7 +153,8 @@ export function AnalysisResultsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [auditVisible, setAuditVisible] = useState(false);
-  const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null);
+  const moreTrigger = useRef<HTMLButtonElement>(null);
+  const [inputsSnapshotId, setInputsSnapshotId] = useState<string>();
   const [detailsTarget, setDetailsTarget] = useState<HTMLDivElement | null>(null);
   const [selectedMfaSeriesId, setSelectedMfaSeriesId] = useState('');
   const [selectedCarbonMethodRef, setSelectedCarbonMethodRef] = useState('');
@@ -245,6 +247,7 @@ export function AnalysisResultsPage() {
       ? taskRecords.find((item) => item.id === requestedId)
       : taskRecords.at(-1);
   const selectedPurpose = snapshotPurpose(selected);
+  useEffect(() => { setInputsSnapshotId(undefined); setAuditVisible(false); }, [selected?.id, activeResultTab]);
   const selectedDemand = (selected?.provider_receipt.calculation_basis as { demand?: Array<{ amount: number; unit: string }> } | undefined)?.demand;
   // Names come from the exact saved model revision, never a client-side UUID dictionary.
   const resultWorkspace = useQuery({
@@ -439,11 +442,14 @@ export function AnalysisResultsPage() {
   if (!applicationId) return <NotFoundState />;
   const error = application.error || snapshots.error;
   return (
-    <ResultActionsTarget.Provider value={actionsTarget}><ResultDetailsTarget.Provider value={detailsTarget}><main className="app-page compact-result-page">
+    <ResultMenuProvider scope={`${selected?.id}:${activeResultTab}`}><ResultDetailsTarget.Provider value={detailsTarget}><main className="app-page compact-result-page">
       <header className="result-page-header">
         <div className="result-page-header__top">
           <h1 title={application.data?.name}>{application.data?.name ?? t('results.title')} <span>· {activeResultTab === 'pcf' ? t('task.pcf') : activeResultTab === 'cbam' ? t('task.cbam') : activeResultTab === 'organization-lifecycle' ? t('task.organization') : activeResultTab === 'mfa' ? t('task.mfa') : t('results.title')}</span></h1>
-          <div className="result-header-actions"><div ref={setActionsTarget} />{selected && activeResultTab !== 'cbam' ? <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button> : null}{selected ? <Link className="arco-btn arco-btn-outline arco-btn-size-small" to={`/applications/${applicationId}/calculation-inputs?snapshot=${selected.id}`}>{t('inventory.viewCalculationInputs')}</Link> : null}<ReturnToProject applicationId={applicationId ?? ''} /></div>
+          <div className="result-header-actions"><ResultMoreMenu triggerRef={moreTrigger} actions={selected ? [
+            { key: 'inputs', label: t('inventory.viewCalculationInputs'), run: () => setInputsSnapshotId(selected.id) },
+            ...(activeResultTab !== 'cbam' ? [{ key: 'details', label: t('results.details'), run: () => setAuditVisible(true) }] : []),
+          ] : []} /><ReturnToProject applicationId={applicationId ?? ''} /></div>
         </div>
         {selected && !invalidResultView && activeResultTab !== 'organization-ghg' ? <div className="result-page-header__records">
           <label htmlFor="snapshot-select">{t('analysis.recordSelectorAria')}</label>
@@ -689,6 +695,9 @@ export function AnalysisResultsPage() {
           </Drawer>
         </>
       ) : null}
-    </main></ResultDetailsTarget.Provider></ResultActionsTarget.Provider>
+      {selected ? <CalculationInputsDialog applicationId={applicationId ?? ''} snapshot={selected}
+        visible={inputsSnapshotId === selected.id} onClose={() => setInputsSnapshotId(undefined)}
+        afterClose={() => moreTrigger.current?.focus({ preventScroll: true })} /> : null}
+    </main></ResultDetailsTarget.Provider></ResultMenuProvider>
   );
 }

@@ -1,11 +1,11 @@
-import { Table } from '@arco-design/web-react';
+import { Drawer, Table } from '@arco-design/web-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { api } from '../api/client';
 import type { CbamTrialRequest, FrozenReport } from '../api/types';
 import { useI18n } from '../i18n';
 import { ErrorState, LoadingState } from './ui/States';
-import { ResultExportMenu, ResultHeaderActions } from './ResultHeaderActions';
+import { ResultExportMenu, ResultHeaderActions, ResultMenuActions } from './ResultHeaderActions';
 
 type Source = { snapshotId: string; cbam: CbamTrialRequest } | { applicationId: string; recordId: string };
 
@@ -16,6 +16,7 @@ export function FrozenReportPanel({ source, showSummary = false }: {source: Sour
     ? api.cbamReportData(source.snapshotId, source.cbam) : api.organizationReportData(source.applicationId, source.recordId, lang) });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [detailsVisible, setDetailsVisible] = useState(false);
   const exportFile = async (kind: 'excel' | 'html' | 'print') => {
     if (pending) return;
     const printWindow = kind === 'print' ? window.open('about:blank', '_blank') : null;
@@ -47,6 +48,9 @@ export function FrozenReportPanel({ source, showSummary = false }: {source: Sour
     {key:'html',label:t('report.downloadHtml'),run:()=>void exportFile('html')},
     {key:'print',label:t('pcf.print'),run:()=>void exportFile('print')},
   ]} /></ResultHeaderActions>{error ? <ErrorState error={error} /> : null}
+    {'recordId' in source ? <><ResultMenuActions actions={[{ key: 'details', label: t('results.details'), run: () => setDetailsVisible(true) }]} />
+      <Drawer visible={detailsVisible} onCancel={() => setDetailsVisible(false)} title={t('results.details')} footer={null}
+        width="min(680px, 100vw)" unmountOnExit><pre className="audit-json">{JSON.stringify(report.data.sources, null, 2)}</pre></Drawer></> : null}
     <FrozenReportContent report={report.data} showSummary={showSummary} />
   </>;
 }

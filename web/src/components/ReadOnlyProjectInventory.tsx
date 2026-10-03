@@ -24,8 +24,8 @@ export function ReadOnlyProjectInventory({ workspace, snapshot }: {
     ]} />
     <h3>{t('inventory.columnBackground')}</h3>
     {pins.length ? pins.map(pin => <details key={pin.consumer_exchange_id} className="frozen-background">
-      <summary>{workspace.background_ports?.find(port => port.exchange_id === pin.consumer_exchange_id)?.process ?? pin.consumer_exchange_id}
-        {' · '}{workspace.background_ports?.find(port => port.exchange_id === pin.consumer_exchange_id)?.label}</summary>
+      <summary>{workspace.background_ports?.find(port => port.exchange_id === pin.consumer_exchange_id)?.process ?? t('pcf.unnamedProcess')}
+        {' · '}{workspace.background_ports?.find(port => port.exchange_id === pin.consumer_exchange_id)?.label ?? t('mfa.unnamedFlow')}</summary>
       <pre className="audit-json">{JSON.stringify(pin, null, 2)}</pre>
     </details>) : <p className="helper-text">{t('inventory.noLinkedBackground')}</p>}
     <details className="frozen-input-identity"><summary>{t('inventory.frozenIdentity')}</summary>

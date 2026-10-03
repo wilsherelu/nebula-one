@@ -5,7 +5,7 @@ import { api } from '../api/client';
 import type { MethodPackage, OrganizationLifecycleActivity, SolvedSystemSnapshot } from '../api/types';
 import { useI18n } from '../i18n';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
-import { ResultHeaderActions } from './ResultHeaderActions';
+import { ResultMenuActions } from './ResultHeaderActions';
 import { FrozenReportPanel } from './FrozenReportPanel';
 
 interface CategoryRule { name?: string; factor_boundary?: string; boundary_status?: string; eligible_consumer_exchange_ids?: string[]; exchange_labels?: Record<string, string> }
@@ -96,7 +96,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   if (lang === 'en' && display.isLoading) return <LoadingState rows={4} />;
   if (lang === 'en' && display.isError) return <ErrorState error={display.error} />;
   return <div className="pcf-result organization-result">
-    {hasFrozenResult ? <ResultHeaderActions><Button type="text" size="small" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button></ResultHeaderActions> : null}
+    {hasFrozenResult ? <ResultMenuActions actions={[{ key: 'settings', label: t('org.additionalSettings'), run: () => setShowSettings(value => !value) }]}
+      fallback={<Button type="text" size="small" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button>} /> : null}
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
     {showSettings || (!records.isLoading && !hasFrozenResult) ? <><div className="project-period-form">

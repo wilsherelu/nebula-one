@@ -8,6 +8,8 @@ export const LANGUAGES: readonly Lang[] = ['zh', 'en'];
  */
 export const MESSAGES = {
   'results.export': ['导出', 'Export'],
+  'common.more': ['更多', 'More'],
+  'common.close': ['关闭', 'Close'],
   'results.details': ['详情', 'Details'],
   'results.recalculate': ['重新核算', 'Recalculate'],
   'cbam.gaps': ['{count} 项待补资料', '{count} missing items'],

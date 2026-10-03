@@ -19,7 +19,7 @@ import { MetricCard } from './ui/MetricCard';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
 import { InvalidReferencesAlert } from './ui/InvalidReferencesAlert';
 import { CbamBoundaryDetails } from './CbamBoundaryDetails';
-import { ResultHeaderActions } from './ResultHeaderActions';
+import { ResultMenuActions } from './ResultHeaderActions';
 import { FrozenReportPanel } from './FrozenReportPanel';
 
 export interface RulePackageOption {
@@ -260,9 +260,8 @@ export function CbamRuleTrialPanel(props: Props) {
           <div className="pcf-result__chart-toolbar"><strong>{complex ? t('cbam.precursorContribution') : t('cbam.directChart')}</strong><Button type="text" size="small" icon={<IconExpand />} href={chartUrl} target="_blank" rel="noreferrer">{t('cbam.openChart')}</Button></div>
           <img src={chartUrl} alt={complex ? t('cbam.complexChartAlt') : t('cbam.simpleChartAlt')} />
         </div> : null}
-        <ResultHeaderActions>
-          <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button>
-        </ResultHeaderActions>
+        <ResultMenuActions actions={[{ key: 'details', label: t('results.details'), run: () => setAuditVisible(true) }]}
+          fallback={<Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button>} />
       </> : null}
 
       <Drawer className="audit-drawer" width="min(680px, 100vw)" visible={auditVisible} onCancel={() => setAuditVisible(false)} footer={null} title={t('results.details')} unmountOnExit>

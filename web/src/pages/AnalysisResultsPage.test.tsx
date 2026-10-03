@@ -199,7 +199,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect((await screen.findAllByText('Declared Energy')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('3.2727272727272725').length).toBeGreaterThan(0);
     fireEvent.load(screen.getByRole('img', { name: '冻结能源载体结果图' }));
-    await userEvent.click(screen.getByRole('button', { name: '详情' }));
+    await userEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByText('solve-hash-1')).toBeInTheDocument();
     expect(screen.getByText(/provider-run-1/)).toBeInTheDocument();
     expect(screen.getByText('energy-request-hash')).toBeInTheDocument();
@@ -249,7 +250,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect(screen.getByText('边界范围结果')).toBeInTheDocument();
     expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@2.0.0');
     expect(api.productCarbonFootprintChart).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@2.0.0');
-    await userEvent.click(screen.getByRole('button', { name: '详情' }));
+    await userEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByRole('img', { name: '产品碳足迹气候变化分项图' })).toHaveAttribute('src', 'blob:pcf-chart');
 
     expect(await screen.findByText('pcf-method-hash')).toBeInTheDocument();
@@ -348,7 +350,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect(screen.getByText('当前不是 Scope 1/2/3 清单')).toBeInTheDocument();
     expect(api.carbonManagement).toHaveBeenCalledWith('snapshot-1', 'carbon.period@1.0.0', 'energy-result-1');
     expect(await screen.findByRole('img', { name: '期间能源碳管理图' })).toHaveAttribute('src', 'blob:carbon-chart');
-    await userEvent.click(screen.getByRole('button', { name: '详情' }));
+    await userEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByText('carbon-method-hash')).toBeInTheDocument();
     expect(screen.getByText('carbon-content-hash')).toBeInTheDocument();
   });
@@ -374,7 +377,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect(screen.getByText('一次加工设施')).toBeInTheDocument();
     expect(api.spatialAggregate).toHaveBeenCalledWith('snapshot-1', 'boundary-park-1');
     expect(await screen.findByRole('img', { name: '园区合并物质流桑基图' })).toHaveAttribute('src', 'blob:park-chart');
-    await userEvent.click(screen.getByRole('button', { name: '详情' }));
+    await userEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByText('spatial-result-hash')).toBeInTheDocument();
     expect(screen.getByText('park-spatial-hash')).toBeInTheDocument();
   });
@@ -402,7 +406,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect(api.spatialEnergy).toHaveBeenCalledWith('snapshot-1', 'boundary-park-1', 'energy-result-1');
     expect(api.spatialEnergyChart).toHaveBeenCalledWith('snapshot-1', 'boundary-park-1', 'energy-result-1', 'energy-series-1');
     expect(await screen.findByRole('img', { name: '园区外部能源投入桑基图' })).toHaveAttribute('src', 'blob:spatial-energy-chart');
-    await userEvent.click(screen.getByRole('button', { name: '详情' }));
+    await userEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByText('spatial-energy-result-hash')).toBeInTheDocument();
     expect(screen.getByText('energy-domain-hash')).toBeInTheDocument();
   });
@@ -430,7 +435,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect(api.spatialDistribution).toHaveBeenCalledWith('snapshot-1', 'spatial.supply@1.0.0');
     expect(api.spatialDistributionMap).toHaveBeenCalledWith('snapshot-1', 'spatial.supply@1.0.0', 'baseline');
     expect(await screen.findByRole('img', { name: '省域供应流向图' })).toHaveAttribute('src', 'blob:supply-map');
-    await userEvent.click(screen.getByRole('button', { name: '详情' }));
+    await userEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByText('distribution-result-hash')).toBeInTheDocument();
     expect(screen.getByText('destination-spatial-hash')).toBeInTheDocument();
   });

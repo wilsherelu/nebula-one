@@ -5,9 +5,9 @@ import { api } from '../api/client';
 import { OrganizationLifecyclePanel } from '../components/OrganizationLifecyclePanel';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
 import { useI18n } from '../i18n';
-import { ResultActionsTarget } from '../components/ResultHeaderActions';
+import { ResultMenuProvider, ResultMoreMenu } from '../components/ResultHeaderActions';
+import { CalculationInputsDialog } from '../components/CalculationInputsDialog';
 import { ReturnToProject } from '../components/ReturnToProject';
-import { Link } from 'react-router-dom';
 import { Select } from '@arco-design/web-react';
 
 export function OrganizationCalculationPage() {
@@ -15,7 +15,8 @@ export function OrganizationCalculationPage() {
   const [params, setParams] = useSearchParams();
   const { t, lang, formatDate } = useI18n();
   const client = useQueryClient();
-  const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null);
+  const moreTrigger = useRef<HTMLButtonElement>(null);
+  const [inputsSnapshotId, setInputsSnapshotId] = useState<string>();
   const attempted = useRef('');
   const snapshotId = params.get('snapshot') ?? '';
   const activeSnapshot = useRef(snapshotId);
@@ -27,6 +28,7 @@ export function OrganizationCalculationPage() {
   const records = useQuery({ queryKey: ['organization-lifecycle', applicationId], queryFn: () => api.organizationLifecycleInventories(applicationId) });
   const selectedRecord = records.data?.find(record => record.id === recordId && record.solved_snapshot_id === snapshotId);
   const snapshot = snapshots.data?.find(item => item.id === snapshotId);
+  useEffect(() => { setInputsSnapshotId(undefined); }, [snapshotId, recordId]);
   const refs = application.data?.context.method_package_refs ?? [];
   const method = recordId ? packages.data?.find(item => `${item.package_id}@${item.version}` === selectedRecord?.result.method_package.reference
     && item.content_sha256 === selectedRecord.result.method_package.content_sha256) : Array.isArray(refs) ? refs.slice().reverse().map(ref => packages.data?.find(item => `${item.package_id}@${item.version}` === ref))
@@ -48,10 +50,12 @@ export function OrganizationCalculationPage() {
       calculate.mutate();
     }
   }, [applicationId, snapshot, method, recordId]);
-  return <ResultActionsTarget.Provider value={actionsTarget}><main className="app-page compact-result-page"><header className="result-page-header">
+  return <ResultMenuProvider scope={`${snapshotId}:${recordId}`}><main className="app-page compact-result-page"><header className="result-page-header">
     <div className="result-page-header__top">
       <h1>{application.data?.name ?? ''} <span>· {t('task.organization')}</span></h1>
-      <div className="result-header-actions"><div ref={setActionsTarget} />{snapshot ? <Link className="arco-btn arco-btn-outline arco-btn-size-small" to={`/applications/${applicationId}/calculation-inputs?snapshot=${snapshot.id}`}>{t('inventory.viewCalculationInputs')}</Link> : null}<ReturnToProject applicationId={applicationId} /></div>
+      <div className="result-header-actions"><ResultMoreMenu triggerRef={moreTrigger} actions={snapshot ? [
+        { key: 'inputs', label: t('inventory.viewCalculationInputs'), run: () => setInputsSnapshotId(snapshot.id) },
+      ] : []} /><ReturnToProject applicationId={applicationId} /></div>
     </div>
     {recordId && records.data?.length ? <div className="result-page-header__records"><label htmlFor="organization-record">{t('analysis.recordSelectorAria')}</label>
       <Select id="organization-record" value={selectedRecord?.id} onChange={value => {
@@ -67,5 +71,8 @@ export function OrganizationCalculationPage() {
     {!snapshot || !method ? (!snapshots.isLoading && !packages.isLoading ? <EmptyState description={t('results.taskMissing')} /> : null) : recordId || calculate.isError ?
       <section className="section-panel"><OrganizationLifecyclePanel applicationId={applicationId} snapshot={snapshot} method={method}
         methodPackages={packages.data} recordId={recordId} onCreated={id => setParams({ snapshot: snapshot.id, record: id })} /></section> : null}
-  </main></ResultActionsTarget.Provider>;
+    {snapshot ? <CalculationInputsDialog applicationId={applicationId} snapshot={snapshot}
+      visible={inputsSnapshotId === snapshot.id} onClose={() => setInputsSnapshotId(undefined)}
+      afterClose={() => moreTrigger.current?.focus({ preventScroll: true })} /> : null}
+  </main></ResultMenuProvider>;
 }
