@@ -101,6 +101,7 @@ function Harness({ children }: { children: ReactNode }) {
     <output data-testid="search">{searchParams.toString()}</output>
     <button onClick={() => navigate(-1)}>浏览器后退</button>
     <button onClick={() => navigate(1)}>浏览器前进</button>
+    <button onClick={() => navigate('/applications/app-1/results?view=cbam&cbam-tab=simple')}>选择测试记录</button>
   </div>;
 }
 
@@ -117,6 +118,10 @@ function searchTerm() {
 }
 
 function mockReads() {
+  vi.spyOn(api, 'cbamReportData').mockResolvedValue({schema_version:'nebula_one.frozen-report.v1',kind:'cbam',snapshot_id:snapshot.id,revision_id:snapshot.system_revision_id,
+    title:'CBAM',method_name:null,method_version:'1.0.0',complete_total:null,summary:[],details:[],process_contributions:[],
+    gaps:[{name:'flue gas cleaning exchanges',status:'open_coverage_limitation'}],outside_boundary:[],uncharacterized:[],sources:{},
+    status_labels:{open_coverage_limitation:'Open coverage limitation'},group_labels:{}});
   vi.spyOn(api, 'periods').mockResolvedValue(reportingPeriods);
   vi.spyOn(api, 'cbamComplexTrial').mockResolvedValue(result);
   vi.spyOn(api, 'cbamComplexTrialChart').mockResolvedValue(new Blob(['<svg />'], { type: 'image/svg+xml' }));
@@ -133,7 +138,8 @@ describe('CBAM rule trial panel', () => {
     await waitFor(() => expect(trial).toHaveBeenCalled());
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     finish(simpleResult as CbamTrialResult);
-    expect(await screen.findByRole('button', { name: '重新核算' })).toBeInTheDocument();
+    expect(await screen.findByText('Ammonia simple goods')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '重新核算' })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
   it('discloses a partial v2 total, missing indirect factor and nitrogen basis without substituting zero', async () => {
@@ -284,8 +290,7 @@ describe('CBAM rule trial panel', () => {
     expect(await screen.findByText('Ammonia')).toBeInTheDocument();
     expect(searchTerm()).toBe('view=cbam');
 
-    await userEvent.click(screen.getByRole('button', { name: '重新核算' }));
-    await userEvent.click(screen.getByRole('tab', { name: '模型边界试算' }));
+    await userEvent.click(screen.getByRole('button', { name: '选择测试记录' }));
     expect(await screen.findByText('Ammonia simple goods')).toBeInTheDocument();
     expect(searchTerm()).toBe('view=cbam&cbam-tab=simple');
     expect(api.cbamTrial).toHaveBeenCalledTimes(1);
@@ -364,9 +369,10 @@ describe('CBAM rule trial panel', () => {
       reporting_period_id: 'period-2026',
       boundary_definition_id: 'boundary-cbam-1',
     });
-    // the first screen carries one concise coverage line, not the port table
+    // Business gaps are visible; technical clause identities remain in the drawer.
     expect(screen.queryByText(/已计入 [\d,]+(\.\d+)? kg CO2e/)).not.toBeInTheDocument();
-    expect(screen.getByText('1 项待补资料')).toBeInTheDocument();
+    expect(await screen.findByText('待补资料与条件')).toBeInTheDocument();
+    expect(screen.getByText('flue gas cleaning exchanges')).toBeInTheDocument();
     expect(screen.queryByText(/边界覆盖：28 个端口/)).not.toBeInTheDocument();
     expect(screen.queryByText(/ST-18/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '详情' }));
@@ -436,7 +442,8 @@ describe('CBAM rule trial panel', () => {
     expect(await screen.findByText('Crude steel')).toBeInTheDocument();
     expect(screen.getByText('Calculated component subtotal')).toBeInTheDocument();
     expect(screen.getByText('No eligible emission factor')).toBeInTheDocument();
-    expect(screen.getByText('1 missing items')).toBeInTheDocument();
+    expect(await screen.findByText('Missing data and pending conditions')).toBeInTheDocument();
+    expect(screen.getByText('flue gas cleaning exchanges')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Details' }));
     expect(await screen.findByText('Unresolved coverage items')).toBeInTheDocument();
     expect(api.cbamTrial).toHaveBeenCalledWith('snapshot-1', expect.objectContaining({ boundary_definition_id: cbamBoundary.id }));

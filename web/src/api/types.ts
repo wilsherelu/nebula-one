@@ -456,6 +456,7 @@ export interface OrganizationLifecycleActivity extends OrganizationSupplierActiv
 
 export interface OrganizationLifecycleResult {
   id: string;
+  created_at: string;
   application_id: string;
   solved_snapshot_id: string;
   content_sha256: string;
@@ -1310,4 +1311,20 @@ export interface CapabilityCatalogResponse {
     limits: string[];
     status: 'ready' | 'unavailable';
   }>;
+}
+export interface FrozenReportRow {
+  exchange_id: string; process_id: string; process_name: string | null; flow_name: string | null;
+  group: string; quantity: number | string | null; quantity_unit: string | null;
+  contribution_value: number | string | null; contribution_unit: string | null;
+  status: string; basis?: string | null;
+}
+export interface FrozenReport {
+  schema_version: string; kind: 'cbam' | 'organization'; snapshot_id: string; revision_id: string;
+  title: string; method_name: string | null; method_version: string; complete_total: number | string | null;
+  summary: Array<{group: string; value: number | string | null; unit: string | null; status: string}>;
+  details: FrozenReportRow[]; process_contributions: Array<{group: string; process_id: string; process_name: string | null; contribution_value: number | string; contribution_unit: string}>;
+  gaps: Array<{name: string | null; status: string; basis?: string | null}>;
+  outside_boundary: Array<{name: string; status: string}>; uncharacterized: FrozenReportRow[];
+  status_labels: Record<string,string>; group_labels: Record<string,string>; sources: Record<string,unknown>;
+  detail_status?: string;
 }

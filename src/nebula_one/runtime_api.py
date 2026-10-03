@@ -5,6 +5,8 @@ from fastapi import APIRouter, Query, Request, Response
 from .container import Container
 from .analysis.cbam_trial_v2 import SCHEMA_VERSION as CBAM_TRIAL_V2_SCHEMA_VERSION
 from .exports.cbam_trial_report import render_cbam_trial_html
+from .exports.frozen_report import export_frozen_report_xlsx, render_frozen_report_html, presentation
+from .services.frozen_report import FrozenReportService
 from .exports.cbam_partial_review import render_cbam_partial_review_markdown
 from .exports.organization_period import render_organization_period_html
 from .exports.organization_lifecycle import render_organization_lifecycle_html
@@ -839,6 +841,25 @@ def export_cbam_trial_report(
     )
 
 
+@router.post("/solved-system-snapshots/{solved_snapshot_id}/cbam-trial/report-data")
+def cbam_report_data(solved_snapshot_id: str, payload: CbamTrialCreate, request: Request) -> dict:
+    return presentation(FrozenReportService(_container(request)).cbam(solved_snapshot_id, payload))
+
+
+@router.post("/solved-system-snapshots/{solved_snapshot_id}/cbam-trial/full-report.html")
+def cbam_full_report(solved_snapshot_id: str, payload: CbamTrialCreate, request: Request) -> Response:
+    report = FrozenReportService(_container(request)).cbam(solved_snapshot_id, payload)
+    return Response(content=render_frozen_report_html(report), media_type="text/html; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="cbam-full-report.html"'})
+
+
+@router.post("/solved-system-snapshots/{solved_snapshot_id}/cbam-trial/export.xlsx")
+def cbam_report_excel(solved_snapshot_id: str, payload: CbamTrialCreate, request: Request) -> Response:
+    report = FrozenReportService(_container(request)).cbam(solved_snapshot_id, payload)
+    return Response(content=export_frozen_report_xlsx(report), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="cbam-trial.xlsx"'})
+
+
 @router.post(
     "/solved-system-snapshots/{solved_snapshot_id}/cbam-trial/chart.svg"
 )
@@ -1220,6 +1241,25 @@ def report_organization_lifecycle_inventory(application_id: str, record_id: str,
                           message="Unsupported report language", status_code=422)
     return Response(content=content, media_type="text/html; charset=utf-8",
                     headers={"ETag": f'"{etag}"'})
+
+
+@router.get("/applications/{application_id}/organization-lifecycle-inventories/{record_id}/report-data")
+def organization_report_data(application_id: str, record_id: str, request: Request, lang: str = "zh") -> dict:
+    return presentation(FrozenReportService(_container(request)).organization(application_id, record_id, lang))
+
+
+@router.get("/applications/{application_id}/organization-lifecycle-inventories/{record_id}/export.xlsx")
+def organization_report_excel(application_id: str, record_id: str, request: Request, lang: str = "zh") -> Response:
+    report = FrozenReportService(_container(request)).organization(application_id, record_id, lang)
+    return Response(content=export_frozen_report_xlsx(report), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="organization-report.xlsx"'})
+
+
+@router.get("/applications/{application_id}/organization-lifecycle-inventories/{record_id}/full-report.html")
+def organization_full_report(application_id: str, record_id: str, request: Request, lang: str = "zh") -> Response:
+    report = FrozenReportService(_container(request)).organization(application_id, record_id, lang)
+    return Response(content=render_frozen_report_html(report), media_type="text/html; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="organization-report.html"'})
 
 
 @router.post(

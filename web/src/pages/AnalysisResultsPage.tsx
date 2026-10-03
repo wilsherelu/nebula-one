@@ -443,7 +443,7 @@ export function AnalysisResultsPage() {
       <header className="result-page-header">
         <div className="result-page-header__top">
           <h1 title={application.data?.name}>{application.data?.name ?? t('results.title')} <span>· {activeResultTab === 'pcf' ? t('task.pcf') : activeResultTab === 'cbam' ? t('task.cbam') : activeResultTab === 'organization-lifecycle' ? t('task.organization') : activeResultTab === 'mfa' ? t('task.mfa') : t('results.title')}</span></h1>
-          <div className="result-header-actions"><div ref={setActionsTarget} />{selected && activeResultTab !== 'cbam' ? <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button> : null}<ReturnToProject applicationId={applicationId ?? ''} /></div>
+          <div className="result-header-actions"><div ref={setActionsTarget} />{selected && activeResultTab !== 'cbam' ? <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button> : null}{selected ? <Link className="arco-btn arco-btn-outline arco-btn-size-small" to={`/applications/${applicationId}/calculation-inputs?snapshot=${selected.id}`}>{t('inventory.viewCalculationInputs')}</Link> : null}<ReturnToProject applicationId={applicationId ?? ''} /></div>
         </div>
         {selected && !invalidResultView && activeResultTab !== 'organization-ghg' ? <div className="result-page-header__records">
           <label htmlFor="snapshot-select">{t('analysis.recordSelectorAria')}</label>
@@ -453,7 +453,6 @@ export function AnalysisResultsPage() {
             setSearchParams(next);
           }} options={taskRecords.map((item, index) => ({ label: t('results.record', { number: taskRecords.length - index, date: formatDate(item.created_at) }), value: item.id }))} />
           {selectedDemand?.length === 1 ? <span className="result-page-header__basis">{t('results.demand', { amount: formatNumber(selectedDemand[0].amount), unit: selectedDemand[0].unit })}</span> : null}
-          <Link to={`/applications/${applicationId}/calculation-inputs?snapshot=${selected.id}`}>{t('inventory.viewCalculationInputs')}</Link>
         </div> : null}
       </header>
       {application.isLoading || snapshots.isLoading ? <section className="section-panel"><LoadingState rows={7} /></section> : null}

@@ -12,5 +12,5 @@ export function CalculationTarget({ workspace, demand = workspace?.demand }: {
   const names = [...new Set((workspace?.fields ?? []).filter(field => field.reference_product
     && field.flow_uuid === target.reference_flow_uuid).map(field => field.label))];
   return <p>{t('calculation.product')}: <strong>{names.length === 1 ? names[0] : target.reference_flow_uuid}</strong>
-    {' · '}{formatNumber(target.amount)} {target.unit}</p>;
+    {' · '}<span style={{ whiteSpace: 'nowrap' }}>{formatNumber(target.amount)} {target.unit}</span></p>;
 }

@@ -564,6 +564,22 @@ export const MESSAGES = {
   'results.withBackground': ['含已关联背景', 'Includes linked background'],
   'results.modelScope': ['当前模型范围', 'Current model scope'],
   'process.graphAria': ['工艺图，点击过程填写数据', 'Process diagram; select a process to enter data'],
+  'report.downloadHtml': ['下载 HTML 报告', 'Download HTML report'],
+  'report.processContributions': ['过程贡献', 'Process contributions'],
+  'report.detail': ['核算明细', 'Calculation details'],
+  'report.includedEmissions': ['计入排放量', 'Included emissions'],
+  'report.gaps': ['待补资料与条件', 'Missing data and pending conditions'],
+  'report.outside': ['本次边界外事项', 'Outside this boundary'],
+  'report.uncharacterized': ['本方法未表征的清单流', 'Inventory flows not characterized by this method'],
+  'report.noCfNote': ['以下流保留原始数量，未计入本次气候贡献。方法未提供因子并不等于数据缺失或排放为零；适用范围仍以方法来源为准。', 'These flows retain their quantities and are not included in climate contributions. No factor does not establish missing data or zero emissions; applicability follows the method source.'],
+  'report.incomplete': ['完整合计未计算；下表展示已计算部分及待补事项。', 'The complete total is not calculated; calculated components and gaps are shown below.'],
+  'report.boundaryTotal': ['结果仅反映该记录已声明的数据边界。', 'Results reflect only this record’s declared boundary.'],
+  'report.methodNote': ['按当前生产模型归组，未覆盖部分另列；不代表完整组织盘查或正式监管申报。', 'Grouped from the production model, with uncovered paths listed separately; this is not a complete organizational inventory or regulatory declaration.'],
+  'report.noBreakdown': ['此历史记录未保存可按过程拆分的贡献证据，保留原摘要，不补造明细。', 'This historical record lacks process contribution evidence. Its summary is retained without fabricated details.'],
+  'report.item': ['事项', 'Item'],
+  'report.basis': ['查看依据', 'View basis'],
+  'report.statusUnavailable': ['状态未提供', 'Status unavailable'],
+  'report.nameUnavailable': ['名称未提供', 'Name unavailable'],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type MessageKey = keyof typeof MESSAGES;

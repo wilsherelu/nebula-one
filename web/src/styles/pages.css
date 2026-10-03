@@ -408,9 +408,12 @@
 .project-history-button { display: inline-flex; align-items: center; justify-content: center; height: 32px; line-height: 30px; padding: 0 15px; text-decoration: none; white-space: nowrap; }
 .project-save-status { color: var(--no-color-text-secondary); font-size: 12px; min-width: 0; }
 .calculation-method-choices { display: grid; gap: 8px; width: 100%; }
-.calculation-method-choices .arco-radio { display: flex; width: 100%; margin: 0; padding: 12px; border: 1px solid var(--no-color-border); border-radius: 8px; }
+.calculation-method-choices .arco-radio { display: flex; align-items: center; width: 100%; margin: 0; padding: 12px; min-height: 72px; border: 1px solid var(--no-color-border); border-radius: 8px; white-space: normal; }
 .calculation-method-choices .arco-radio-checked { border-color: var(--color-primary-light-4); background: var(--color-primary-light-1); }
-.calculation-method-choices .arco-radio-label { min-width: 0; }
+.calculation-method-choices .arco-radio-text { min-width: 0; flex: 1; }
+.calculation-method-choices .arco-radio-mask-wrapper { top: auto; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.calculation-method-choices .arco-radio-icon-hover::before { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.calculation-method-choices .arco-radio:focus-within { outline: 2px solid var(--no-color-primary); outline-offset: 2px; }
 .calculation-method-copy { display: flex; flex-direction: column; gap: 4px; line-height: 1.45; }
 .calculation-method-copy strong, .calculation-method-copy small { display: block; }
 .calculation-method-choices small { color: var(--no-color-text-secondary); }

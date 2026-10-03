@@ -1,4 +1,4 @@
-import { Alert, Button, Select, Table } from '@arco-design/web-react';
+import { Alert, Button, Select } from '@arco-design/web-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { api } from '../api/client';
@@ -6,6 +6,7 @@ import type { MethodPackage, OrganizationLifecycleActivity, SolvedSystemSnapshot
 import { useI18n } from '../i18n';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
 import { ResultHeaderActions } from './ResultHeaderActions';
+import { FrozenReportPanel } from './FrozenReportPanel';
 
 interface CategoryRule { name?: string; factor_boundary?: string; boundary_status?: string; eligible_consumer_exchange_ids?: string[]; exchange_labels?: Record<string, string> }
 interface Entry { enabled: boolean; factorRef: string; factor: string; version: string; source: string; hash: string; evidenceRole: 'supplier_specific' | 'demonstration_proxy'; methodId: string; methodVersion: string; methodHash: string; referenceProduct: string }
@@ -32,7 +33,6 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   const labels = (method.manifest.display_labels ?? {}) as { input_basis?: Record<string, string>; group_status?: Record<string, string> };
   const categoryName = (key: string) => lang === 'en' ? display.data?.labels.categories[key] ?? key : rules[key]?.name ?? key;
   const exchangeName = (key: string, rule: CategoryRule) => lang === 'en' ? display.data?.labels.exchanges[key] ?? key : rule.exchange_labels?.[key] ?? key;
-  const groupStatus = (key: string) => lang === 'en' ? display.data?.labels.group_status[key] ?? key : labels.group_status?.[key] ?? key;
   const periodName = (period: { name: string; start_date?: string; end_date?: string }) =>
     lang === 'en' && period.start_date && period.end_date ? `${period.start_date}—${period.end_date}` : period.name;
   const basis = (snapshot.provider_receipt.calculation_basis ?? {}) as Record<string, unknown>;
@@ -152,36 +152,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     </> : null}
     {records.isLoading ? null : matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
       <strong>{record.result.activity_basis.mode === 'current_model_total' ? t('org.currentModel') : periodName(record.result.reporting_period)} · {record.result.facility}</strong>
-      <ResultHeaderActions><Button type="outline" size="small" href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></ResultHeaderActions>
-      <p className="organization-result__basis">{t('org.resultBasis', { basis: record.result.activity_basis.mode === 'current_model_total' ? t('org.currentTotal') : lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
-      <Table rowKey="key" pagination={false} data={[
-        { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
-        { key: 'energy', ...record.result.groups.purchased_energy_lifecycle, label: t('org.groupEnergy') },
-        { key: 'other', ...record.result.groups.other_value_chain, label: t('org.groupOther') },
-      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), align: 'right', render: (_, row) => row.value == null ? t('org.unknown') : `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
-      <p>{t(record.result.combined_total == null ? 'org.coveragePartial' : 'org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
-      {record.result.climate_source?.unassigned_suppliers?.length ? <div>
-        <p>{t('org.unassignedSupply')}</p><ul>{record.result.climate_source.unassigned_suppliers.map(row =>
-          <li key={row.consumer_exchange_id}>{workspace.data?.fields.find(field => `${field.process_id}::${field.port_id}` === row.consumer_exchange_id)?.label ?? row.consumer_exchange_id}
-            {' · '}{format(row.contribution_value)} kg CO2-Eq</li>)}</ul>
-      </div> : null}
-      {record.result.climate_source?.uncharacterized_terms?.length ? <>
-        <p>{t('org.uncharacterized', {count: record.result.climate_source.uncharacterized_terms.length})}</p>
-        <details><summary>{t('org.flowIdentity')}</summary><ul>{record.result.climate_source.uncharacterized_terms.map(term =>
-          <li key={`${term.process_uuid}:${term.exchange_id}`}>{term.flow_uuid}@{term.flow_version} · {term.exchange_id} · {format(term.amount)} {term.amount_unit}</li>
-        )}</ul></details>
-      </> : null}
-      {record.result.groups.other_value_chain.categories.filter(item => item.supply_receipts?.length).map(item => <details key={`supply:${item.category}`}>
-        <summary>{categoryName(item.category)} · {format(item.value)} kg CO2-Eq</summary>
-        <ul>{item.supply_receipts?.map(row => <li key={row.consumer_exchange_id}>
-          {workspace.data?.fields.find(field => `${field.process_id}::${field.port_id}` === row.consumer_exchange_id)?.label ?? row.consumer_exchange_id}
-          {' · '}{format(row.contribution_value)} kg CO2-Eq
-          <small> · {row.project_id}@{row.version} · {row.source_graph_hash}</small>
-        </li>)}</ul>
-        {item.missing_exchange_ids?.length ? <p>{t('org.unknown')} · {item.missing_exchange_ids.join(', ')}</p> : null}
-      </details>)}
-      {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: categoryName(item.category), value: format(item.proxy_reference_value) })}</p>)}
-      <details className="organization-result__evidence"><summary>{t('org.methodDetails')}</summary><p>{t('org.intro')}</p><p>{t('org.scopeNote')}</p><small>{t('org.methodEvidence', { method: record.result.method_package.reference, hash: record.content_sha256 })}</small></details>
+      <p className="organization-result__basis">{record.result.activity_basis.mode === 'current_model_total' ? t('results.demand', {amount:format(record.result.activity_basis.period_output),unit:record.result.activity_basis.unit}) : t('org.resultBasis', { basis: lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
+      <FrozenReportPanel source={{applicationId,recordId:record.id}} showSummary />
     </section>) : <EmptyState description={t('org.noResults')} />}
   </div>;
 }

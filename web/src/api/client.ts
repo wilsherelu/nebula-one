@@ -1,5 +1,6 @@
 import type { Lang } from '../i18n/messages';
 import type {
+  FrozenReport,
   ApiProblem,
   Application,
   ProjectWorkspace,
@@ -151,6 +152,12 @@ function withLang(path: string, lang?: Lang): string {
 }
 
 export const api = {
+  cbamReportData: (snapshotId: string, payload: CbamTrialRequest) => requestJson<FrozenReport>(`/api/v1/solved-system-snapshots/${snapshotId}/cbam-trial/report-data`, { method: 'POST', body: JSON.stringify(payload) }),
+  cbamFullReport: (snapshotId: string, payload: CbamTrialRequest) => requestBlob(`/api/v1/solved-system-snapshots/${snapshotId}/cbam-trial/full-report.html`, { method: 'POST', body: JSON.stringify(payload) }),
+  cbamReportExcel: (snapshotId: string, payload: CbamTrialRequest) => requestBlob(`/api/v1/solved-system-snapshots/${snapshotId}/cbam-trial/export.xlsx`, { method: 'POST', body: JSON.stringify(payload) }),
+  organizationReportData: (applicationId: string, recordId: string, lang = 'zh') => requestJson<FrozenReport>(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${recordId}/report-data?lang=${lang}`),
+  organizationReportExcel: (applicationId: string, recordId: string, lang = 'zh') => requestBlob(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${recordId}/export.xlsx?lang=${lang}`),
+  organizationFullReport: (applicationId: string, recordId: string, lang = 'zh') => requestBlob(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${recordId}/full-report.html?lang=${lang}`),
   workspace: (applicationId: string, revisionId: string, lang?: Lang) =>
     requestJson<ProjectWorkspace>(withLang(`/api/v1/applications/${applicationId}/workspace/${revisionId}`, lang)),
   applyReviewedCbam: (applicationId: string, revisionId: string, lang?: Lang) => requestJson<ProjectWorkspace>(

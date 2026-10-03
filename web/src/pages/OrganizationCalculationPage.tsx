@@ -8,11 +8,12 @@ import { useI18n } from '../i18n';
 import { ResultActionsTarget } from '../components/ResultHeaderActions';
 import { ReturnToProject } from '../components/ReturnToProject';
 import { Link } from 'react-router-dom';
+import { Select } from '@arco-design/web-react';
 
 export function OrganizationCalculationPage() {
   const { applicationId = '' } = useParams();
   const [params, setParams] = useSearchParams();
-  const { t, lang } = useI18n();
+  const { t, lang, formatDate } = useI18n();
   const client = useQueryClient();
   const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null);
   const attempted = useRef('');
@@ -23,9 +24,12 @@ export function OrganizationCalculationPage() {
   const application = useQuery({ queryKey: ['application', applicationId, lang], queryFn: () => api.application(applicationId, lang) });
   const snapshots = useQuery({ queryKey: ['solved-snapshots', applicationId], queryFn: () => api.solvedSnapshots(applicationId) });
   const packages = useQuery({ queryKey: ['method-packages', applicationId], queryFn: api.methodPackages });
+  const records = useQuery({ queryKey: ['organization-lifecycle', applicationId], queryFn: () => api.organizationLifecycleInventories(applicationId) });
+  const selectedRecord = records.data?.find(record => record.id === recordId && record.solved_snapshot_id === snapshotId);
   const snapshot = snapshots.data?.find(item => item.id === snapshotId);
   const refs = application.data?.context.method_package_refs ?? [];
-  const method = Array.isArray(refs) ? refs.slice().reverse().map(ref => packages.data?.find(item => `${item.package_id}@${item.version}` === ref))
+  const method = recordId ? packages.data?.find(item => `${item.package_id}@${item.version}` === selectedRecord?.result.method_package.reference
+    && item.content_sha256 === selectedRecord.result.method_package.content_sha256) : Array.isArray(refs) ? refs.slice().reverse().map(ref => packages.data?.find(item => `${item.package_id}@${item.version}` === ref))
     .find(item => item?.package_kind === 'organization_lifecycle_carbon') : undefined;
   const calculate = useMutation({
     mutationFn: () => api.createOrganizationCurrentModel(applicationId, {
@@ -47,12 +51,17 @@ export function OrganizationCalculationPage() {
   return <ResultActionsTarget.Provider value={actionsTarget}><main className="app-page compact-result-page"><header className="result-page-header">
     <div className="result-page-header__top">
       <h1>{application.data?.name ?? ''} <span>· {t('task.organization')}</span></h1>
-      <div className="result-header-actions"><div ref={setActionsTarget} /><ReturnToProject applicationId={applicationId} /></div>
+      <div className="result-header-actions"><div ref={setActionsTarget} />{snapshot ? <Link className="arco-btn arco-btn-outline arco-btn-size-small" to={`/applications/${applicationId}/calculation-inputs?snapshot=${snapshot.id}`}>{t('inventory.viewCalculationInputs')}</Link> : null}<ReturnToProject applicationId={applicationId} /></div>
     </div>
+    {recordId && records.data?.length ? <div className="result-page-header__records"><label htmlFor="organization-record">{t('analysis.recordSelectorAria')}</label>
+      <Select id="organization-record" value={selectedRecord?.id} onChange={value => {
+        const next = records.data.find(record => record.id === value);
+        if (next) setParams({snapshot:next.solved_snapshot_id,record:next.id});
+      }} options={records.data.map((record,index)=>({value:record.id,label:t('results.record',{number:records.data.length-index,date:formatDate(record.created_at)})}))} />
+    </div> : null}
   </header>
-    {snapshot ? <Link className="calculation-inputs-link" to={`/applications/${applicationId}/calculation-inputs?snapshot=${snapshot.id}`}>{t('inventory.viewCalculationInputs')}</Link> : null}
-    {application.isLoading || snapshots.isLoading || packages.isLoading ? <LoadingState /> : null}
-    {application.isError || snapshots.isError || packages.isError ? <ErrorState error={application.error || snapshots.error || packages.error} /> : null}
+    {application.isLoading || snapshots.isLoading || packages.isLoading || records.isLoading ? <LoadingState /> : null}
+    {application.isError || snapshots.isError || packages.isError || records.isError ? <ErrorState error={application.error || snapshots.error || packages.error || records.error} /> : null}
     {calculate.isPending ? <LoadingState /> : null}
     {calculate.isError ? <ErrorState error={calculate.error} onRetry={() => calculate.mutate()} /> : null}
     {!snapshot || !method ? (!snapshots.isLoading && !packages.isLoading ? <EmptyState description={t('results.taskMissing')} /> : null) : recordId || calculate.isError ?

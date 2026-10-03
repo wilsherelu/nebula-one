@@ -19,7 +19,8 @@ import { MetricCard } from './ui/MetricCard';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
 import { InvalidReferencesAlert } from './ui/InvalidReferencesAlert';
 import { CbamBoundaryDetails } from './CbamBoundaryDetails';
-import { ResultHeaderActions, ResultExportMenu } from './ResultHeaderActions';
+import { ResultHeaderActions } from './ResultHeaderActions';
+import { FrozenReportPanel } from './FrozenReportPanel';
 
 export interface RulePackageOption {
   reference: string;
@@ -64,9 +65,6 @@ export function CbamRuleTrialPanel(props: Props) {
   const formatDecimal = (value: string | null | undefined): string =>
     value == null || value.trim() === '' ? '—' : formatNumber(Number(value), { maximumSignificantDigits: 8 });
   const [auditVisible, setAuditVisible] = useState(false);
-  const [configVisible, setConfigVisible] = useState(false);
-  const [reportPending, setReportPending] = useState(false);
-  const [reportError, setReportError] = useState<Error | null>(null);
 
   const periods = useQuery({
     queryKey: ['periods', props.applicationId],
@@ -184,7 +182,7 @@ export function CbamRuleTrialPanel(props: Props) {
   }
 
   // Keep the result layout pending while the selected frozen trial is fetched.
-  if (!configVisible && (mode.pending || period.pending || boundary.pending || activeResult.isLoading)) return <LoadingState rows={7} />;
+  if (mode.pending || period.pending || boundary.pending || activeResult.isLoading) return <LoadingState rows={7} />;
 
   const complex = result?.schema_version === 'nebula_one.cbam.complex-trial.v1' ? result : undefined;
   const simple = result && result.schema_version !== 'nebula_one.cbam.complex-trial.v1' ? result : undefined;
@@ -204,37 +202,16 @@ export function CbamRuleTrialPanel(props: Props) {
         : { value: formatDecimal(simple.attributed_emissions.indirect.value), unit: simple.attributed_emissions.indirect.unit ?? undefined };
   const openItemCount = simple?.coverage?.open_items.length ?? 0;
 
-  const downloadReport = async () => {
-    if (reportPending) return;
-    setReportPending(true);
-    setReportError(null);
-    try {
-      const blob = await api.cbamTrialReport(props.snapshot.id, simplePayload);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `cbam-trial-${props.snapshot.id}.html`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      setReportError(error instanceof Error ? error : new Error(t('cbam.reportFailed')));
-    } finally {
-      setReportPending(false);
-    }
-  };
-
   return (
     <div className="pcf-result cbam-result">
-      {(!result || configVisible) ? <div className="pcf-result__head">
+      {!result ? <div className="pcf-result__head">
         <Tabs activeTab={mode.value} onChange={(key) => mode.select(key)} type="capsule">
           {props.simpleMethods.length ? <Tabs.TabPane key="simple" title={t('cbam.simpleMode')} /> : null}
           {props.complexMethods.length ? <Tabs.TabPane key="complex" title={t('cbam.complexMode')} /> : null}
         </Tabs>
       </div> : null}
 
-      {(!result || configVisible) ? <div className="cbam-result__selectors">
+      {!result ? <div className="cbam-result__selectors">
         <div><label htmlFor="cbam-method">{t('cbam.method')}</label><Select id="cbam-method" value={activeMethod.value} onChange={activeMethod.select} options={(isComplex ? props.complexMethods : props.simpleMethods).map((item) => ({ label: `${t(isComplex ? 'cbam.complexMode' : 'cbam.simpleMode')} · v${item.reference.split('@').at(-1)}`, value: item.reference }))} /></div>
         <div><label htmlFor="cbam-period">{t('cbam.period')}</label><Select id="cbam-period" value={period.value} onChange={period.select} options={periods.data.map((item) => ({ label: `${item.name} · ${item.start_date}—${item.end_date}`, value: item.id }))} /></div>
         {needsFrozenBoundary ? <div><label htmlFor="cbam-boundary">{t('cbam.frozenAccountingBoundary')}</label><Select id="cbam-boundary" value={boundary.value} onChange={boundary.select} options={boundaryCandidates.map((item) => ({ label: `${t('cbam.frozenAccountingBoundary')} · ${formatDate(item.frozen_at ?? item.created_at)}`, value: item.id }))} /></div> : null}
@@ -243,7 +220,7 @@ export function CbamRuleTrialPanel(props: Props) {
           <div><label htmlFor="cbam-precursor-snapshot">{t('cbam.precursorSnapshot')}</label><Select id="cbam-precursor-snapshot" value={precursorSnapshot.value} onChange={precursorSnapshot.select} options={precursorCandidates.map((item) => ({ label: `${referenceUnit(item.functional_unit)} · ${formatDate(item.created_at)}`, value: item.id }))} /></div>
         </> : null}
       </div> : null}
-      {result ? <div className="result-frozen-summary"><span>{result.goods.aggregated_goods_category}</span><span>{periods.data.find(item => item.id === period.value)?.name}</span><span>{t(isComplex ? 'cbam.complexMode' : 'cbam.simpleMode')} · v{activeMethod.value.split('@').at(-1)}</span><Button size="small" type="text" onClick={() => setConfigVisible(!configVisible)}>{t('results.recalculate')}</Button></div> : null}
+      {result ? <div className="result-frozen-summary"><span>{result.goods.aggregated_goods_category}</span><span>{periods.data.find(item => item.id === period.value)?.name}</span><span>{t(isComplex ? 'cbam.complexMode' : 'cbam.simpleMode')} · v{activeMethod.value.split('@').at(-1)}</span></div> : null}
 
       {isComplex && !props.simpleMethods.length ? <Alert type="warning" title={t('cbam.noPrecursorMethod')} content={t('cbam.noPrecursorMethodNote')} /> : null}
       {isComplex && !precursorSnapshot.value && !precursorReferencesItself ? <Alert type="warning" title={t('cbam.noPrecursorSnapshot')} content={t('cbam.noPrecursorSnapshotNote')} /> : null}
@@ -275,10 +252,8 @@ export function CbamRuleTrialPanel(props: Props) {
             <MetricCard label={t('cbam.indirectStatus')} value={indirectStatus.value} unit={indirectStatus.unit} />
           </div>
         </div>
-        {simple?.coverage ? <p className="cbam-result__coverage">
-          {openItemCount ? <Button type="text" size="small" onClick={() => setAuditVisible(true)}>{t('cbam.gaps', { count: openItemCount })}</Button> : <span>{t('cbam.closedCoverage')}</span>}
-        </p> : null}
         <p className="result-coverage-note">{partial ? t('cbam.incompleteSubtotal') : t('cbam.notDeclaration')}</p>
+        {simple?.schema_version === 'nebula_one.cbam.trial.v2' ? <FrozenReportPanel source={{snapshotId:props.snapshot.id,cbam:simplePayload}} /> : null}
         {activeChart.isLoading ? <div className="pcf-result__chart-state"><LoadingState rows={5} /></div> : null}
         {activeChart.error ? <div className="pcf-result__chart-state"><ErrorState error={activeChart.error} onRetry={() => activeChart.refetch()} /></div> : null}
         {chartUrl ? <div className="pcf-result__chart" role="region" aria-label={t('cbam.chart')}>
@@ -286,10 +261,8 @@ export function CbamRuleTrialPanel(props: Props) {
           <img src={chartUrl} alt={complex ? t('cbam.complexChartAlt') : t('cbam.simpleChartAlt')} />
         </div> : null}
         <ResultHeaderActions>
-          {simple?.schema_version === 'nebula_one.cbam.trial.v2' ? <ResultExportMenu disabled={reportPending} actions={[{key: 'report', label: t('cbam.downloadHtml'), run: downloadReport}]} /> : null}
           <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button>
         </ResultHeaderActions>
-        {reportError ? <ErrorState error={reportError} onRetry={downloadReport} /> : null}
       </> : null}
 
       <Drawer className="audit-drawer" width="min(680px, 100vw)" visible={auditVisible} onCancel={() => setAuditVisible(false)} footer={null} title={t('results.details')} unmountOnExit>

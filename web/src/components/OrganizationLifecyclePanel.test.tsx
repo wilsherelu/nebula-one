@@ -34,6 +34,10 @@ it('explains the missing exact supply receipt in English without a numeric resul
 it('uses the versioned English projection for organization categories and exchanges', async () => {
   window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
   vi.spyOn(api, 'periods').mockResolvedValue([]);
+  vi.spyOn(api, 'organizationReportData').mockResolvedValue({schema_version:'nebula_one.frozen-report.v1',kind:'organization',snapshot_id:'snapshot',revision_id:'revision',title:'Organization',method_name:null,method_version:'1.0.5',complete_total:null,
+    summary:[{group:'on_site_direct',value:10,unit:'kg CO2-Eq',status:'calculated'},{group:'other_value_chain',value:null,unit:'kg CO2-Eq',status:'partial'}],details:[],process_contributions:[],
+    gaps:[{name:'Upstream purchased iron ore',status:'partial'}],outside_boundary:[],uncharacterized:[],sources:{},
+    group_labels:{on_site_direct:'On site direct emissions',other_value_chain:'Other value chain emissions'},status_labels:{calculated:'Calculated',partial:'Some required data is missing'}});
   vi.spyOn(api, 'workspace').mockResolvedValue({ process_graph: { nodes: [{ id: 'steel' }] } } as never);
   vi.spyOn(api, 'organizationLifecycleInventories').mockResolvedValue([{
     id: 'record', solved_snapshot_id: 'snapshot', content_sha256: 'c'.repeat(64),
@@ -68,10 +72,12 @@ it('uses the versioned English projection for organization categories and exchan
   expect(screen.queryByText('Iron ore purchased for sintering')).not.toBeInTheDocument();
   expect(screen.queryByRole('textbox', { name: 'Organization or facility name' })).not.toBeInTheDocument();
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-  expect(screen.getByText('Scope 1: on site direct emissions')).toBeInTheDocument();
-  expect(screen.getByText('Some required data is missing')).toBeInTheDocument();
+  expect(await screen.findByText('On site direct emissions')).toBeInTheDocument();
+  expect(screen.getAllByText('Some required data is missing').length).toBeGreaterThan(0);
   expect(screen.getByText('2026-01-01—2026-12-31 · Steel')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Open HTML report' })).toHaveAttribute('href', expect.stringContaining('report.html?lang=en'));
+  expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+  expect(screen.getByText('Upstream purchased iron ore')).toBeInTheDocument();
+  expect(api.organizationReportData).toHaveBeenCalledWith('application','record','en');
   expect(screen.queryByText('采购铁矿石上游')).not.toBeInTheDocument();
   expect(screen.queryByText('范围 1：厂内直接排放')).not.toBeInTheDocument();
   screen.getByRole('button', { name: 'Period scaling and additional activities' }).click();
