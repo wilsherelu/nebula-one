@@ -1,5 +1,5 @@
 import { Alert, Button, Descriptions, Drawer, Select, Table, Tabs } from '@arco-design/web-react';
-import { IconArrowLeft, IconFile, IconInfoCircle } from '@arco-design/web-react/icon';
+import { IconFile, IconInfoCircle } from '@arco-design/web-react/icon';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -26,6 +26,7 @@ import { SpatialEnergyPanel } from '../components/SpatialEnergyPanel';
 import { SpatialDistributionPanel } from '../components/SpatialDistributionPanel';
 import { AnalysisTabs } from '../components/AnalysisTabs';
 import { MfaResultPanel } from '../components/MfaResultPanel';
+import { ReturnToProject } from '../components/ReturnToProject';
 import { SnapshotContext } from '../components/SnapshotContext';
 import { CopyableValue } from '../components/ui/CopyableValue';
 import { InvalidReferencesAlert } from '../components/ui/InvalidReferencesAlert';
@@ -441,9 +442,8 @@ export function AnalysisResultsPage() {
     <ResultActionsTarget.Provider value={actionsTarget}><ResultDetailsTarget.Provider value={detailsTarget}><main className="app-page compact-result-page">
       <header className="result-page-header">
         <div className="result-page-header__top">
-          <Button type="text" size="small" icon={<IconArrowLeft />} onClick={() => navigate(`/applications/${applicationId}/workbench${application.data?.context.template_locked && selected ? `?step=reports&revision=${selected.system_revision_id}` : ''}`)}>{t('analysis.backToProject')}</Button>
           <h1 title={application.data?.name}>{application.data?.name ?? t('results.title')} <span>· {activeResultTab === 'pcf' ? t('task.pcf') : activeResultTab === 'cbam' ? t('task.cbam') : activeResultTab === 'organization-lifecycle' ? t('task.organization') : activeResultTab === 'mfa' ? t('task.mfa') : t('results.title')}</span></h1>
-          <div className="result-header-actions"><div ref={setActionsTarget} />{selected && activeResultTab !== 'cbam' ? <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button> : null}</div>
+          <div className="result-header-actions"><div ref={setActionsTarget} />{selected && activeResultTab !== 'cbam' ? <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button> : null}<ReturnToProject applicationId={applicationId ?? ''} /></div>
         </div>
         {selected && !invalidResultView && activeResultTab !== 'organization-ghg' ? <div className="result-page-header__records">
           <label htmlFor="snapshot-select">{t('analysis.recordSelectorAria')}</label>
@@ -453,6 +453,7 @@ export function AnalysisResultsPage() {
             setSearchParams(next);
           }} options={taskRecords.map((item, index) => ({ label: t('results.record', { number: taskRecords.length - index, date: formatDate(item.created_at) }), value: item.id }))} />
           {selectedDemand?.length === 1 ? <span className="result-page-header__basis">{t('results.demand', { amount: formatNumber(selectedDemand[0].amount), unit: selectedDemand[0].unit })}</span> : null}
+          <Link to={`/applications/${applicationId}/calculation-inputs?snapshot=${selected.id}`}>{t('inventory.viewCalculationInputs')}</Link>
         </div> : null}
       </header>
       {application.isLoading || snapshots.isLoading ? <section className="section-panel"><LoadingState rows={7} /></section> : null}

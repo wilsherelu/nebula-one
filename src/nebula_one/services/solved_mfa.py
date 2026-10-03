@@ -6,11 +6,13 @@ from ..errors import DomainError
 from ..models import SystemRevision
 from ..runtime_models import SolvedSystemSnapshot
 from ..runtime_schemas import SolvedSystemSnapshotOut
+from .mfa_display_graph import MFADisplayGraph
 
 
 class SolvedMFAService:
-    def __init__(self, database: Database) -> None:
+    def __init__(self, database: Database, client=None) -> None:
         self.database = database
+        self.display_graph = MFADisplayGraph(client) if client is not None else None
 
     def analyze(self, solved_snapshot_id: str, *, tolerance: float = 1e-9) -> dict:
         with self.database.session() as db:
@@ -32,11 +34,17 @@ class SolvedMFAService:
                 mode="json"
             )
             graph = revision.graph_snapshot
-        return build_solved_mfa(
+        sources, issues = [], []
+        if self.display_graph is not None:
+            graph, sources, issues = self.display_graph.enrich(graph, solved_payload["provider_receipt"].get("project_background_process_receipts") or [])
+        result = build_solved_mfa(
             solved_snapshot=solved_payload,
             revision_graph=graph,
             tolerance=tolerance,
         )
+        result["audit"]["display_name_sources"] = sources
+        result["audit"]["display_name_issues"] = issues
+        return result
 
     def sankey_svg(
         self,

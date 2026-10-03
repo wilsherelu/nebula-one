@@ -1,4 +1,4 @@
-import { Alert, Button, Modal, Select } from '@arco-design/web-react';
+import { Alert, Button, Modal } from '@arco-design/web-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -12,6 +12,8 @@ import { ProjectDataForm, type ProjectDataFormHandle } from '../components/Proje
 import { CalculationMethodDialog, type CalculationTask } from '../components/CalculationMethodDialog';
 import { ScenariosPage } from './ScenariosPage';
 import { ProfessionalProjectPage } from './ProfessionalProjectPage';
+import { ReadOnlyProjectInventory } from '../components/ReadOnlyProjectInventory';
+import { ReturnToProject } from '../components/ReturnToProject';
 
 export function ProjectWorkspacePage() {
   const { applicationId = '' } = useParams();
@@ -29,18 +31,15 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
   const navigate = useNavigate();
   const client = useQueryClient();
   const { t, lang } = useI18n();
-  const versionDate = (value: string) => new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-GB', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date(value));
   const models = useQuery({ queryKey: ['models', applicationId], queryFn: () => api.models(applicationId) });
   const model = params.get('model') ?? models.data?.[0]?.id ?? '';
   const revisions = useQuery({ queryKey: ['revisions', model], queryFn: () => api.revisions(model), enabled: !!model && !!models.data?.some(m => m.id === model) });
   // An absent selection opens the last saved data version; an explicit invalid one is refused.
   const revisionId = params.get('revision') ?? revisions.data?.at(-1)?.id ?? '';
   const revision = revisions.data?.find(r => r.id === revisionId);
+  const historical = !!revision && revision.id !== revisions.data?.at(-1)?.id;
   // A draft lives only while its own version is on screen; on leaving, keep or discard it by choice.
   const [draftDirty, setDraftDirty] = useState(false);
-  const [pendingSwitch, setPendingSwitch] = useState<string | null>(null);
   const [pendingLeave, setPendingLeave] = useState<string | null>(null);
   const [calculationOpen, setCalculationOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<CalculationTask>('pcf');
@@ -59,17 +58,6 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
   const workspace = useQuery({ queryKey: ['workspace', applicationId, revisionId, lang], queryFn: () => api.workspace(applicationId, revisionId, lang), enabled: !!revision });
   const packages = useQuery({ queryKey: ['method-packages', applicationId], queryFn: api.methodPackages });
   const step = params.get('step') ?? 'data';
-  const applyRevision = (id: string) => {
-    solve.reset();
-    setDraftDirty(false);
-    setPendingSwitch(null);
-    setParams(prev => { const p = new URLSearchParams(prev); p.set('revision', id); return p; });
-  };
-  const requestRevision = (id: string) => {
-    if (id === revisionId) return;
-    if (draftDirty) setPendingSwitch(id);
-    else applyRevision(id);
-  };
   const supportsPcf = workspace.data?.capabilities.includes('pcf.product.v1');
   const supportsCbam = workspace.data?.capabilities.includes('cbam.trial.v2');
   const cbamBlocked = workspace.data?.blocked_capabilities.some(item => item.capability === 'cbam.trial.v2');
@@ -142,16 +130,15 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
   return <main className="app-page project-workspace-page">
     <div className="project-workspace-header">
     <PageHeader title={name} description="" />
-    {workspace.data && !badSelection ? <div className="project-header-actions">
-      <div className="project-version-bar"><span>{t('workspace.dataVersion')}</span><Select aria-label={t('workspace.dataVersionAria')} value={revisionId} disabled={saving || solve.isPending} onChange={requestRevision} options={revisions.data?.map(r => ({ label: `${t('workspace.shortRevision', { number: r.revision_number })} · ${versionDate(r.created_at)}`, value: r.id }))} /></div>
-      <Link className="arco-btn arco-btn-text project-history-button" to={`/applications/${applicationId}/history?revision=${revisionId}`}
+    {historical ? <ReturnToProject applicationId={applicationId} /> : workspace.data && !badSelection ? <div className="project-header-actions">
+      <Link className="arco-btn arco-btn-text project-history-button" to={`/applications/${applicationId}/history`}
         onClick={event => { if (saving || solve.isPending) event.preventDefault(); else if (draftDirty) { event.preventDefault(); setPendingLeave(event.currentTarget.getAttribute('href')); } }}>{t('workspace.history')}</Link>
       <span className="project-save-status" role="status">{saving ? t('workspace.saving') : draftDirty ? t('workspace.unsaved') : workspace.data.saved ? t('workspace.saved') : ''}</span>
-      <Button type="outline" disabled={saving || solve.isPending || (!draftDirty && workspace.data.saved)} loading={saving} onClick={() => { void formRef.current?.save().catch(() => undefined); }}>{t('form.save')}</Button>
+      <Button type="outline" disabled={saving || solve.isPending || (!draftDirty && workspace.data.saved)} loading={saving} onClick={() => { void formRef.current?.save().catch(() => undefined); }}>{t('workspace.saveProject')}</Button>
       <Button type="primary" loading={solve.isPending} disabled={saving || solve.isPending} onClick={beginCalculation}>{t('workspace.calculate')}</Button>
     </div> : null}
     </div>
-    {error ? <ErrorState error={error} onRetry={retry} /> : badSelection ? <Alert type="error" content={t('workspace.badSelection')} action={<Button onClick={() => setParams({ step: 'data' })}>{t('workspace.clearSelection')}</Button>} /> : !workspace.data ? <LoadingState /> : <>
+    {error ? <ErrorState error={error} onRetry={retry} /> : badSelection ? <Alert type="error" content={t('workspace.badSelection')} action={<Button onClick={() => setParams({ step: 'data' })}>{t('workspace.clearSelection')}</Button>} /> : !workspace.data ? <LoadingState /> : historical ? <ReadOnlyProjectInventory workspace={workspace.data} /> : <>
       <ProjectDataForm key={revisionId} ref={formRef} workspace={workspace.data} hideFooterSave onReload={() => workspace.refetch()} onDirtyChange={setDraftDirty} onSaveStateChange={setSaving} onSaved={async (next, base) => { client.setQueryData(['workspace', applicationId, next.revision_id, lang], next); await Promise.all([client.invalidateQueries({ queryKey: ['revisions', model] }), client.invalidateQueries({ queryKey: ['application', applicationId] })]); if (resolvedRevisionRef.current !== base) return; setParams(prev => { const p = new URLSearchParams(prev); p.set('revision', next.revision_id); p.delete('step'); return p; }); }} />
       {returnedBound && cbamBlocked ? <Alert type="warning" content={t('workspace.cbamBoundaryUnreviewed')} action={<Button disabled={!workspace.data.saved || reviewCbam.isPending} loading={reviewCbam.isPending} onClick={() => reviewCbam.mutate()}>{t('workspace.applyCbamRules')}</Button>} /> : null}
       {reviewCbam.isError ? <ErrorState error={reviewCbam.error} /> : null}
@@ -163,12 +150,12 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
     <Modal
       className="draft-switch-modal"
       title={t('workspace.draftTitle')}
-      visible={!!pendingSwitch || !!pendingLeave}
-      onCancel={() => { setPendingSwitch(null); setPendingLeave(null); }}
+      visible={!!pendingLeave}
+      onCancel={() => setPendingLeave(null)}
       footer={<div className="form-actions">
-        <Button onClick={() => { setPendingSwitch(null); setPendingLeave(null); }}>{t('workspace.draftCancel')}</Button>
-        <Button onClick={() => { clearProjectDraft(applicationId, revisionId); if (pendingLeave) navigate(pendingLeave); else applyRevision(pendingSwitch ?? revisionId); }}>{t('workspace.draftDiscard')}</Button>
-        <Button type="primary" onClick={() => { if (pendingLeave) navigate(pendingLeave); else applyRevision(pendingSwitch ?? revisionId); }}>{t('workspace.draftKeep')}</Button>
+        <Button onClick={() => setPendingLeave(null)}>{t('workspace.draftCancel')}</Button>
+        <Button onClick={() => { clearProjectDraft(applicationId, revisionId); if (pendingLeave) navigate(pendingLeave); }}>{t('workspace.draftDiscard')}</Button>
+        <Button type="primary" onClick={() => { if (pendingLeave) navigate(pendingLeave); }}>{t('workspace.draftKeep')}</Button>
       </div>}
     >{t('workspace.draftBody')}</Modal>
   </main>;

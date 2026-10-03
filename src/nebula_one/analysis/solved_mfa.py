@@ -515,9 +515,10 @@ def build_solved_mfa(
             drawn_direction = direction
             drawn_amount = signed_amount
         boundary_id = _node_id(f"boundary-{drawn_direction}", flow_uuid)
+        previous_label = nodes_by_series[key].get(boundary_id, {}).get("label")
         nodes_by_series[key][boundary_id] = {
             "id": boundary_id,
-            "label": flow_name,
+            "label": previous_label if flow_name == flow_uuid and previous_label else flow_name,
             "kind": boundary_kind,
             "flow_uuid": flow_uuid,
             "direction": drawn_direction,
@@ -870,6 +871,7 @@ def render_sankey_svg(
     spatial_energy_flow_mode = diagram_mode == "spatial_energy_flow"
     energy_flow_mode = diagram_mode == "energy_flow"
     park_mode = diagram_mode in {"park", "spatial_energy", "spatial_energy_flow"}
+    standard_mode = not park_mode and not energy_flow_mode
     has_partial_background = any(
         node.get("claim_role") == "partial_background_leaf"
         for node in process_nodes
@@ -884,7 +886,7 @@ def render_sankey_svg(
     ]
     process_ranks = _ranks(process_nodes, process_links)
     has_input_boundary = any(
-        node.get("kind") == "system_boundary" and node.get("direction") == "input"
+        (node.get("kind") == "system_boundary" or (standard_mode and node.get("kind") == "environment")) and node.get("direction") == "input"
         for node in nodes
     )
     process_rank_offset = 1 if has_input_boundary else 0
@@ -896,7 +898,7 @@ def render_sankey_svg(
     for node in nodes:
         if node.get("kind") == "process":
             continue
-        if node.get("kind") == "system_boundary" and node.get("direction") == "input":
+        if (node.get("kind") == "system_boundary" or (standard_mode and node.get("kind") == "environment")) and node.get("direction") == "input":
             ranks[node["id"]] = 0
         else:
             ranks[node["id"]] = output_rank
@@ -946,6 +948,8 @@ def render_sankey_svg(
         f'<metadata>unit_group_identity={escape(_text(series.get("unit_group")))}</metadata>',
     ]
     for rank in sorted(columns):
+        if standard_mode:
+            continue
         node_ids = columns[rank]
         x = positions[node_ids[0]][0]
         if rank == 0 and has_input_boundary:
@@ -1014,7 +1018,7 @@ def render_sankey_svg(
         if link.get("kind") == "internal":
             stroke = "#3478d4"
         elif link.get("exchange_type") == "elementary":
-            stroke = "#38a87c"
+            stroke = "#6f879e" if standard_mode and link.get("direction") == "input" else "#38a87c"
         elif link.get("direction") == "input":
             stroke = "#6f879e"
         else:
@@ -1028,7 +1032,8 @@ def render_sankey_svg(
         chunks.append(
             f'<path class="link" data-link-id="{escape(_text(link["id"]))}" d="{path_data}" stroke="{stroke}" stroke-width="{stroke_width:.2f}"><title>{escape(tooltip)}</title></path>'
         )
-        flow_label = _shorten(link.get("flow_name") or link.get("flow_uuid"), 28)
+        name = _text(link.get("flow_name"))
+        flow_label = _shorten(name if name and name != link.get("flow_uuid") else L("未提供流名称", "Flow name unavailable"), 28)
         amount_label = f"{_format_amount(link['value'])} {series.get('unit')}"
         label_x = x1 + (x2 - x1) * 0.56
         label_width = min(226.0, max(132.0, 7.1 * len(flow_label) + 24.0))
@@ -1072,9 +1077,13 @@ def render_sankey_svg(
             fill, stroke, role = "#f3edff", "#7b61c9", L("部分背景", "PARTIAL BACKGROUND")
         if node.get("kind") == "system_boundary" and node.get("direction") == "output":
             fill, stroke, role = "#e8f6f8", "#4aa7b5", L("系统输出", "SYSTEM OUTPUT")
+        if standard_mode and node.get("kind") == "environment" and node.get("direction") == "input":
+            fill, stroke, role = "#edf3f7", "#6f879e", L("自然资源投入", "NATURAL RESOURCE INPUT")
         if node.get("display_role"):
             role = _text(node["display_role"]).upper()
         full_label = _text(node.get("label"))
+        if not full_label or full_label in {node.get("process_id"), node.get("flow_uuid")}:
+            full_label = f"{L('未提供名称', 'Name unavailable')} {sorted(node_by_id).index(node['id']) + 1}"
         incoming = incoming_totals.get(node["id"], 0.0)
         outgoing = outgoing_totals.get(node["id"], 0.0)
         in_label = L("入 ", "IN ")
@@ -1094,9 +1103,10 @@ def render_sankey_svg(
         chunks.append(
             f'<circle cx="{x - card_width / 2 + 18:.1f}" cy="{y - 21:.1f}" r="5" fill="{stroke}"/>'
         )
-        chunks.append(
-            f'<text class="node-role" x="{x - card_width / 2 + 31:.1f}" y="{y - 17:.1f}" fill="{stroke}">{escape(role)}</text>'
-        )
+        if not standard_mode:
+            chunks.append(
+                f'<text class="node-role" x="{x - card_width / 2 + 31:.1f}" y="{y - 17:.1f}" fill="{stroke}">{escape(role)}</text>'
+            )
         chunks.append(
             f'<text class="node-title" x="{x - card_width / 2 + 16:.1f}" y="{y + 4:.1f}">{escape(_shorten(full_label, 27))}</text>'
         )
@@ -1122,7 +1132,7 @@ def render_sankey_svg(
         else (
             (("#6f879e", "Park input"), ("#3478d4", "Inter-facility flow"), ("#38a87c", "Elementary output"), ("#4aa7b5", "Park output"))
             if park_mode
-            else (("#6f879e", L("边界输入", "Boundary input")), ("#3478d4", L("内部流", "Internal flow")), ("#38a87c", L("基本排放", "Elementary output")), ("#4aa7b5", L("系统输出", "System output")))
+            else (("#6f879e", L("外部投入", "External inputs")), ("#3478d4", L("工序间流", "Process transfers")), ("#38a87c", L("环境排放", "Environmental emissions")), ("#4aa7b5", L("产品与副产物", "Products and coproducts")))
         )
     )
     legend_x = 48
@@ -1147,6 +1157,8 @@ def render_sankey_svg(
             )
         )
     )
-    chunks.append(f'<text class="legend" x="{width - 48}" y="{legend_y + 4}" text-anchor="end">{escape(footer_note)}</text>')
+    if not standard_mode or has_partial_background:
+        note_y = legend_y + 24 if standard_mode else legend_y + 4
+        chunks.append(f'<text class="legend" x="{width - 48}" y="{note_y}" text-anchor="end">{escape(footer_note)}</text>')
     chunks.append("</svg>")
     return "".join(chunks)

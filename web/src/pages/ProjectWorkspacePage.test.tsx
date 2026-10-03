@@ -144,7 +144,8 @@ it('keeps unsaved inventory edits when a background binding mints the next data 
 
   vi.spyOn(seedProjectsApi, 'resolveBackground').mockResolvedValue({ pin: electricityPin, name: '同源电力' });
   const save = vi.spyOn(api, 'saveProjectInputs').mockResolvedValue(bound);
-  mount('data', [revision, revision3], '&revision=r2');
+  mount('data', [revision]);
+  vi.mocked(api.revisions).mockResolvedValueOnce([revision]).mockResolvedValue([revision, revision3]);
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
   await userEvent.click(screen.getByRole('button', { name: '选择背景数据' }));
   await userEvent.click(await screen.findByRole('combobox', { name: '背景来源' }));
@@ -160,39 +161,47 @@ it('keeps unsaved inventory edits when a background binding mints the next data 
   expect(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' })).toHaveValue('600');
 });
 
-it('asks before switching versions with an unsaved draft and keeps it scoped to the original version', async () => {
-  mount('data', [revision, revision3], '&revision=r2');
+it('keeps an unsaved draft when leaving the current project for history', async () => {
+  mount();
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
-  await userEvent.click(screen.getByRole('combobox', { name: '当前数据版本' }));
-  fireEvent.click(await screen.findByRole('option', { name: /版本 3/ }));
-  // The switch is refused until the operator chooses; the version bar still reads the current one.
+  await userEvent.click(screen.getByRole('link', { name: '历史结果' }));
   expect(await screen.findByText(/尚未保存的填报修改/)).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: '保留草稿并切换' }));
-  await waitFor(() => expect(api.workspace).toHaveBeenCalledWith('app-steel', 'r3', 'zh'));
-  // The kept draft stays under r2's own scope, not r3's.
+  await userEvent.click(screen.getByRole('button', { name: '取消' }));
+  expect(screen.getByRole('spinbutton', { name: '炼钢 / 电力' })).toHaveValue('600');
+  await userEvent.click(screen.getByRole('link', { name: '历史结果' }));
+  await userEvent.click(screen.getByRole('button', { name: '保留草稿并离开' }));
+  expect(await screen.findByRole('button', { name: '返回项目' })).toBeInTheDocument();
   expect(JSON.parse(localStorage.getItem('nebula-one:project:app-steel:r2')!)).toEqual(expect.objectContaining({ amounts: [1000] }));
-  expect(localStorage.getItem('nebula-one:project:app-steel:r3')).toBeNull();
-  // Returning to r2 restores the unsaved edit.
-  await userEvent.click(screen.getByRole('combobox', { name: '当前数据版本' }));
-  fireEvent.click(await screen.findByRole('option', { name: /版本 2/ }));
+  await userEvent.click(screen.getByRole('button', { name: '返回项目' }));
   expect(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' })).toHaveValue('600');
 });
 
-it('discards the draft when the operator chooses to abandon it on a version switch', async () => {
-  mount('data', [revision, revision3], '&revision=r2');
+it('discards only the current draft when leaving for history', async () => {
+  mount();
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
-  await userEvent.click(screen.getByRole('combobox', { name: '当前数据版本' }));
-  fireEvent.click(await screen.findByRole('option', { name: /版本 3/ }));
+  await userEvent.click(screen.getByRole('link', { name: '历史结果' }));
   expect(await screen.findByText(/尚未保存的填报修改/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: '放弃草稿' }));
-  await waitFor(() => expect(api.workspace).toHaveBeenCalledWith('app-steel', 'r3', 'zh'));
+  expect(await screen.findByRole('button', { name: '返回项目' })).toBeInTheDocument();
   expect(localStorage.getItem('nebula-one:project:app-steel:r2')).toBeNull();
+});
+
+it('opens historical revision deep links read-only and returns to current editable data', async () => {
+  mount('data', [revision, revision3], '&revision=r2');
+  expect(await screen.findByText(/此清单为历史记录/)).toBeInTheDocument();
+  expect(screen.queryByRole('spinbutton')).toBeNull();
+  expect(screen.queryByRole('button', { name: '核算' })).toBeNull();
+  await userEvent.click(screen.getByRole('button', { name: '返回项目' }));
+  expect(await screen.findByRole('button', { name: '保存项目' })).toBeInTheDocument();
+  expect(api.workspace).toHaveBeenLastCalledWith('app-steel', 'r3', 'zh');
+  expect(screen.queryByRole('combobox', { name: '当前数据版本' })).toBeNull();
 });
 
 it('saves an edited inventory before solving against the returned exact revision', async () => {
   const save = vi.spyOn(api, 'saveProjectInputs').mockResolvedValue(bound);
   const solve = vi.spyOn(api, 'solveAndFreeze').mockResolvedValue({ ...climateSnapshot, system_revision_id: 'r3' });
-  mount('data', [revision, revision3], '&revision=r2');
+  mount('data', [revision]);
+  vi.mocked(api.revisions).mockResolvedValueOnce([revision]).mockResolvedValue([revision, revision3]);
   fireEvent.change(await screen.findByRole('spinbutton', { name: '炼钢 / 电力' }), { target: { value: '600' } });
   fireEvent.click(screen.getByRole('button', { name: '核算' }));
   fireEvent.click(screen.getByRole('button', { name: '保存并计算' }));

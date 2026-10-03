@@ -1,4 +1,3 @@
-import { Button } from '@arco-design/web-react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
@@ -6,6 +5,7 @@ import type { SolvedSystemSnapshot } from '../api/types';
 import { useI18n } from '../i18n';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
+import { ReturnToProject } from '../components/ReturnToProject';
 
 function snapshotTask(snapshot: SolvedSystemSnapshot): 'cbam' | 'pcf' | 'mfa' | 'organization' {
   const declared = snapshot.provider_receipt.analysis_task;
@@ -27,25 +27,25 @@ export function ProjectHistoryPage() {
   const snapshots = useQuery({ queryKey: ['solved-snapshots', applicationId], queryFn: () => api.solvedSnapshots(applicationId) });
   const records = useQuery({ queryKey: ['organization-lifecycle', applicationId], queryFn: () => api.organizationLifecycleInventories(applicationId) });
   const revision = params.get('revision');
-  const back = `/applications/${applicationId}/workbench${revision ? `?revision=${encodeURIComponent(revision)}` : ''}`;
   const items = (snapshots.data ?? []).filter(item => (!revision || item.system_revision_id === revision)
     && !(item.provider_receipt.analysis_task === 'organization' && (records.data ?? []).some(record => record.solved_snapshot_id === item.id))).map(item => {
     const task = snapshotTask(item);
-    return { id: item.id, date: item.created_at, revision: item.system_revision_id,
+    return { id: item.id, snapshotId: item.id, date: item.created_at, revision: item.system_revision_id,
       label: task === 'organization' ? t('workspace.orgPending') : t(`task.${task}`),
       href: task === 'organization' ? `/applications/${applicationId}/organization?snapshot=${item.id}`
         : `/applications/${applicationId}/results?snapshot=${item.id}&view=${task}` };
   });
   const organizationItems = (records.data ?? []).filter(item => !revision || (snapshots.data ?? []).some(snapshot => snapshot.id === item.solved_snapshot_id && snapshot.system_revision_id === revision)).map(item => ({
-    id: item.id, date: (snapshots.data ?? []).find(snapshot => snapshot.id === item.solved_snapshot_id)?.created_at ?? '', revision: (snapshots.data ?? []).find(snapshot => snapshot.id === item.solved_snapshot_id)?.system_revision_id ?? '',
+    id: item.id, snapshotId: item.solved_snapshot_id, date: (snapshots.data ?? []).find(snapshot => snapshot.id === item.solved_snapshot_id)?.created_at ?? '', revision: (snapshots.data ?? []).find(snapshot => snapshot.id === item.solved_snapshot_id)?.system_revision_id ?? '',
     label: t('task.organization'), href: `/applications/${applicationId}/organization?snapshot=${item.solved_snapshot_id}&record=${item.id}`,
   }));
-  return <main className="app-page"><PageHeader title={t('workspace.history')} description={application.data?.name ?? ''} action={<Button href={back}>{t('analysis.backToProject')}</Button>} />
+  return <main className="app-page"><PageHeader title={t('workspace.history')} description={application.data?.name ?? ''} action={<ReturnToProject applicationId={applicationId} />} />
     {snapshots.isLoading || records.isLoading ? <LoadingState /> : null}
     {application.isError || snapshots.isError || records.isError ? <ErrorState error={application.error || snapshots.error || records.error} /> : null}
     {!snapshots.isLoading && !records.isLoading && !items.length && !organizationItems.length ? <EmptyState description={t('workspace.historyEmpty')} /> : null}
-    {[...items, ...organizationItems].sort((a, b) => b.date.localeCompare(a.date)).map(item => <Link key={item.id} className="home-project-row" to={item.href}>
-      <strong>{item.label}</strong><span>{formatDate(item.date)} · {t('workspace.dataVersion')} {revisions.data?.find(row => row.id === item.revision)?.revision_number ?? item.revision.slice(0, 8)} →</span>
-    </Link>)}
+    {[...items, ...organizationItems].sort((a, b) => b.date.localeCompare(a.date)).map(item => <div key={item.id} className="history-record">
+      <Link className="home-project-row" to={item.href}><strong>{item.label}</strong><span>{formatDate(item.date)} · {t('workspace.dataVersion')} {revisions.data?.find(row => row.id === item.revision)?.revision_number ?? item.revision.slice(0, 8)} →</span></Link>
+      <Link to={`/applications/${applicationId}/calculation-inputs?snapshot=${item.snapshotId}`}>{t('inventory.viewCalculationInputs')}</Link>
+    </div>)}
   </main>;
 }

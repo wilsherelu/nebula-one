@@ -1,13 +1,13 @@
-import { Button } from '@arco-design/web-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { OrganizationLifecyclePanel } from '../components/OrganizationLifecyclePanel';
-import { IconArrowLeft } from '@arco-design/web-react/icon';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
 import { useI18n } from '../i18n';
 import { ResultActionsTarget } from '../components/ResultHeaderActions';
+import { ReturnToProject } from '../components/ReturnToProject';
+import { Link } from 'react-router-dom';
 
 export function OrganizationCalculationPage() {
   const { applicationId = '' } = useParams();
@@ -44,14 +44,13 @@ export function OrganizationCalculationPage() {
       calculate.mutate();
     }
   }, [applicationId, snapshot, method, recordId]);
-  const back = `/applications/${applicationId}/workbench${snapshot ? `?revision=${snapshot.system_revision_id}` : ''}`;
   return <ResultActionsTarget.Provider value={actionsTarget}><main className="app-page compact-result-page"><header className="result-page-header">
     <div className="result-page-header__top">
-      <Button type="text" size="small" icon={<IconArrowLeft />} href={back}>{t('analysis.backToProject')}</Button>
       <h1>{application.data?.name ?? ''} <span>· {t('task.organization')}</span></h1>
-      <div className="result-header-actions" ref={setActionsTarget} />
+      <div className="result-header-actions"><div ref={setActionsTarget} /><ReturnToProject applicationId={applicationId} /></div>
     </div>
   </header>
+    {snapshot ? <Link className="calculation-inputs-link" to={`/applications/${applicationId}/calculation-inputs?snapshot=${snapshot.id}`}>{t('inventory.viewCalculationInputs')}</Link> : null}
     {application.isLoading || snapshots.isLoading || packages.isLoading ? <LoadingState /> : null}
     {application.isError || snapshots.isError || packages.isError ? <ErrorState error={application.error || snapshots.error || packages.error} /> : null}
     {calculate.isPending ? <LoadingState /> : null}

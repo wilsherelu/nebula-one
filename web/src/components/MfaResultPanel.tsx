@@ -26,11 +26,12 @@ export function MfaResultPanel({ result, seriesId, snapshotId }: {
       <Tabs.TabPane key="detail" title={t('mfa.details')}>
         <Table<Record<string, unknown> & { _row: number }> rowKey="_row" pagination={{ pageSize: 12 }} data={series.links.map((link, index) => ({ ...link, _row: index }))}
           columns={[
-            { title: t('mfa.flowName'), render: (_, row) => typeof row.flow_name === 'string' ? row.flow_name : t('mfa.unnamedFlow') },
+            { title: t('mfa.flowName'), render: (_, row) => <details><summary>{typeof row.flow_name === 'string' && row.flow_name !== row.flow_uuid ? row.flow_name : t('mfa.unnamedFlow')}</summary><pre className="audit-json">{JSON.stringify(row, null, 2)}</pre></details> },
             { title: t('mfa.amount'), align: 'right', render: (_, row) => typeof row.value === 'number' ? number(row.value) : '—' },
             { title: t('pcf.unit'), render: () => series.unit },
           ]} />
         <details className="mfa-trace"><summary>{t('mfa.trace')}</summary>
+          {series.nodes.map(node => <details key={String(node.id)}><summary>{String(node.label)}</summary><pre className="audit-json">{JSON.stringify(node, null, 2)}</pre></details>)}
           <pre className="audit-json">{JSON.stringify({ audit: result.audit, links: series.links }, null, 2)}</pre>
         </details>
       </Tabs.TabPane>

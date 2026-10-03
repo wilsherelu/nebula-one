@@ -135,7 +135,6 @@ export function ProductCarbonFootprintPanel({
   }
   if (!result) return <>{methodSelector}<EmptyState description={t('pcf.selectPrompt')} /></>;
 
-  const functionalUnit = `${formatNumber(result.functional_unit.amount)} ${result.functional_unit.unit}`;
   const resultLabel = result.boundary_claim.coverage === 'foreground_only'
     ? t('pcf.foreground')
     : result.boundary_claim.complete_product_declaration ? t('task.pcf') : t('pcf.covered');
@@ -159,7 +158,6 @@ export function ProductCarbonFootprintPanel({
         {!result.boundary_claim.complete_product_declaration ? <p className="result-coverage-note">{t(result.boundary_claim.coverage === 'foreground_only' ? 'pcf.coverageForeground' : 'pcf.coverageBackground')}</p> : null}
         </div>
         <dl className="pcf-result__facts">
-          <div><dt>{t('pcf.functionalUnit')}</dt><dd>{functionalUnit}</dd></div>
           <div><dt>{t('pcf.method')}</dt><dd>{result.method_package.lcia_method}</dd></div>
           <div><dt>{t('pcf.boundaryTitle')}</dt><dd>{result.boundary_claim.coverage === 'foreground_only' ? t('pcf.foreground') : t('results.withBackground')}</dd></div>
         </dl>
@@ -183,10 +181,11 @@ export function ProductCarbonFootprintPanel({
             rowKey="_row_key"
             pagination={false}
             scroll={{ x: 560 }}
-            data={result.contribution_analysis.hotspots.slice(0, 3).map((item) => ({ ...item, _row_key: `${item.rank}:${item.process_id}:${item.exchange_id}` }))}
+            data={result.contribution_analysis.hotspots.map((item) => ({ ...item, _row_key: `${item.rank}:${item.process_id}:${item.exchange_id}` }))}
             columns={[
               { title: t('pcf.rank'), dataIndex: 'rank', width: 72 },
               { title: t('pcf.process'), width: 280, render: (_, item) => <div title={exchangeNames[item.exchange_id]}>{processName(item.process_id, processNodes, t('pcf.unnamedProcess'))}{exchangeNames[item.exchange_id] ? <small className="contribution-flow-name">{exchangeNames[item.exchange_id]}</small> : null}</div> },
+              { title: t('inventory.columnAmount'), align: 'right', width: 150, render: (_, item) => <span className="tabular">{formatNumber(item.amount)} {item.amount_unit}</span> },
               { title: t('pcf.contribution'), align: 'right', width: 180, render: (_, item) => <span className="tabular">{formatNumber(item.contribution_value)} {item.contribution_unit}</span> },
               { title: t('pcf.share'), align: 'right', width: 120, render: (_, item) => <span className="tabular">{item.share_of_total === null ? '—' : `${formatNumber(item.share_of_total * 100)}%`}</span> },
             ]}

@@ -118,6 +118,19 @@
 .pcf-result__method label { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; }
 .pcf-result__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--no-space-2); }
 .pcf-result__summary { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr); gap: var(--no-space-3); }
+.pcf-result__summary.pcf-product-summary { grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr); align-items: center; padding: 16px; border: 1px solid var(--no-color-border); border-radius: var(--no-radius-panel); }
+.pcf-product-summary .pcf-result__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border: 0; background: transparent; }
+.pcf-product-summary .metric-card { padding: 0; border: 0; background: transparent; }
+.return-project-button.arco-btn { border: 1px solid var(--no-color-border); background: var(--no-color-surface-muted); color: var(--no-color-text-primary); }
+.history-record { display: flex; align-items: center; gap: 16px; }
+.history-record .home-project-row { flex: 1; min-width: 0; }
+.history-record > a:last-child { flex: none; }
+.calculation-inputs-link { align-self: flex-start; }
+.calculation-inputs { display: grid; gap: 12px; min-width: 0; }
+.calculation-inputs .arco-table-td { overflow-wrap: anywhere; }
+.calculation-inputs h3, .calculation-inputs p { margin: 0; }
+.frozen-background, .frozen-input-identity { overflow-wrap: anywhere; }
+.frozen-background summary, .frozen-input-identity summary { cursor: pointer; }
 .pcf-result__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--no-space-2); margin: 0; padding: var(--no-space-3); border: 1px solid var(--no-color-border); border-radius: var(--no-radius-panel); background: var(--no-color-surface-muted); }
 .pcf-result__facts div { min-width: 0; }
 .pcf-result__facts dt { color: var(--no-color-text-secondary); font-size: 12px; line-height: 18px; }
@@ -439,7 +452,7 @@
 .project-header-actions .arco-btn-disabled { background: var(--no-color-surface-muted); color: var(--no-color-text-tertiary); border-color: transparent; }
 @media (max-width: 1200px) {
   .compact-result-page .result-page-header__records { flex-wrap: wrap; }
-  .pcf-product-summary { grid-template-columns: 1fr; }
+  .pcf-result__summary.pcf-product-summary { grid-template-columns: 1fr; }
   .pcf-product-summary__value { grid-column: 1; grid-row: auto; }
 }
 .project-process-group { min-width: 0; margin: 0; padding: 4px 16px 0; border: 1px solid var(--no-color-border); border-radius: 6px; }

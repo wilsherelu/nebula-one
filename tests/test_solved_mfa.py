@@ -121,7 +121,9 @@ def test_sankey_uses_business_unit_label_and_keeps_identity_in_metadata():
     )
     assert 'data-link-id="feed"' in svg
     assert 'data-node-id="process:p1"' in svg
-    assert "SYSTEM INPUTS" in svg
+    assert "External inputs" in svg
+    assert '<text class="column-label"' not in svg
+    assert '<text class="node-role"' not in svg
     assert "IN 1 · OUT 1 kg" in svg
     assert "→ 1 kg" in svg
 
@@ -148,19 +150,19 @@ def test_mfa_sankey_localizes_fixed_chrome_when_chinese_labels_requested():
     # Fixed UI chrome — title, column headers, node roles, IN/OUT totals, legend, footer, subtitle —
     # renders Chinese only when the caller asks for it; every park/energy route keeps the English bytes.
     assert "物质流向图" in zh
-    assert "系统输入" in zh
-    assert "系统输出" in zh
-    assert "生产过程 1" in zh
+    assert '<text class="column-label"' not in zh
+    assert '<text class="node-role"' not in zh
+    assert "生产过程 1" not in zh
     assert "入 1" in zh
-    assert "边界输入" in zh and "基本排放" in zh
+    assert "外部投入" in zh and "环境排放" in zh
     assert "冻结求解交换" in zh
     assert "Solved MFA Sankey" not in zh
     assert "SYSTEM INPUTS" not in zh
-    # Default-English output is unchanged.
+    # Mass display labels change in both languages; the graph values are unchanged.
     assert "Solved MFA Sankey" in en
-    assert "SYSTEM INPUTS" in en
+    assert '<text class="column-label"' not in en
     assert "IN 1" in en
-    assert "Boundary input" in en
+    assert "External inputs" in en
     assert "Solved MFA Sankey" in en
     assert "物质流向图" not in en
 

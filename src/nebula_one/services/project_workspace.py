@@ -5,6 +5,7 @@ from typing import Annotated
 from types import SimpleNamespace
 
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 
 from ..casepacks.bindings import (
     ParentRevisionSnapshot, ParameterSetSnapshot, resolve_parameter_binding,
@@ -17,6 +18,8 @@ from ..runtime_schemas import ProviderBackgroundProcessPin, ProviderProjectBackg
 from ..model_processing_contract import PackageRef
 from ..mapped_background_schemas import ProviderMappedBackgroundProcessPin
 from .seed_projects import process_graph_projection
+from ..models import SystemModel
+from ..runtime_models import MethodPackage
 
 
 class ProjectInputs(BaseModel):
@@ -95,6 +98,25 @@ class ProjectWorkspaceService:
         return fields
 
     def read(self, application_id, revision_id, language="zh"):
+        result = self._read_workspace(application_id, revision_id, language)
+        revision = self.c.system_revisions.get(revision_id)
+        context = revision.application_context
+        refs = context.get("method_package_refs") or []
+        with self.c.database.session() as db:
+            model = db.get(SystemModel, revision.system_model_id)
+            methods = [dict(reference=f"{item.package_id}@{item.version}", content_sha256=item.content_sha256)
+                       for item in db.scalars(select(MethodPackage)) if f"{item.package_id}@{item.version}" in refs]
+            result["frozen_identity"] = {
+                "schema_version": "nebula_one.project-revision-identity.v1",
+                "graph_sha256": revision.graph_sha256,
+                "source_model": {"project_id": model.upstream_project_id, "version": model.upstream_version,
+                                 "graph_sha256": model.graph_sha256, "upstream_receipt": model.upstream_receipt},
+                "template": context.get("seed_template") or context.get("modeling_template_binding"),
+                "method_packages": methods,
+            }
+        return result
+
+    def _read_workspace(self, application_id, revision_id, language="zh"):
         if self._is_returned(application_id):
             application, revision = self._fillable_graph(application_id, revision_id)
             from .returned_projects import ReturnedProjectService
@@ -129,6 +151,10 @@ class ProjectWorkspaceService:
         return self._fillable_without_casepack(self.c.applications.get(application_id).context)
 
     def save(self, application_id, payload: ProjectInputs, language="zh"):
+        saved = self._save_workspace(application_id, payload, language)
+        return self.read(application_id, saved["revision_id"], language)
+
+    def _save_workspace(self, application_id, payload: ProjectInputs, language="zh"):
         if self._is_returned(application_id):
             from .returned_projects import ReturnedProjectService
             application, parent = self._fillable_graph(application_id, payload.revision_id)

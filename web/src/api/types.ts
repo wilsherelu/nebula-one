@@ -44,6 +44,7 @@ export interface ModelProcessingRulesRef {
 }
 
 export interface ProjectWorkspace {
+  frozen_identity?: Record<string, unknown>;
   mapped_background_process_pins?: MappedBackgroundProcessPin[];
   project_background_pins?: ProjectBackgroundPin[];
   model_processing_rules_ref?: ModelProcessingRulesRef | null;
