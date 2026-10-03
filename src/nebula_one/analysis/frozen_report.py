@@ -10,7 +10,11 @@ def names(graph, workspace):
     processes, _ = _process_catalog(graph)
     exchanges = _exchange_catalog(graph)
     for field in workspace.get("fields", []):
-        exchanges.setdefault(field["key"], {})["name"] = field["label"]
+        # A linked input shares its quantity key with the supplier output, but retains
+        # its own exchange identity for report labels.
+        exchange_id = (f"{field['process_id']}::{field['port_id']}"
+                       if field.get('process_id') and field.get('port_id') else field['key'])
+        exchanges.setdefault(exchange_id, {})["name"] = field["label"]
     return processes, exchanges
 
 

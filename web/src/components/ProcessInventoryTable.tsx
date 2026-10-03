@@ -2,6 +2,7 @@ import { Alert, Button, InputNumber, Select, Table } from '@arco-design/web-reac
 import { useSearchParams } from 'react-router-dom';
 import type { ProjectWorkspace } from '../api/types';
 import { useI18n } from '../i18n';
+import { FlowColumnTitle } from './FlowColumnTitle';
 
 type Field = ProjectWorkspace['fields'][number];
 export function ProcessInventoryTable({fields, values, disabled, onChange, workspace, onEditBackground, hasGraph = false}: {
@@ -22,7 +23,7 @@ export function ProcessInventoryTable({fields, values, disabled, onChange, works
   return <section className={`process-inventory${hasGraph ? ' process-inventory--with-graph' : ''}`}>
     <div className="section-heading"><div><h3>{t('inventory.title')}</h3><small className="helper-text">{t('inventory.summary', { processes: processes.length, rows: rows.length })}</small></div><Select aria-label={t('inventory.selectProcess')} value={selected} options={processes.map(([value, label]) => ({value, label}))} onChange={value => setParams(prev => {const p = new URLSearchParams(prev); p.set('process', value); return p;})} /></div>
     {!rows.length ? <Alert type="error" content={t('inventory.unknownProcess')} /> : <Table rowKey={f => `${f.process_id}/${f.port_id}`} data={rows} pagination={false} scroll={{x: 640}} columns={[
-      {title: t('inventory.columnFlow'), dataIndex: 'label', render: (_, f: Field) => <span>{f.label}{rows.filter(row => row.label === f.label).length > 1 ? <small className="inventory-linked">{f.port_id}</small> : null}{f.linked ? <small className="inventory-linked">{t('inventory.internalLink')}</small> : null}</span>},
+      {title: <FlowColumnTitle />, dataIndex: 'label', render: (_, f: Field) => <span>{f.label}{rows.filter(row => row.label === f.label).length > 1 ? <small className="inventory-linked">{f.port_id}</small> : null}{f.linked ? <small className="inventory-linked">{t('inventory.internalLink')}</small> : null}</span>},
       {title: t('inventory.columnDirection'), width: 84, render: (_, f: Field) => f.flow_type === 'biosphere' ? (f.group === 'inputs' ? t('inventory.intake') : t('inventory.emission')) : f.group === 'inputs' ? t('inventory.input') : t('inventory.output')},
       {title: t('inventory.columnAmount'), width: 180, render: (_, f: Field) => <InputNumber aria-label={`${f.process} / ${f.label}`} value={values[f.key]} min={f.reference_product ? Number.EPSILON : 0} disabled={disabled} onChange={value => onChange(f.key, value)} />},
       {title: t('inventory.columnUnit'), dataIndex: 'unit', width: 80},

@@ -54,14 +54,14 @@ def report_tables(report):
                for r in report["details"]]
     return [
         ("摘要", ["归组", "排放量", "单位", "状态"], [[group(r["group"]), r["value"], r["unit"], status(r["status"])] for r in report["summary"]]),
-        ("冻结输入", ["过程", "清单流", "方向", "数量", "单位", "交换身份"],
+        ("冻结输入", ["过程", "流", "方向", "数量", "单位", "交换身份"],
          [[r["process"], r["label"], {"input":"投入", "output":"产出", "emission":"排放", "emissions":"排放"}.get(r["group"], r["group"]), r["value"], r["unit"], r["key"]] for r in report["inputs"]]),
         ("过程贡献", ["归组", "过程", "计入排放量", "单位"],
          [[group(r["group"]), r.get("process_name") or "未提供过程名称", r["contribution_value"], r["contribution_unit"]] for r in report["process_contributions"]]),
-        ("核算明细", ["归组", "过程", "清单流", "原始数量", "原始单位", "计入排放量", "排放单位", "状态", "依据"], details),
+        ("核算明细", ["归组", "过程", "流", "原始数量", "原始单位", "计入排放量", "排放单位", "状态", "依据"], details),
         ("缺项", ["事项", "状态", "说明"], [[r.get("name") or "未提供事项名称", status(r["status"]), r.get("basis")] for r in report["gaps"]]),
         ("边界外", ["事项", "状态"], [[r["name"], status(r["status"])] for r in report["outside_boundary"]]),
-        ("未表征流", ["过程", "清单流", "数量", "单位", "状态"], [[r.get("process_name") or "未提供过程名称", r.get("flow_name") or "未提供流名称", r["quantity"], r["quantity_unit"], status(r["status"])] for r in report["uncharacterized"]]),
+        ("未表征流", ["过程", "流", "数量", "单位", "状态"], [[r.get("process_name") or "未提供过程名称", r.get("flow_name") or "未提供流名称", r["quantity"], r["quantity_unit"], status(r["status"])] for r in report["uncharacterized"]]),
         ("方法及来源", ["字段", "内容"], source_rows({"snapshot_id": report["snapshot_id"], "revision_id": report["revision_id"], "record_id": report.get("record_id"), "method_name": report.get("method_name"), "method_version": report["method_version"], "basis": report["basis"], "demand": report["demand"], "complete_total": report["complete_total"], **report["sources"]})),
     ]
 

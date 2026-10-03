@@ -6,6 +6,8 @@ import type { CbamTrialRequest, FrozenReport } from '../api/types';
 import { useI18n } from '../i18n';
 import { ErrorState, LoadingState } from './ui/States';
 import { ResultExportMenu, ResultHeaderActions, ResultMenuActions } from './ResultHeaderActions';
+import { FlowColumnTitle } from './FlowColumnTitle';
+import { FrozenReportCharts } from './FrozenReportCharts';
 
 type Source = { snapshotId: string; cbam: CbamTrialRequest } | { applicationId: string; recordId: string };
 
@@ -65,12 +67,14 @@ export function FrozenReportContent({ report, showSummary }: {report: FrozenRepo
     { key: 'outside', title: t('report.outside'), rows: report.outside_boundary },
   ];
   return <div className="frozen-report">
+    {report.kind === 'organization' ? <FrozenReportCharts report={report} /> : null}
     {showSummary ? <><Table pagination={false} rowKey="group" data={report.summary} columns={[
       {title:t('org.group'),render:(_,row)=>group(row.group)},
       {title:t('org.emissions'),align:'right',render:(_,row)=>value(row.value,row.unit)},
       {title:t('org.status'),render:(_,row)=>status(row.status)},
     ]} /><p className="result-coverage-note">{report.complete_total === null ? t('report.incomplete') : t('report.boundaryTotal')}</p></> : null}
     <h3>{t('report.processContributions')}</h3>
+    {report.kind === 'cbam' ? <FrozenReportCharts report={report} /> : null}
     {report.detail_status === 'frozen_process_contribution_evidence_unavailable' ? <p>{t('report.noBreakdown')}</p> : <Table pagination={false} rowKey={row=>`${row.group}:${row.process_id}`} data={report.process_contributions} columns={[
       {title:t('org.group'),render:(_,row)=>group(row.group)},
       {title:t('pcf.process'),render:(_,row)=>row.process_name ?? t('pcf.unnamedProcess')},
@@ -80,7 +84,7 @@ export function FrozenReportContent({ report, showSummary }: {report: FrozenRepo
     <Table pagination={false} scroll={{x:900}} rowKey={row=>`${row.group}:${row.exchange_id}`} data={report.details} columns={[
       {title:t('org.group'),width:130,render:(_,row)=>group(row.group)},
       {title:t('pcf.process'),width:210,render:(_,row)=>row.process_name ?? t('pcf.unnamedProcess')},
-      {title:t('inventory.columnFlow'),width:260,render:(_,row)=>row.flow_name ?? t('mfa.unnamedFlow')},
+      {title:<FlowColumnTitle />,width:260,render:(_,row)=>row.flow_name ?? t('mfa.unnamedFlow')},
       {title:t('inventory.columnAmount'),width:150,align:'right',render:(_,row)=>value(row.quantity,row.quantity_unit)},
       {title:t('report.includedEmissions'),width:150,align:'right',render:(_,row)=>value(row.contribution_value,row.contribution_unit)},
       {title:t('org.status'),width:220,render:(_,row)=><>{status(row.status)}{row.basis ? <details><summary>{t('report.basis')}</summary>{row.basis}</details> : null}</>},
@@ -91,7 +95,7 @@ export function FrozenReportContent({ report, showSummary }: {report: FrozenRepo
     ]} /> : <p>{t('org.none')}</p>}</section>)}
     {report.uncharacterized.length ? <section><h3>{t('report.uncharacterized')}</h3><p>{t('report.noCfNote')}</p><Table pagination={false} rowKey="exchange_id" data={report.uncharacterized} columns={[
       {title:t('pcf.process'),render:(_,row)=>row.process_name ?? t('pcf.unnamedProcess')},
-      {title:t('inventory.columnFlow'),render:(_,row)=>row.flow_name ?? t('mfa.unnamedFlow')},
+      {title:<FlowColumnTitle />,render:(_,row)=>row.flow_name ?? t('mfa.unnamedFlow')},
       {title:t('inventory.columnAmount'),align:'right',render:(_,row)=>value(row.quantity,row.quantity_unit)},
     ]} /></section> : null}
     <p>{t('report.methodNote')}{report.method_name ? ` ${report.method_name} · ${report.method_version}` : ''}</p>

@@ -22,6 +22,7 @@ from .project_template_revision import apply_template_revision
 from ..mapped_background_schemas import ProviderMappedBackgroundProcessPin
 from .project_mapped_background import ProjectMappedBackgroundService
 from .project_user_background import ProjectUserBackgroundService
+from .flow_display import exact_flow_labels
 
 BOUNDARY_FIELDS = ('name', 'boundary_type', 'included_entity_ids', 'included_process_ids',
                    'included_flow_rules', 'excluded_items', 'consolidation_policy', 'period_id',
@@ -557,6 +558,8 @@ class SeedProjectService:
         # only revisions validated from 1.1.1 on carry the upstream bilingual projection.
         labels = display_labels(template.get('identity_revision', {}).get('content', {})
                                  .get('display_metadata', []), language)
+        catalog_labels, display_issues = exact_flow_labels(self.c.client, revision.graph_snapshot, language)
+        labels = {**catalog_labels, **labels}
         for field in fields:
             key = f"{field['process_id']}::{field['port_id']}"
             if key in labels:
@@ -573,6 +576,7 @@ class SeedProjectService:
             'content_sha256': revision.content_sha256,
             'template_title': pick_name(template.get('title_display') or {}, language) or template['title'],
             'fields': fields, 'process_graph': process_graph_projection(revision.graph_snapshot),
+            'flow_display_issues': display_issues,
             'demand': inputs.get('demand', template['demand']),
             'demand_mode': inputs.get('demand_mode', 'explicit'),
             'source': inputs.get('source', template.get('source_default', '模板示例值（未经实测）')),

@@ -3,6 +3,7 @@ import type { ProjectWorkspace, SolvedSystemSnapshot } from '../api/types';
 import { useI18n } from '../i18n';
 import { CalculationTarget } from './CalculationTarget';
 import { ProcessGraph } from './ProcessGraph';
+import { FlowColumnTitle } from './FlowColumnTitle';
 
 /** Quantities come only from this immutable revision; solve inputs come from its frozen receipt. */
 export function ReadOnlyProjectInventory({ workspace, snapshot }: {
@@ -17,7 +18,7 @@ export function ReadOnlyProjectInventory({ workspace, snapshot }: {
     {workspace.process_graph ? <ProcessGraph graph={workspace.process_graph} /> : null}
     <Table rowKey="key" pagination={false} scroll={{ x: 720 }} data={workspace.fields} columns={[
       { title: t('pcf.process'), dataIndex: 'process', width: 230 },
-      { title: t('inventory.columnFlow'), dataIndex: 'label', width: 290 },
+      { title: <FlowColumnTitle />, dataIndex: 'label', width: 290 },
       { title: t('inventory.columnDirection'), width: 90, render: (_, row) => row.flow_type === 'biosphere' ? t(row.group === 'inputs' ? 'inventory.intake' : 'inventory.emission') : t(row.group === 'inputs' ? 'inventory.input' : 'inventory.output') },
       { title: t('inventory.columnAmount'), align: 'right', width: 120, render: (_, row) => <span className="tabular">{formatNumber(row.value, { maximumSignificantDigits: 12 })}</span> },
       { title: t('inventory.columnUnit'), dataIndex: 'unit', width: 80 },
