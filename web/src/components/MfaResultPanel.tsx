@@ -20,7 +20,8 @@ export function MfaResultPanel({ result, seriesId, snapshotId }: {
     </div>
     <Tabs defaultActiveTab="flow">
       <Tabs.TabPane key="flow" title={t('mfa.chart')}>
-        <SankeyViewer src={`/api/v1/solved-system-snapshots/${snapshotId}/mfa/sankey.svg?series_id=${encodeURIComponent(seriesId)}`} alt={t('mfa.chartAlt')} />
+        {/* The existing mass SVG uses 10px for its smallest labels. Scale only its viewport to 12px. */}
+        <SankeyViewer defaultZoom="detail" readableScale={1.2} src={`/api/v1/solved-system-snapshots/${snapshotId}/mfa/sankey.svg?series_id=${encodeURIComponent(seriesId)}`} alt={t('mfa.chartAlt')} />
       </Tabs.TabPane>
       <Tabs.TabPane key="detail" title={t('mfa.details')}>
         <Table<Record<string, unknown> & { _row: number }> rowKey="_row" pagination={{ pageSize: 12 }} data={series.links.map((link, index) => ({ ...link, _row: index }))}

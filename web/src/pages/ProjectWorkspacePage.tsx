@@ -144,11 +144,11 @@ function ProjectWorkspace({ applicationId, name, purposeBound, returnedBound, me
     <PageHeader title={name} description="" />
     {workspace.data && !badSelection ? <div className="project-header-actions">
       <div className="project-version-bar"><span>{t('workspace.dataVersion')}</span><Select aria-label={t('workspace.dataVersionAria')} value={revisionId} disabled={saving || solve.isPending} onChange={requestRevision} options={revisions.data?.map(r => ({ label: `${t('workspace.shortRevision', { number: r.revision_number })} · ${versionDate(r.created_at)}`, value: r.id }))} /></div>
-      <Link className="arco-btn arco-btn-secondary project-history-button" to={`/applications/${applicationId}/history?revision=${revisionId}`}
+      <Link className="arco-btn arco-btn-text project-history-button" to={`/applications/${applicationId}/history?revision=${revisionId}`}
         onClick={event => { if (saving || solve.isPending) event.preventDefault(); else if (draftDirty) { event.preventDefault(); setPendingLeave(event.currentTarget.getAttribute('href')); } }}>{t('workspace.history')}</Link>
-      <span className="project-save-status" role="status">{saving ? t('workspace.saving') : draftDirty ? t('workspace.unsaved') : ''}</span>
-      <Button disabled={saving || solve.isPending || (!draftDirty && workspace.data.saved)} loading={saving} onClick={() => { void formRef.current?.save().catch(() => undefined); }}>{t('form.save')}</Button>
-      <Button type="primary" disabled={saving || solve.isPending} onClick={beginCalculation}>{t('workspace.calculate')}</Button>
+      <span className="project-save-status" role="status">{saving ? t('workspace.saving') : draftDirty ? t('workspace.unsaved') : workspace.data.saved ? t('workspace.saved') : ''}</span>
+      <Button type="outline" disabled={saving || solve.isPending || (!draftDirty && workspace.data.saved)} loading={saving} onClick={() => { void formRef.current?.save().catch(() => undefined); }}>{t('form.save')}</Button>
+      <Button type="primary" loading={solve.isPending} disabled={saving || solve.isPending} onClick={beginCalculation}>{t('workspace.calculate')}</Button>
     </div> : null}
     </div>
     {error ? <ErrorState error={error} onRetry={retry} /> : badSelection ? <Alert type="error" content={t('workspace.badSelection')} action={<Button onClick={() => setParams({ step: 'data' })}>{t('workspace.clearSelection')}</Button>} /> : !workspace.data ? <LoadingState /> : <>

@@ -287,7 +287,7 @@ export function CbamRuleTrialPanel(props: Props) {
         </div> : null}
         <ResultHeaderActions>
           {simple?.schema_version === 'nebula_one.cbam.trial.v2' ? <ResultExportMenu disabled={reportPending} actions={[{key: 'report', label: t('cbam.downloadHtml'), run: downloadReport}]} /> : null}
-          <Button size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button>
+          <Button type="text" size="small" icon={<IconInfoCircle />} onClick={() => setAuditVisible(true)}>{t('results.details')}</Button>
         </ResultHeaderActions>
         {reportError ? <ErrorState error={reportError} onRetry={downloadReport} /> : null}
       </> : null}

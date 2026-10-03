@@ -6,7 +6,7 @@ type Graph = NonNullable<ProjectWorkspace['process_graph']>;
 
 // Column x per layer, row y per node inside a layer. This is a plain layered view, not an
 // automatic-layout solver: it only reflects the edges the revision already declares.
-const NODE_W = 160, NODE_H = 72, GAP_X = 48, GAP_Y = 24, PAD = 16;
+const NODE_W = 160, NODE_H = 52, GAP_X = 32, GAP_Y = 20, PAD = 12;
 
 function layersOf(graph: Graph): string[][] {
   const incoming = new Map(graph.nodes.map(n => [n.id, new Set<string>()]));

@@ -1,18 +1,20 @@
 import { Button } from '@arco-design/web-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { OrganizationLifecyclePanel } from '../components/OrganizationLifecyclePanel';
-import { PageHeader } from '../components/ui/PageHeader';
+import { IconArrowLeft } from '@arco-design/web-react/icon';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
 import { useI18n } from '../i18n';
+import { ResultActionsTarget } from '../components/ResultHeaderActions';
 
 export function OrganizationCalculationPage() {
   const { applicationId = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const { t, lang } = useI18n();
   const client = useQueryClient();
+  const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null);
   const attempted = useRef('');
   const snapshotId = params.get('snapshot') ?? '';
   const activeSnapshot = useRef(snapshotId);
@@ -43,8 +45,13 @@ export function OrganizationCalculationPage() {
     }
   }, [applicationId, snapshot, method, recordId]);
   const back = `/applications/${applicationId}/workbench${snapshot ? `?revision=${snapshot.system_revision_id}` : ''}`;
-  return <main className="app-page"><PageHeader title={t('task.organization')} description={application.data?.name ?? ''}
-    action={<Button href={back}>{t('analysis.backToProject')}</Button>} />
+  return <ResultActionsTarget.Provider value={actionsTarget}><main className="app-page compact-result-page"><header className="result-page-header">
+    <div className="result-page-header__top">
+      <Button type="text" size="small" icon={<IconArrowLeft />} href={back}>{t('analysis.backToProject')}</Button>
+      <h1>{application.data?.name ?? ''} <span>· {t('task.organization')}</span></h1>
+      <div className="result-header-actions" ref={setActionsTarget} />
+    </div>
+  </header>
     {application.isLoading || snapshots.isLoading || packages.isLoading ? <LoadingState /> : null}
     {application.isError || snapshots.isError || packages.isError ? <ErrorState error={application.error || snapshots.error || packages.error} /> : null}
     {calculate.isPending ? <LoadingState /> : null}
@@ -52,5 +59,5 @@ export function OrganizationCalculationPage() {
     {!snapshot || !method ? (!snapshots.isLoading && !packages.isLoading ? <EmptyState description={t('results.taskMissing')} /> : null) : recordId || calculate.isError ?
       <section className="section-panel"><OrganizationLifecyclePanel applicationId={applicationId} snapshot={snapshot} method={method}
         methodPackages={packages.data} recordId={recordId} onCreated={id => setParams({ snapshot: snapshot.id, record: id })} /></section> : null}
-  </main>;
+  </main></ResultActionsTarget.Provider>;
 }

@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import type { MethodPackage, OrganizationLifecycleActivity, SolvedSystemSnapshot } from '../api/types';
 import { useI18n } from '../i18n';
 import { EmptyState, ErrorState, LoadingState } from './ui/States';
+import { ResultHeaderActions } from './ResultHeaderActions';
 
 interface CategoryRule { name?: string; factor_boundary?: string; boundary_status?: string; eligible_consumer_exchange_ids?: string[]; exchange_labels?: Record<string, string> }
 interface Entry { enabled: boolean; factorRef: string; factor: string; version: string; source: string; hash: string; evidenceRole: 'supplier_specific' | 'demonstration_proxy'; methodId: string; methodVersion: string; methodHash: string; referenceProduct: string }
@@ -94,11 +95,8 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
   }
   if (lang === 'en' && display.isLoading) return <LoadingState rows={4} />;
   if (lang === 'en' && display.isError) return <ErrorState error={display.error} />;
-  return <div className="pcf-result">
-    <h3>{t('org.title')}</h3>
-    <p>{t('org.currentModel')}</p>
-    <details><summary>{t('org.methodDetails')}</summary><p>{t('org.intro')}</p><p>{t('org.scopeNote')}</p></details>
-    {hasFrozenResult ? <Button type="text" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button> : null}
+  return <div className="pcf-result organization-result">
+    {hasFrozenResult ? <ResultHeaderActions><Button type="text" size="small" onClick={() => setShowSettings(value => !value)}>{t('org.additionalSettings')}</Button></ResultHeaderActions> : null}
     {periods.isLoading || workspace.isLoading || records.isLoading ? <LoadingState rows={4} /> : null}
     {periods.isError || workspace.isError || records.isError ? <ErrorState error={periods.error || workspace.error || records.error} /> : null}
     {showSettings || (!records.isLoading && !hasFrozenResult) ? <><div className="project-period-form">
@@ -152,9 +150,16 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
     <Button type="primary" loading={create.isPending} onClick={() => create.mutate()}>{t('org.calculate')}</Button>
     {create.isError ? <ErrorState error={create.error} /> : null}
     </> : null}
-    {!recordId && !records.isLoading ? <h4>{t('org.savedResults')}</h4> : null}
     {records.isLoading ? null : matching.filter(record => !recordId || record.id === recordId).length ? matching.filter(record => !recordId || record.id === recordId).map(record => <section className="section-panel" key={record.id}>
       <strong>{record.result.activity_basis.mode === 'current_model_total' ? t('org.currentModel') : periodName(record.result.reporting_period)} · {record.result.facility}</strong>
+      <ResultHeaderActions><Button type="outline" size="small" href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></ResultHeaderActions>
+      <p className="organization-result__basis">{t('org.resultBasis', { basis: record.result.activity_basis.mode === 'current_model_total' ? t('org.currentTotal') : lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
+      <Table rowKey="key" pagination={false} data={[
+        { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
+        { key: 'energy', ...record.result.groups.purchased_energy_lifecycle, label: t('org.groupEnergy') },
+        { key: 'other', ...record.result.groups.other_value_chain, label: t('org.groupOther') },
+      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), align: 'right', render: (_, row) => row.value == null ? t('org.unknown') : `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
+      <p>{t(record.result.combined_total == null ? 'org.coveragePartial' : 'org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
       {record.result.climate_source?.unassigned_suppliers?.length ? <div>
         <p>{t('org.unassignedSupply')}</p><ul>{record.result.climate_source.unassigned_suppliers.map(row =>
           <li key={row.consumer_exchange_id}>{workspace.data?.fields.find(field => `${field.process_id}::${field.port_id}` === row.consumer_exchange_id)?.label ?? row.consumer_exchange_id}
@@ -166,14 +171,6 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
           <li key={`${term.process_uuid}:${term.exchange_id}`}>{term.flow_uuid}@{term.flow_version} · {term.exchange_id} · {format(term.amount)} {term.amount_unit}</li>
         )}</ul></details>
       </> : null}
-      <p><Button href={`/api/v1/applications/${applicationId}/organization-lifecycle-inventories/${record.id}/report.html?lang=${lang}`} target="_blank">{t('org.openReport')}</Button></p>
-      <p>{t('org.resultBasis', { basis: record.result.activity_basis.mode === 'current_model_total' ? t('org.currentTotal') : lang === 'en' ? display.data?.labels.input_basis[record.result.activity_basis.mode] ?? record.result.activity_basis.mode : labels.input_basis?.[record.result.activity_basis.mode] ?? record.result.activity_basis.mode, output: format(record.result.activity_basis.period_output), scale: format(record.result.activity_basis.scale_factor) })}</p>
-      <Table rowKey="key" pagination={false} data={[
-        { key: 'direct', ...record.result.groups.on_site_direct, label: t('org.groupDirect') },
-        { key: 'energy', ...record.result.groups.purchased_energy_lifecycle, label: t('org.groupEnergy') },
-        { key: 'other', ...record.result.groups.other_value_chain, label: t('org.groupOther') },
-      ]} columns={[{ title: t('org.group'), dataIndex: 'label' }, { title: t('org.emissions'), render: (_, row) => row.value == null ? t('org.unknown') : `${format(row.value)} ${row.unit}` }, { title: t('org.status'), render: (_, row) => groupStatus(row.status) }]} />
-      <p>{t(record.result.combined_total == null ? 'org.coveragePartial' : 'org.coverage', { total: format(record.result.combined_total), missing: record.result.coverage.missing_categories.map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), outside: (record.result.coverage.not_in_boundary_categories ?? []).map(categoryName).join(lang === 'zh' ? '、' : ', ') || t('org.none'), proxy: record.result.coverage.demonstration_proxy_activity_ids.length ? t('org.itemCount', { count: record.result.coverage.demonstration_proxy_activity_ids.length }) : t('org.none') })}</p>
       {record.result.groups.other_value_chain.categories.filter(item => item.supply_receipts?.length).map(item => <details key={`supply:${item.category}`}>
         <summary>{categoryName(item.category)} · {format(item.value)} kg CO2-Eq</summary>
         <ul>{item.supply_receipts?.map(row => <li key={row.consumer_exchange_id}>
@@ -184,7 +181,7 @@ export function OrganizationLifecyclePanel({ applicationId, snapshot, method, me
         {item.missing_exchange_ids?.length ? <p>{t('org.unknown')} · {item.missing_exchange_ids.join(', ')}</p> : null}
       </details>)}
       {record.result.groups.other_value_chain.categories.filter(item => item.proxy_reference_value != null).map(item => <p key={item.category}>{t('org.proxyReference', { name: categoryName(item.category), value: format(item.proxy_reference_value) })}</p>)}
-      <small>{t('org.methodEvidence', { method: record.result.method_package.reference, hash: record.content_sha256 })}</small>
+      <details className="organization-result__evidence"><summary>{t('org.methodDetails')}</summary><p>{t('org.intro')}</p><p>{t('org.scopeNote')}</p><small>{t('org.methodEvidence', { method: record.result.method_package.reference, hash: record.content_sha256 })}</small></details>
     </section>) : <EmptyState description={t('org.noResults')} />}
   </div>;
 }

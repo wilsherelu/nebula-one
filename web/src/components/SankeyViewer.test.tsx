@@ -11,14 +11,25 @@ function renderViewer(element: React.ReactElement) {
 }
 
 describe('SankeyViewer', () => {
+  it('opens the complete original SVG at a readable scale and resets when the record changes', () => {
+    const { rerender } = renderViewer(<SankeyViewer src="/api/first.svg" alt="MFA" defaultZoom="detail" readableScale={1.2} />);
+    const image = screen.getByRole('img', { name: 'MFA' });
+    Object.defineProperty(image, 'naturalWidth', { value: 3024 });
+    fireEvent.load(image);
+    expect(image).toHaveStyle({ width: '3629px' });
+    expect(screen.getByRole('radio', { name: '可读比例' })).toBeChecked();
+    rerender(<I18nProvider><SankeyViewer src="/api/second.svg" alt="MFA" defaultZoom="detail" readableScale={1.2} /></I18nProvider>);
+    expect(screen.getByRole('img')).toHaveAttribute('src', '/api/second.svg');
+    expect(screen.getByLabelText('正在加载')).toBeInTheDocument();
+  });
   it('zooms only the viewport without changing the source result', async () => {
     renderViewer(<SankeyViewer src="/api/exact.svg" alt="MFA" />);
     const image = screen.getByRole('img', { name: 'MFA' });
     fireEvent.load(image);
-    await userEvent.click(screen.getByRole('radio', { name: '放大查看' }));
+    await userEvent.click(screen.getByRole('radio', { name: '可读比例' }));
     expect(image).toHaveClass('is-enlarged');
     expect(image).toHaveAttribute('src', '/api/exact.svg');
-    await userEvent.click(screen.getByRole('radio', { name: '适配宽度' }));
+    await userEvent.click(screen.getByRole('radio', { name: '全图概览' }));
     expect(image).not.toHaveClass('is-enlarged');
   });
   it('shows a scrollable loading state and exposes the original SVG', () => {
@@ -56,7 +67,7 @@ describe('SankeyViewer', () => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
     renderViewer(<SankeyViewer src="/api/exact.svg" alt="Material flow" />);
     fireEvent.load(screen.getByRole('img', { name: 'Material flow' }));
-    await userEvent.click(screen.getByRole('radio', { name: 'Zoom in' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Readable scale' }));
     expect(screen.getByLabelText('Scrollable Sankey diagram')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open full chart' })).toHaveAttribute('href', '/api/exact.svg');
   });

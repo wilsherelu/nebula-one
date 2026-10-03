@@ -22,5 +22,5 @@ export function ResultExportMenu({ actions, disabled = false }: {
   const { t } = useI18n();
   return <Dropdown trigger="click" droplist={<Menu onClickMenuItem={key => actions.find(action => action.key === key)?.run()}>
     {actions.map(action => <Menu.Item key={action.key}>{action.label}</Menu.Item>)}
-  </Menu>}><Button size="small" disabled={disabled}>{t('results.export')} <IconDown /></Button></Dropdown>;
+  </Menu>}><Button type="outline" size="small" disabled={disabled}>{t('results.export')} <IconDown /></Button></Dropdown>;
 }

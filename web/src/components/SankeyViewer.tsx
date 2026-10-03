@@ -10,6 +10,8 @@ interface SankeyViewerProps {
   helperText?: string;
   viewportLabel?: string;
   errorText?: string;
+  defaultZoom?: 'fit' | 'detail';
+  readableScale?: number;
 }
 
 export function SankeyViewer({
@@ -18,16 +20,21 @@ export function SankeyViewer({
   helperText,
   viewportLabel,
   errorText,
+  defaultZoom = 'fit',
+  readableScale = 1,
 }: SankeyViewerProps) {
   const { t } = useI18n();
   const [attempt, setAttempt] = useState(0);
-  const [zoom, setZoom] = useState('fit');
+  const [zoom, setZoom] = useState(defaultZoom);
+  const [naturalWidth, setNaturalWidth] = useState<number>();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
     setState('loading');
     setAttempt(0);
-  }, [src]);
+    setZoom(defaultZoom);
+    setNaturalWidth(undefined);
+  }, [src, defaultZoom]);
 
   const retry = () => {
     setState('loading');
@@ -68,7 +75,8 @@ export function SankeyViewer({
           className={`${state === 'ready' ? '' : 'is-pending'} ${zoom === 'detail' ? 'is-enlarged' : ''}`}
           src={imageSrc}
           alt={alt}
-          onLoad={() => setState('ready')}
+          style={zoom === 'detail' && naturalWidth ? { width: Math.ceil(naturalWidth * readableScale) } : undefined}
+          onLoad={event => { setNaturalWidth(event.currentTarget.naturalWidth); setState('ready'); }}
           onError={() => setState('error')}
         />
       </div>

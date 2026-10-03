@@ -148,14 +148,16 @@ export function ProductCarbonFootprintPanel({
       ]} /></ResultHeaderActions>
       {artifactError ? <ErrorState error={artifactError} onRetry={failedAction ? () => runArtifactAction(failedAction) : undefined} /> : null}
 
-      <div className="pcf-result__summary">
+      <div className="pcf-result__summary pcf-product-summary">
         <CalculationTarget workspace={workspace} demand={result.functional_unit.reference_flow_uuid
           ? [{ ...result.functional_unit, reference_flow_uuid: result.functional_unit.reference_flow_uuid }] : undefined} />
-        <MetricCard
+        <div className="pcf-product-summary__value"><MetricCard
           label={resultLabel}
           value={formatNumber(result.total_footprint.value)}
           unit={result.total_footprint.unit}
         />
+        {!result.boundary_claim.complete_product_declaration ? <p className="result-coverage-note">{t(result.boundary_claim.coverage === 'foreground_only' ? 'pcf.coverageForeground' : 'pcf.coverageBackground')}</p> : null}
+        </div>
         <dl className="pcf-result__facts">
           <div><dt>{t('pcf.functionalUnit')}</dt><dd>{functionalUnit}</dd></div>
           <div><dt>{t('pcf.method')}</dt><dd>{result.method_package.lcia_method}</dd></div>
@@ -163,9 +165,6 @@ export function ProductCarbonFootprintPanel({
         </dl>
       </div>
 
-      {!result.boundary_claim.complete_product_declaration ? (
-        <p className="result-coverage-note">{t(result.boundary_claim.coverage === 'foreground_only' ? 'pcf.coverageForeground' : 'pcf.coverageBackground')}</p>
-      ) : null}
 
 
       <section className="pcf-result__hotspots" aria-labelledby="pcf-hotspots-title">
