@@ -283,8 +283,8 @@ export function AnalysisResultsPage() {
   });
   const selectedEnergy = energyResults.data?.[energyResults.data.length - 1];
   const solvedMfa = useQuery({
-    queryKey: ['solved-mfa', selected?.id],
-    queryFn: () => api.solvedMfa(selected!.id),
+    queryKey: ['solved-mfa', selected?.id, lang],
+    queryFn: () => api.solvedMfa(selected!.id, lang),
     enabled: Boolean(selected),
   });
   const boundaries = useQuery({
@@ -562,7 +562,7 @@ export function AnalysisResultsPage() {
                 <ProductCarbonFootprintPanel
                   workspace={resultWorkspace.data}
                   snapshotId={selected.id}
-                  exchangeNames={Object.fromEntries((resultWorkspace.data?.fields ?? []).filter(field => field.process_id && field.port_id).map(field => [`${field.process_id}::${field.port_id}`, field.label]))}
+                  exchangeNames={Object.fromEntries((resultWorkspace.data?.fields ?? []).filter(field => field.process_id && field.port_id).map(field => [`${field.process_id}::${field.port_id}`, `${field.label}${field.description ? ' — ' + field.description : ''}`]))}
                   processNodes={processDisplayNodes({
                     workspaceNodes: resultWorkspace.data?.process_graph?.nodes ?? [],
                     exchanges: [...selected.scaled_elementary_exchanges, ...selected.scaled_technosphere_exchanges],

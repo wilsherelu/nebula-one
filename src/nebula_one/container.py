@@ -126,7 +126,7 @@ def build_container(
     provider_solves = ProviderSolveService(
         database, analysis_runs, results, native_climate, native_inventory
     )
-    solved_mfa = SolvedMFAService(database, client)
+    solved_mfa = SolvedMFAService(database, client, settings.casepack_roots)
     energy_carrier_results = EnergyCarrierResultService(database)
     energy_flows = EnergyFlowService(database)
     water_balances = WaterBalanceService(database)

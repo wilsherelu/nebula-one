@@ -43,7 +43,8 @@ class FrozenReportService:
             "sources": {"result": result, "workspace_identity": workspace.get("frozen_identity"),
                         "frozen_snapshot": snapshot,
                         "snapshot_hash": snapshot["content_sha256"], "provider_receipt": snapshot["provider_receipt"],
-                        "display_name_sources": names, "display_name_issues": issues}}
+                        "display_name_sources": names, "display_name_issues": issues,
+                        "case_display_sources": workspace.get('case_display_sources', [])}}
 
     def cbam(self, snapshot_id, payload, lang="zh"):
         result = self.c.cbam_trials.analyze(snapshot_id, payload)

@@ -23,6 +23,7 @@ from ..mapped_background_schemas import ProviderMappedBackgroundProcessPin
 from .project_mapped_background import ProjectMappedBackgroundService
 from .project_user_background import ProjectUserBackgroundService
 from .flow_display import exact_flow_labels
+from .case_display import display_project_graph
 
 BOUNDARY_FIELDS = ('name', 'boundary_type', 'included_entity_ids', 'included_process_ids',
                    'included_flow_rules', 'excluded_items', 'consolidation_policy', 'period_id',
@@ -96,7 +97,11 @@ def inventory_fields(graph):
                     'label': port.get('name', port['id']), 'group': group, 'flow_type': port.get('type'), 'value': port.get('amount'),
                     'unit': port.get('unit'), 'flow_uuid': port.get('flowUuid', port.get('flow_uuid')),
                     'mode': node.get('mode'), 'linked': (node['id'], port['id']) in aliases,
-                    'reference_product': bool(port.get('isProduct'))})
+                    'reference_product': bool(port.get('isProduct')),
+                    **({'description': port['display_description']} if port.get('display_description') else {}),
+                    **({'source_label': port['source_display_name'], 'source_process_name': node.get('source_display_name')}
+                       if 'source_display_name' in port else {}),
+                    **({'source_catalog_label': port['source_catalog_display_name']} if port.get('source_catalog_display_name') else {})})
     return fields
 
 
@@ -109,8 +114,10 @@ def process_graph_projection(graph):
     """
     nodes = [{'id': node['id'], 'name': node.get('name', node['id'])} for node in graph.get('nodes', [])]
     node_ids = {node['id'] for node in nodes}
+    labels = {(node['id'], port['id']): port['name'] for node in graph.get('nodes', [])
+              for port in node.get('outputs', []) if port.get('source_display_name') and port.get('name')}
     edges = [
-        {'source': edge['fromNode'], 'target': edge['toNode'], 'label': edge.get('name', edge['id'])}
+        {'source': edge['fromNode'], 'target': edge['toNode'], 'label': labels.get((edge['fromNode'], edge.get('sourcePortId')), edge.get('name', edge['id']))}
         for edge in graph.get('exchanges', [])
         if edge['fromNode'] in node_ids and edge['toNode'] in node_ids and edge['fromNode'] != edge['toNode']
     ]
@@ -552,21 +559,23 @@ class SeedProjectService:
         # same field/port contract is used without pretending the return is an installed seed record.
         template = template or application.context['seed_template']
         inputs = revision.application_context.get('project_inputs', {})
-        fields = inventory_fields(revision.graph_snapshot)
-        ports = list_background_ports(revision.graph_snapshot)
         # A project keeps the display projection its own template version was created with;
         # only revisions validated from 1.1.1 on carry the upstream bilingual projection.
         labels = display_labels(template.get('identity_revision', {}).get('content', {})
                                  .get('display_metadata', []), language)
         catalog_labels, display_issues = exact_flow_labels(self.c.client, revision.graph_snapshot, language)
         labels = {**catalog_labels, **labels}
+        graph, case_sources = display_project_graph(revision.graph_snapshot, self.c.settings.casepack_roots, language, labels)
+        fields = inventory_fields(graph)
+        ports = list_background_ports(graph)
         for field in fields:
             key = f"{field['process_id']}::{field['port_id']}"
-            if key in labels:
+            if key in labels and 'source_label' not in field:
                 field['label'] = labels[key]
         for port in ports:
-            if port['exchange_id'] in labels:
-                port['label'] = labels[port['exchange_id']]
+            field = next((f for f in fields if f"{f['process_id']}::{f['port_id']}" == port['exchange_id']), None)
+            if field:
+                port['label'] = field['label']
         mapped = inputs.get('mapped_background_process_pins', [])
         providers = {str(pin.get('process_uuid') or '') for pin in mapped} - {''}
         # The pinned native climate contract answers mapped providers without bare provider pins.
@@ -575,8 +584,9 @@ class SeedProjectService:
         return {'application_id': application.id, 'revision_id': revision.id,
             'content_sha256': revision.content_sha256,
             'template_title': pick_name(template.get('title_display') or {}, language) or template['title'],
-            'fields': fields, 'process_graph': process_graph_projection(revision.graph_snapshot),
+            'fields': fields, 'process_graph': process_graph_projection(graph),
             'flow_display_issues': display_issues,
+            'case_display_sources': case_sources,
             'demand': inputs.get('demand', template['demand']),
             'demand_mode': inputs.get('demand_mode', 'explicit'),
             'source': inputs.get('source', template.get('source_default', '模板示例值（未经实测）')),

@@ -83,7 +83,7 @@ def _exchange_catalog(graph: dict[str, Any]) -> dict[str, dict[str, str]]:
                 if not port_id:
                     continue
                 exchanges[f"{node_id}::{port_id}"] = {
-                    "name": _text(raw_port.get("name")),
+                    "name": _text(raw_port.get("name")) + (' — ' + raw_port['display_description'] if raw_port.get('display_description') else ''),
                     "flow_uuid": _text(
                         raw_port.get("flowUuid") or raw_port.get("flow_uuid")
                     ),

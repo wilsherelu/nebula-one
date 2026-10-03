@@ -14,6 +14,7 @@ from .analysis.pcf_visual import render_product_pcf_svg
 from .analysis.carbon_management_visual import render_carbon_management_svg
 from .organization_lifecycle_display import organization_lifecycle_display
 from .errors import DomainError
+from .release_resources import read_language
 from .hashing import canonical_json_sha256
 from .schemas import AnalysisRunOut, OutboxEventOut, QueuedAnalysisRunOut
 from .runtime_schemas import (
@@ -594,9 +595,10 @@ def analyze_solved_mfa(
     solved_snapshot_id: str,
     request: Request,
     tolerance: float = Query(default=1e-9, ge=0),
+    lang: str = 'zh',
 ) -> dict:
     return _container(request).solved_mfa.analyze(
-        solved_snapshot_id, tolerance=tolerance
+        solved_snapshot_id, tolerance=tolerance, language=read_language(lang)
     )
 
 
@@ -606,11 +608,13 @@ def render_solved_mfa_sankey(
     request: Request,
     series_id: str | None = None,
     tolerance: float = Query(default=1e-9, ge=0),
+    lang: str = 'zh',
 ) -> Response:
     svg = _container(request).solved_mfa.sankey_svg(
         solved_snapshot_id,
         series_id=series_id,
         tolerance=tolerance,
+        language=read_language(lang),
     )
     return Response(content=svg, media_type="image/svg+xml")
 

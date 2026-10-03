@@ -330,7 +330,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  solvedMfa: (snapshotId: string) => requestJson<SolvedMfaResult>(`/api/v1/solved-system-snapshots/${snapshotId}/mfa`),
+  solvedMfa: (snapshotId: string, lang = 'zh') => requestJson<SolvedMfaResult>(`/api/v1/solved-system-snapshots/${snapshotId}/mfa?lang=${lang}`),
   boundaries: (applicationId: string) => requestJson<BoundaryDefinition[]>(`/api/v1/applications/${applicationId}/boundaries`),
   spatialAggregate: (snapshotId: string, boundaryId: string) =>
     requestJson<SpatialAggregateResult>(`/api/v1/solved-system-snapshots/${snapshotId}/spatial-aggregate`, {

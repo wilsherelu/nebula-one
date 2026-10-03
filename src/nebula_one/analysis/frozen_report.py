@@ -7,7 +7,7 @@ from .solved_mfa import _exchange_catalog, _process_catalog
 
 
 def names(graph, workspace):
-    processes, _ = _process_catalog(graph)
+    processes, node_to_process = _process_catalog(graph)
     exchanges = _exchange_catalog(graph)
     for field in workspace.get("fields", []):
         # A linked input shares its quantity key with the supplier output, but retains
@@ -15,6 +15,11 @@ def names(graph, workspace):
         exchange_id = (f"{field['process_id']}::{field['port_id']}"
                        if field.get('process_id') and field.get('port_id') else field['key'])
         exchanges.setdefault(exchange_id, {})["name"] = field["label"]
+        if field.get('description'):
+            exchanges[exchange_id]['name'] += ' — ' + field['description']
+        process = node_to_process.get(field.get('process_id'))
+        if process in processes and field.get('process'):
+            processes[process]['label'] = field['process']
     return processes, exchanges
 
 

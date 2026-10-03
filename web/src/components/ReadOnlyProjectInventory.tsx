@@ -18,7 +18,7 @@ export function ReadOnlyProjectInventory({ workspace, snapshot }: {
     {workspace.process_graph ? <ProcessGraph graph={workspace.process_graph} /> : null}
     <Table rowKey="key" pagination={false} scroll={{ x: 720 }} data={workspace.fields} columns={[
       { title: t('pcf.process'), dataIndex: 'process', width: 230 },
-      { title: <FlowColumnTitle />, dataIndex: 'label', width: 290 },
+      { title: <FlowColumnTitle />, dataIndex: 'label', width: 290, render: (_, row) => <span>{row.label}{row.description ? <small className="inventory-linked">{row.description}</small> : null}</span> },
       { title: t('inventory.columnDirection'), width: 90, render: (_, row) => row.flow_type === 'biosphere' ? t(row.group === 'inputs' ? 'inventory.intake' : 'inventory.emission') : t(row.group === 'inputs' ? 'inventory.input' : 'inventory.output') },
       { title: t('inventory.columnAmount'), align: 'right', width: 120, render: (_, row) => <span className="tabular">{formatNumber(row.value, { maximumSignificantDigits: 12 })}</span> },
       { title: t('inventory.columnUnit'), dataIndex: 'unit', width: 80 },
@@ -34,7 +34,9 @@ export function ReadOnlyProjectInventory({ workspace, snapshot }: {
         model_processing_rules_ref: workspace.model_processing_rules_ref, demand: basis?.demand ?? workspace.demand,
         project_identity: workspace.frozen_identity,
         snapshot_id: snapshot?.id, snapshot_content_sha256: snapshot?.content_sha256,
-        provider_receipt: snapshot?.provider_receipt }, null, 2)}</pre>
+        provider_receipt: snapshot?.provider_receipt, display_sources: workspace.case_display_sources,
+        original_labels: workspace.fields.filter(row => row.source_label).map(row => ({process_id: row.process_id,
+          port_id: row.port_id, label: row.source_label, process: row.source_process_name, catalog_label: row.source_catalog_label})) }, null, 2)}</pre>
     </details>
   </section>;
 }

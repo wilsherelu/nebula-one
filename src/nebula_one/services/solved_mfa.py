@@ -7,14 +7,17 @@ from ..models import SystemRevision
 from ..runtime_models import SolvedSystemSnapshot
 from ..runtime_schemas import SolvedSystemSnapshotOut
 from .mfa_display_graph import MFADisplayGraph
+from .case_display import display_project_graph
+from .flow_display import exact_flow_labels
 
 
 class SolvedMFAService:
-    def __init__(self, database: Database, client=None) -> None:
+    def __init__(self, database: Database, client=None, display_roots=()) -> None:
         self.database = database
         self.display_graph = MFADisplayGraph(client) if client is not None else None
+        self.display_roots = display_roots
 
-    def analyze(self, solved_snapshot_id: str, *, tolerance: float = 1e-9) -> dict:
+    def analyze(self, solved_snapshot_id: str, *, tolerance: float = 1e-9, language: str = 'zh') -> dict:
         with self.database.session() as db:
             solved = db.get(SolvedSystemSnapshot, solved_snapshot_id)
             if solved is None:
@@ -37,6 +40,11 @@ class SolvedMFAService:
         sources, issues = [], []
         if self.display_graph is not None:
             graph, sources, issues = self.display_graph.enrich(graph, solved_payload["provider_receipt"].get("project_background_process_receipts") or [])
+        labels = {}
+        if self.display_roots and self.display_graph is not None:
+            labels, label_issues = exact_flow_labels(self.display_graph.client, graph, language)
+            issues.extend(label_issues)
+        graph, case_sources = display_project_graph(graph, self.display_roots, language, labels)
         result = build_solved_mfa(
             solved_snapshot=solved_payload,
             revision_graph=graph,
@@ -44,6 +52,8 @@ class SolvedMFAService:
         )
         result["audit"]["display_name_sources"] = sources
         result["audit"]["display_name_issues"] = issues
+        if case_sources:
+            result['audit']['case_display_sources'] = case_sources
         return result
 
     def sankey_svg(
@@ -52,8 +62,9 @@ class SolvedMFAService:
         *,
         series_id: str | None = None,
         tolerance: float = 1e-9,
+        language: str = 'zh',
     ) -> str:
-        result = self.analyze(solved_snapshot_id, tolerance=tolerance)
+        result = self.analyze(solved_snapshot_id, tolerance=tolerance, language=language)
         series = result["series"]
         if not series:
             raise DomainError(

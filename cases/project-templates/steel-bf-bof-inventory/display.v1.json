@@ -1,0 +1,343 @@
+{
+  "schema_version": "nebula_one.case-display.v1",
+  "id": "steel-bf-bof-readable-names",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "owner": "Nebula One authored steel case",
+  "source_seed": {
+    "id": "nebula.iron-steel.bf-bof-crude-steel",
+    "version": "1.1.0"
+  },
+  "source_files": [
+    {
+      "path": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/model/graph.json",
+      "sha256": "69336d77bb968fc9666cf5a26e2d349b27d09c4b4d8ef26367e269773113febc"
+    },
+    {
+      "path": "cases/standard-lca-seeds/iron-steel-bf-bof-crude-steel/model/owned-flows.json",
+      "sha256": "fac62b13fa53e18fda2dd6d267c70a23c62bd2cc191685fb6910e657aef0bfcf"
+    }
+  ],
+  "note": "Authored presentation translations and short labels only. Original assets and catalog names remain unchanged; exact identity and original process/exchange names govern applicability. No factors, flow substitutions or structural changes.",
+  "processes": [
+    {
+      "node_id": "ore-sintering",
+      "process_uuid": "ccb77787-6ccb-5b7d-9de5-5ee661f4387a",
+      "source_name": "Iron ore sintering strand",
+      "names": {
+        "zh": "铁矿石烧结",
+        "en": "Iron ore sintering strand"
+      }
+    },
+    {
+      "node_id": "blast-furnace",
+      "process_uuid": "6c426a97-262a-5a7c-877f-8ff58c8eb202",
+      "source_name": "Blast furnace (liquid pig iron)",
+      "names": {
+        "zh": "高炉炼铁",
+        "en": "Blast furnace (liquid pig iron)"
+      }
+    },
+    {
+      "node_id": "basic-oxygen-converter",
+      "process_uuid": "b601279e-2bc5-5a33-8b0d-07ca234d7fbb",
+      "source_name": "Basic oxygen converter",
+      "names": {
+        "zh": "转炉炼钢",
+        "en": "Basic oxygen converter"
+      }
+    },
+    {
+      "node_id": "secondary-metallurgy-and-degassing",
+      "process_uuid": "d422196a-2dba-5c98-ba7a-7c86f1d6ec6b",
+      "source_name": "Secondary metallurgy and vacuum degassing",
+      "names": {
+        "zh": "二次冶金与真空脱气",
+        "en": "Secondary metallurgy and vacuum degassing"
+      }
+    },
+    {
+      "node_id": "continuous-casting",
+      "process_uuid": "ea66dbd3-03e1-5ff8-a1d0-9662604392c0",
+      "source_name": "Continuous slab caster",
+      "names": {
+        "zh": "连铸",
+        "en": "Continuous slab caster"
+      }
+    }
+  ],
+  "flows": [
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "fdba4f91-bbc9-5ea8-86d9-2ecb831afe09",
+      "version": "1.1.0",
+      "names": {
+        "zh": "铁矿石（未烧结精矿粉）",
+        "en": "Iron ore concentrate (not agglomerated)"
+      },
+      "source_names": {
+        "zh": "铁矿石（未烧结精矿粉，标准 seed 自建）",
+        "en": "Iron ore concentrate, not agglomerated (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "ca40b889-cf9a-5aac-89c6-45f820da3b65",
+      "version": "1.1.0",
+      "names": {
+        "zh": "石灰石熔剂",
+        "en": "Limestone flux"
+      },
+      "source_names": {
+        "zh": "石灰石熔剂（标准 seed 自建）",
+        "en": "Limestone flux (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "89e07856-8713-57ff-b4a8-104b0119975c",
+      "version": "1.1.0",
+      "names": {
+        "zh": "焦粉",
+        "en": "Coke breeze"
+      },
+      "source_names": {
+        "zh": "焦粉（烧结固体燃料，标准 seed 自建）",
+        "en": "Coke breeze for sintering (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "f4c2a1b3-c84d-5582-88f7-30cf0626045c",
+      "version": "1.1.0",
+      "names": {
+        "zh": "烧结矿",
+        "en": "Sintered ore"
+      },
+      "source_names": {
+        "zh": "烧结矿（标准 seed 自建）",
+        "en": "Sintered ore (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "1b8ac953-3db1-5fef-8fa7-7112ed40aeb3",
+      "version": "1.1.0",
+      "names": {
+        "zh": "冶金焦炭",
+        "en": "Metallurgical coke"
+      },
+      "source_names": {
+        "zh": "冶金焦炭（标准 seed 自建）",
+        "en": "Metallurgical coke (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "abf85061-0371-5ab5-9426-942df477cd84",
+      "version": "1.1.0",
+      "names": {
+        "zh": "喷吹烟煤",
+        "en": "PCI bituminous coal"
+      },
+      "source_names": {
+        "zh": "喷吹烟煤（标准 seed 自建）",
+        "en": "Bituminous coal for pulverised coal injection (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "df1c5ffd-830d-52f4-b600-9a28e8c73013",
+      "version": "1.1.0",
+      "names": {
+        "zh": "高炉铁水",
+        "en": "Hot metal"
+      },
+      "source_names": {
+        "zh": "高炉铁水（标准 seed 自建）",
+        "en": "Blast furnace hot metal, liquid pig iron (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "e4019f2f-542c-59f4-afbd-cee42dd4915f",
+      "version": "1.1.0",
+      "names": {
+        "zh": "高炉炉渣",
+        "en": "Blast furnace slag"
+      },
+      "source_names": {
+        "zh": "高炉炉渣（标准 seed 自建）",
+        "en": "Blast furnace slag (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "74d988a9-b09d-5549-9672-64234caa6f0a",
+      "version": "1.1.0",
+      "names": {
+        "zh": "废钢",
+        "en": "Steel scrap"
+      },
+      "source_names": {
+        "zh": "废钢（标准 seed 自建）",
+        "en": "Steel scrap (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "af57ba56-81ba-58f9-a753-c50d578dc816",
+      "version": "1.1.0",
+      "names": {
+        "zh": "转炉钢水",
+        "en": "Converter liquid steel"
+      },
+      "source_names": {
+        "zh": "转炉钢水（标准 seed 自建）",
+        "en": "Converter liquid steel (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "320a0821-db11-57c9-a1fb-a5f964b998aa",
+      "version": "1.1.0",
+      "names": {
+        "zh": "转炉炉渣",
+        "en": "Converter slag"
+      },
+      "source_names": {
+        "zh": "转炉炉渣（标准 seed 自建）",
+        "en": "Converter slag (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "a5d9b9da-dd04-5a82-968a-ec0b131c3f33",
+      "version": "1.1.0",
+      "names": {
+        "zh": "二次冶金处理钢水",
+        "en": "Secondary metallurgy treated steel"
+      },
+      "source_names": {
+        "zh": "二次冶金处理钢水（标准 seed 自建）",
+        "en": "Secondary metallurgy treated steel (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "e31064bf-4268-5617-b79d-8b7f326d966e",
+      "version": "1.1.0",
+      "names": {
+        "zh": "粗钢连铸板坯",
+        "en": "Crude steel slab"
+      },
+      "source_names": {
+        "zh": "粗钢连铸板坯（标准 seed 自建）",
+        "en": "Continuously cast crude steel slab (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "f44cc9da-b3a8-583e-963d-4ac456a4cd49",
+      "version": "1.1.0",
+      "names": {
+        "zh": "连铸切损与返回废钢",
+        "en": "Casting crop and returned scrap"
+      },
+      "source_names": {
+        "zh": "连铸切损与返回废钢（标准 seed 自建）",
+        "en": "Continuous casting crop and return scrap (seed owned)"
+      }
+    },
+    {
+      "source_namespace": "nebula.standard-lca-seed",
+      "flow_uuid": "345ca664-03ac-55d0-b66b-141c91029812",
+      "version": "1.3.0",
+      "names": {
+        "zh": "天然气（质量基）",
+        "en": "Natural gas (mass basis)"
+      },
+      "source_name": "Natural gas for furnace injection"
+    }
+  ],
+  "exchanges": [
+    {
+      "exchange_id": "ore-sintering::co2-sinter-breeze-out",
+      "source_name": "Carbon dioxide (fossil), sintering solid fuel",
+      "flow": {
+        "source_namespace": "tiangong_open_data",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "version": "03.00.004"
+      },
+      "description": {
+        "zh": "焦粉燃烧",
+        "en": "Coke breeze combustion"
+      }
+    },
+    {
+      "exchange_id": "ore-sintering::co2-sinter-carbonate-out",
+      "source_name": "Carbon dioxide (fossil), limestone carbonate decomposition in the sinter strand",
+      "flow": {
+        "source_namespace": "tiangong_open_data",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "version": "03.00.004"
+      },
+      "description": {
+        "zh": "烧结熔剂中碳酸盐分解",
+        "en": "Carbonate decomposition in sinter flux"
+      }
+    },
+    {
+      "exchange_id": "blast-furnace::co2-bf-reduction-out",
+      "source_name": "Carbon dioxide (fossil), reduction of iron oxides in the burden",
+      "flow": {
+        "source_namespace": "tiangong_open_data",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "version": "03.00.004"
+      },
+      "description": {
+        "zh": "矿石还原",
+        "en": "Ore reduction"
+      }
+    },
+    {
+      "exchange_id": "blast-furnace::co2-bf-raceway-out",
+      "source_name": "Carbon dioxide (fossil), raceway combustion of coke and injected carbon",
+      "flow": {
+        "source_namespace": "tiangong_open_data",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "version": "03.00.004"
+      },
+      "description": {
+        "zh": "风口区燃料燃烧",
+        "en": "Fuel combustion in the raceway"
+      }
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::co2-converter-decarburisation-out",
+      "source_name": "Carbon dioxide (fossil), decarburisation of the hot metal and scrap carbon",
+      "flow": {
+        "source_namespace": "tiangong_open_data",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "version": "03.00.004"
+      },
+      "description": {
+        "zh": "转炉脱碳",
+        "en": "Converter decarburisation"
+      }
+    },
+    {
+      "exchange_id": "basic-oxygen-converter::co2-converter-flux-out",
+      "source_name": "Carbon dioxide (fossil), limestone carbonate decomposition in the converter",
+      "flow": {
+        "source_namespace": "tiangong_open_data",
+        "flow_uuid": "08a91e70-3ddc-11dd-923d-0050c2490048",
+        "version": "03.00.004"
+      },
+      "description": {
+        "zh": "转炉熔剂中碳酸盐分解",
+        "en": "Carbonate decomposition in converter flux"
+      }
+    }
+  ]
+}

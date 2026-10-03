@@ -52,7 +52,8 @@ export interface ProjectWorkspace {
   revision_id: string;
   content_sha256: string;
   template_title: string | null;
-  fields: Array<{ key: string; label: string; process: string; unit: string; value: number; process_id?: string; port_id?: string; group?: string; flow_type?: string; flow_uuid?: string; linked?: boolean; reference_product?: boolean }>;
+  fields: Array<{ key: string; label: string; process: string; unit: string; value: number; process_id?: string; port_id?: string; group?: string; flow_type?: string; flow_uuid?: string; linked?: boolean; reference_product?: boolean; description?: string; source_label?: string; source_process_name?: string; source_catalog_label?: string }>;
+  case_display_sources?: Array<Record<string, unknown>>;
   /** Read-only process topology of the selected revision: nodes are processes, edges are the
    * exchanges the graph actually declares (never inferred from array order). */
   process_graph?: { nodes: Array<{ id: string; name: string }>; edges: Array<{ source: string; target: string; label: string }> };

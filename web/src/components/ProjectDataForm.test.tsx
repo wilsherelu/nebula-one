@@ -121,14 +121,15 @@ describe('Project data editing', () => {
     mount(inventory);
     fireEvent.click(screen.getByRole('button', { name: '高炉' }));
     await userEvent.click(screen.getByRole('button', { name: '选择背景数据' }));
-    expect(await screen.findByText('背景数据 · 高炉 / 电力')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: '关联背景过程' }));
-    // The nested association dialog is locked to this exchange and shows its process / input.
-    expect(screen.getByText('高炉 · 电力')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('combobox', {name: '背景来源'}));
+    // jsdom has no layout for Arco's virtual option list; exercise its selection event.
+    fireEvent.click(screen.getByText('精确引用', {exact:true}));
+    // The one in-place picker stays locked to the same exchange through source selection.
     fireEvent.change(screen.getByLabelText('背景过程 UUID'), { target: { value: pin.process_uuid } });
     fireEvent.change(screen.getByLabelText('数据版本'), { target: { value: pin.version } });
     await userEvent.click(screen.getByRole('button', { name: '校验背景数据' }));
-    await userEvent.click(await screen.findByRole('button', { name: '确认关联并保存' }));
+    await userEvent.click(await screen.findByRole('button', { name: '确认关联' }));
     await waitFor(() => expect(request).toHaveBeenCalledWith('project-a', expect.objectContaining({
       background_process_pins: [expect.objectContaining({ consumer_exchange_id: 'b::electricity', process_uuid: pin.process_uuid })],
     }), 'zh'));
@@ -146,7 +147,7 @@ describe('Project data editing', () => {
     const request = vi.spyOn(api, 'saveProjectInputs').mockResolvedValue({...inventory, background_process_pins: []});
     mount(inventory);
     await userEvent.click(screen.getByRole('button', { name: '更换背景数据' }));
-    await userEvent.click(await screen.findByRole('button', { name: '移除' }));
+    await userEvent.click(await screen.findByRole('button', { name: '移除此背景关联' }));
     await waitFor(() => expect(request).toHaveBeenCalledWith('project-a', expect.objectContaining({ background_process_pins: [] }), 'zh'));
   });
 });
