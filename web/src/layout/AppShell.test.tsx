@@ -11,6 +11,7 @@ it('collapses and expands with keyboard while retaining accessible language sele
   await userEvent.keyboard('{Enter}');
   expect(screen.getByRole('button', {name:'展开导航'})).toHaveAttribute('aria-expanded', 'false');
   expect(screen.getByRole('button', {name:'界面语言'})).toBeInTheDocument();
+  expect(screen.getByRole('menuitem', {name:'首页'})).toHaveAttribute('aria-current', 'page');
   expect(screen.getByText('Workspace').closest('.app-shell')).toHaveStyle('--no-sidebar-width: 64px');
   await userEvent.keyboard('{Enter}');
   expect(screen.getByRole('button', {name:'收起导航'})).toHaveAttribute('aria-expanded', 'true');

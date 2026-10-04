@@ -37,10 +37,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           // as an explicit parameter instead of relying on storage both apps cannot share.
           if (key === 'modeling') window.open(`/modeling?${languageParam(lang)}`, '_blank', 'noopener,noreferrer');
         }}>
-          <Menu.Item key="home" renderItemInTooltip={() => t('nav.home')}><IconHome /><span>{t('nav.home')}</span></Menu.Item>
-          <Menu.Item key="applications" renderItemInTooltip={() => t('nav.projects')}><IconApps /><span className="nav-full">{t('nav.projects')}</span><span className="nav-short">{t('nav.projectsShort')}</span></Menu.Item>
-          <Menu.Item key="templates" renderItemInTooltip={() => t('nav.templates')}><IconStorage /><span className="nav-full">{t('nav.templates')}</span><span className="nav-short">{t('nav.templatesShort')}</span></Menu.Item>
-          <Menu.Item key="modeling" renderItemInTooltip={() => t('nav.modeling')}><IconBranch /><span className="nav-full">{t('nav.modeling')}</span><span className="nav-short">{t('nav.modelingShort')}</span></Menu.Item>
+          <Menu.Item key="home" aria-label={t('nav.home')} aria-current={active === 'home' ? 'page' : undefined} renderItemInTooltip={() => t('nav.home')}><IconHome /><span>{t('nav.home')}</span></Menu.Item>
+          <Menu.Item key="applications" aria-label={t('nav.projects')} aria-current={active === 'applications' ? 'page' : undefined} renderItemInTooltip={() => t('nav.projects')}><IconApps /><span className="nav-full">{t('nav.projects')}</span><span className="nav-short">{t('nav.projectsShort')}</span></Menu.Item>
+          <Menu.Item key="templates" aria-label={t('nav.templates')} aria-current={active === 'templates' ? 'page' : undefined} renderItemInTooltip={() => t('nav.templates')}><IconStorage /><span className="nav-full">{t('nav.templates')}</span><span className="nav-short">{t('nav.templatesShort')}</span></Menu.Item>
+          <Menu.Item key="modeling" aria-label={t('nav.modeling')} aria-current={active === 'modeling' ? 'page' : undefined} renderItemInTooltip={() => t('nav.modeling')}><IconBranch /><span className="nav-full">{t('nav.modeling')}</span><span className="nav-short">{t('nav.modelingShort')}</span></Menu.Item>
         </Menu>
       </Sider>
       <Content className="app-content">{children}</Content>
