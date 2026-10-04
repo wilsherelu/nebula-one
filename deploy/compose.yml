@@ -40,7 +40,6 @@ services:
         COPY nebula-lca-api/data/Tiangong/ILCD_Unit_Groups.xlsx ./data/Tiangong/ILCD_Unit_Groups.xlsx
         COPY nebula-lca-api/data/Tiangong/elementary_flows_sample.csv ./data/Tiangong/elementary_flows_sample.csv
         COPY nebula-lca-api/data/Tiangong/intermediate_flows_sample.csv ./data/Tiangong/intermediate_flows_sample.csv
-        COPY nebula-lca-api/data/Tiangong/tiangong_processes.zip ./data/Tiangong/tiangong_processes.zip
         COPY nebula-lca-api/data/Tiangong/tidas_reference_seed.json ./data/Tiangong/tidas_reference_seed.json
         COPY nebula-lca-api/data/EF3.1/flow_index.csv ./data/EF3.1/flow_index.csv
         COPY nebula-lca-api/data/EF3.1/indicator_index.csv ./data/EF3.1/indicator_index.csv

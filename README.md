@@ -6,7 +6,7 @@ This first public candidate includes the steel blast furnace–BOF template and 
 
 ## Start the local steel example
 
-Install Docker with Compose. Check out Nebula LCA revision `e7b583d3cd2ea7db5d6ce97c802c91f53926875e` in a clean source tree, then set `NEBULA_LCA_SOURCE_DIR` to its absolute path. Verify `git -C <engine-path> rev-parse HEAD` and `git -C <engine-path> status --porcelain` before building. Compose reads this directory; `deploy/engine.env` declares the receipt identity and does not select or verify the source checkout. From this repository root, run:
+Install Docker with Compose. Check out Nebula LCA revision `f9f8953a0421bd3678421a65b57aa855a7b0a5b9` in a clean source tree, then set `NEBULA_LCA_SOURCE_DIR` to its absolute path. Verify `git -C <engine-path> rev-parse HEAD` and `git -C <engine-path> status --porcelain` before building. Compose reads this directory; `deploy/engine.env` declares the receipt identity and does not select or verify the source checkout. From this repository root, run:
 
 ```sh
 docker compose -f deploy/compose.yml -f deploy/compose.steel-demo.local.example.yml up --build -d
