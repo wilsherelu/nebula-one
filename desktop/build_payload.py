@@ -45,7 +45,7 @@ def validate_editor_assets(editor):
 def validate_public_payload(target):
     forbidden = {'ILCD_Unit_Groups.xlsx', 'elementary_flows_sample.csv',
                  'intermediate_flows_sample.csv', 'tiangong_processes.zip',
-                 'china-grid-co2-2023.v1.json'}
+                 'china-grid-co2-2023.v1.json', 'ghg_ef31_v1.json'}
     for file in target.rglob('*'):
         if file.is_file() and (file.name in forbidden or 'solver-data' in file.parts):
             raise ValueError(f'Unneeded legacy asset in desktop payload: {file.relative_to(target)}')
