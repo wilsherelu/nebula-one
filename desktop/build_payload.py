@@ -101,6 +101,9 @@ def main():
         shutil.copy2(mapping / name, target / 'licenses' / f'flow-mapping-{name}')
     run([str(root / 'build/desktop-venv/Scripts/python.exe'), str(root / 'desktop/dependency_notices.py'),
          str(target / 'licenses/python')], root)
+    run([str(root / 'build/desktop-venv/Scripts/python.exe'), str(root / 'desktop/javascript_notices.py'),
+         '--one-web', str(root / 'web'), '--lca-web', str(lca / 'nebula-lca-web'),
+         '--output', str(target / 'licenses/javascript')], root)
     validate_public_payload(target)
     records = []
     for file in sorted(target.rglob('*')):
