@@ -19,13 +19,13 @@ describe('interface language', () => {
     render(<I18nProvider><LanguageSwitch /><Probe /></I18nProvider>);
     expect(screen.getByTestId('lang')).toHaveTextContent('zh');
     expect(screen.getByText('我的项目')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('radio', { name: 'EN' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'English' }));
     await waitFor(() => expect(screen.getByTestId('lang')).toHaveTextContent('en'));
     expect(screen.getByText('My projects')).toBeInTheDocument();
   });
   it('keeps the chosen language across a reload', async () => {
     const first = render(<I18nProvider><LanguageSwitch /><Probe /></I18nProvider>);
-    await userEvent.click(screen.getByRole('radio', { name: 'EN' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'English' }));
     await waitFor(() => expect(screen.getByTestId('lang')).toHaveTextContent('en'));
     first.unmount();
     render(<I18nProvider><Probe /></I18nProvider>);

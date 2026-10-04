@@ -6,6 +6,7 @@
 .brand-mark span:last-child { display: flex; flex-direction: column; line-height: 20px; }
 .brand-mark strong { font-size: 16px; }
 .brand-mark small { font-size: var(--no-font-helper); color: var(--no-color-text-secondary); }
+.language-switch { align-self: center; flex-shrink: 0; margin-bottom: var(--no-space-3); }
 .app-sidebar .arco-menu { flex: 1; min-height: 0; overflow-y: auto; background: transparent; color: var(--no-color-text-secondary); }
 .app-sidebar .arco-menu-item { background: transparent; color: var(--no-color-text-secondary); }
 .app-sidebar .arco-menu-item.arco-menu-selected { background: var(--no-color-primary-soft); color: var(--no-color-primary); font-weight: 600; }
@@ -20,6 +21,7 @@
   .app-sidebar { position: sticky; width: 100% !important; height: 56px; display: flex; flex-direction: row; }
   .app-sidebar .arco-layout-sider-children { flex-direction: row; width: 100%; align-items: center; overflow: hidden; }
   .brand-mark { height: 56px; flex: 0 0 auto; padding-inline: var(--no-space-3); }
+  .language-switch { margin: 0 var(--no-space-2) 0 0; }
   .brand-mark small { display: none; }
   .brand-mark__orb { width: 22px; height: 22px; border-width: 5px; }
   .app-sidebar .arco-menu { display: flex; flex-direction: row; overflow-x: auto; min-width: 0; }

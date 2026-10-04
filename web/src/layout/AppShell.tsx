@@ -21,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="brand-mark__orb" aria-hidden="true" />
           <span><strong>Nebula One</strong><small>{t('brand.tagline')}</small></span>
         </div>
+        <LanguageSwitch />
         <Menu selectedKeys={[active]} onClickMenuItem={(key) => {
           if (key === 'home') navigate('/');
           if (key === 'templates') navigate('/templates');
@@ -34,7 +35,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Menu.Item key="templates"><IconStorage /><span className="nav-full">{t('nav.templates')}</span><span className="nav-short">{t('nav.templatesShort')}</span></Menu.Item>
           <Menu.Item key="modeling"><IconBranch /><span className="nav-full">{t('nav.modeling')}</span><span className="nav-short">{t('nav.modelingShort')}</span></Menu.Item>
         </Menu>
-        <LanguageSwitch />
       </Sider>
       <Content className="app-content">{children}</Content>
     </Layout>

@@ -69,9 +69,14 @@ def _identity_graph(graph):
             item[side] = sorted(ports, key=lambda value: str(value.get("id")))
         nodes.append(item)
     links = []
+    node_modes = {node.get("id"): node.get("mode") for node in graph.get("nodes", [])}
     for edge in graph.get("exchanges", []):
         identity = {key: deepcopy(value) for key, value in edge.items()
                     if key not in ("amount", "providerAmount", "consumerAmount")}
+        # The engine derives this mode from the endpoints when loading legacy graphs.
+        # Preserve explicit modes on balanced links, where they carry different semantics.
+        if any(node_modes.get(edge.get(side)) == "normalized" for side in ("fromNode", "toNode")):
+            identity["quantityMode"] = "dual"
         if identity.get("sourceHandle") in (None, f"out:{edge.get('sourcePortId')}"):
             identity.pop("sourceHandle", None)
         if identity.get("targetHandle") in (None, f"in:{edge.get('targetPortId')}"):

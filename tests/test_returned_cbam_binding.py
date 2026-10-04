@@ -39,6 +39,29 @@ def test_reviewed_cbam_identity_rejects_an_unknown_emission_and_changed_flow():
     assert "flowUuid" in _first_difference(_identity_graph(original), _identity_graph(changed))
 
 
+@pytest.mark.parametrize("normalized_side", ["fromNode", "toNode"])
+def test_reviewed_identity_uses_endpoint_mode_for_legacy_normalized_links(normalized_side):
+    original = _graph()
+    original["nodes"].append({"id": "process-b", "mode": "balanced", "inputs": [], "outputs": []})
+    original["nodes"][0]["mode"] = "balanced"
+    edge = {"id": "link", "fromNode": "process-a", "toNode": "process-b", "quantityMode": "single"}
+    original["exchanges"] = [edge]
+    next(node for node in original["nodes"] if node["id"] == edge[normalized_side])["mode"] = "normalized"
+    returned = deepcopy(original)
+    returned["exchanges"][0]["quantityMode"] = "dual"
+    assert _identity_graph(original) == _identity_graph(returned)
+    returned["exchanges"][0]["toNode"] = "unknown-process"
+    assert _first_difference(_identity_graph(original), _identity_graph(returned))
+
+
+def test_balanced_link_quantity_mode_is_still_part_of_reviewed_identity():
+    original = _graph()
+    original["exchanges"] = [{"id": "link", "fromNode": "process-a", "toNode": "process-b", "quantityMode": "single"}]
+    returned = deepcopy(original)
+    returned["exchanges"][0]["quantityMode"] = "dual"
+    assert _first_difference(_identity_graph(original), _identity_graph(returned)).endswith("quantityMode")
+
+
 def _selector():
     path = Path("src/nebula_one/resources/official_methods/cbam-steel-direct-selector-1.1.3.json")
     method = json.loads(path.read_text(encoding="utf-8"))

@@ -2,14 +2,14 @@ import { Radio } from '@arco-design/web-react';
 import { useI18n } from '../i18n';
 import type { Lang } from '../i18n';
 
-/** Language names stay in their own script: 中 and EN are not strings to translate. */
-const LABELS: Record<Lang, string> = { zh: '中', en: 'EN' };
+/** Language names stay in their own script. */
+const LABELS: Record<Lang, string> = { zh: '中文', en: 'English' };
 
 export function LanguageSwitch() {
   const { lang, setLanguage, t } = useI18n();
   return <Radio.Group
     type="button"
-    size="mini"
+    size="small"
     aria-label={t('language.switchAria')}
     className="language-switch"
     value={lang}

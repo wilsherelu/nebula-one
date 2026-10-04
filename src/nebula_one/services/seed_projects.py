@@ -143,6 +143,19 @@ def demand_for_inventory(fields, demand, payload):
     return output_amounts
 
 
+def reference_output_preview(fields, demand):
+    """Use the same unique reference outputs that a fresh inventory form will save."""
+    result = []
+    for item in demand:
+        matches = [field for field in fields if field['group'] == 'outputs'
+                   and field['reference_product'] and field['flow_uuid'] == item['reference_flow_uuid']
+                   and field['unit'] == item['unit']]
+        if len(matches) != 1 or matches[0]['value'] <= 0:
+            fail('PROJECT_REFERENCE_OUTPUT_AMBIGUOUS', '目标产品产出缺失或不唯一，不能自动确定求解需求。', 422)
+        result.append({**item, 'amount': matches[0]['value']})
+    return result
+
+
 def apply_inventory_inputs(container, parent, payload, demand, *, idempotency_prefix, label):
     """Restate one data version's port amounts and inputs as a new revision.
 
@@ -496,6 +509,7 @@ class SeedProjectService:
             graph = apply_template_revision(source.graph_snapshot, definition.get('identity_revision'))
             from .inventory_derivation import derive_inventory
             graph, _ = derive_inventory(graph, definition.get('inventory_derivation'))
+            context['seed_template']['demand'] = reference_output_preview(inventory_fields(graph), demand)
             revision_graph_hash = canonical_json_sha256(graph) if definition.get('identity_revision') else source.graph_sha256
             receipt = {**deepcopy(source.upstream_receipt), 'base_revision_id': revision_id,
                 'template_source_model_id': source.id, 'seed_template_sha256': item['template_sha256']}
@@ -581,6 +595,9 @@ class SeedProjectService:
         labels = {**catalog_labels, **labels}
         graph, case_sources = display_project_graph(revision.graph_snapshot, self.c.settings.casepack_roots, language, labels)
         fields = inventory_fields(graph)
+        demand = inputs.get('demand', template['demand'])
+        if not inputs:
+            demand = reference_output_preview(fields, demand)
         ports = list_background_ports(graph)
         for field in fields:
             key = f"{field['process_id']}::{field['port_id']}"
@@ -601,8 +618,8 @@ class SeedProjectService:
             'fields': fields, 'process_graph': process_graph_projection(graph),
             'flow_display_issues': display_issues,
             'case_display_sources': case_sources,
-            'demand': inputs.get('demand', template['demand']),
-            'demand_mode': inputs.get('demand_mode', 'explicit'),
+            'demand': demand,
+            'demand_mode': inputs.get('demand_mode', 'explicit') if inputs else 'reference_output',
             'source': inputs.get('source', template.get('source_default', '模板示例值（未经实测）')),
             'saved': bool(inputs),
             'capabilities': list(dict.fromkeys([*template['capabilities'],

@@ -180,6 +180,8 @@ def test_batch_demand_follows_final_product_output_and_explicit_override_is_sepa
              and field['reference_product']
              and field['flow_uuid'] == initial['demand'][0]['reference_flow_uuid']]
     assert len(final) == 1
+    assert initial['demand'][0]['amount'] == final[0]['value'] == 1000
+    assert initial['demand_mode'] == 'reference_output'
     values = {field['key']: field['value'] for field in initial['fields']}
     values[final[0]['key']] = 1500
     body = dict(revision_id=initial['revision_id'], expected_content_sha256=initial['content_sha256'],

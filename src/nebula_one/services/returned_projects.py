@@ -35,7 +35,7 @@ def _refuse(code: str, message: str, **details: Any) -> None:
     raise DomainError(code=code, message=message, status_code=409, details=details)
 
 
-def reference_demand(application, revision) -> list[dict[str, Any]]:
+def reference_demand(application, revision, *, reference_output=False) -> list[dict[str, Any]]:
     """The calculation demand the returned model proves, from its own reference product port.
 
     The editor's functional unit names a flow, an amount and a unit; the precise unit-group identity
@@ -64,10 +64,13 @@ def reference_demand(application, revision) -> list[dict[str, Any]]:
             reference_product_ports=len(products),
         )
     port = products[0]
+    amount = port.get("amount") if reference_output else unit["amount"]
+    if not isinstance(amount, (int, float)) or amount <= 0:
+        _refuse("PROJECT_REFERENCE_AMOUNT_INVALID", "目标产品产出必须大于零。")
     return [
         {
             "reference_flow_uuid": unit["flow_uuid"],
-            "amount": float(unit["amount"]),
+            "amount": float(amount),
             "unit": unit["unit"],
             "unit_group_uuid": port["unitGroupUuid"],
             "unit_group_version": port["unitGroupVersion"],
@@ -180,7 +183,9 @@ class ReturnedProjectService:
 
     def read(self, application, revision, language="zh"):
         inputs = revision.application_context.get("project_inputs", {})
-        demand = inputs.get("demand") or reference_demand(application, revision)
+        # A fresh inventory editor saves in reference_output mode; preview that same batch.
+        # Already saved explicit demands remain pinned to their original values.
+        demand = inputs.get("demand") or reference_demand(application, revision, reference_output=True)
         capabilities, blocked = self._tasks(application, revision, demand, inputs)
         template = {
             "title": (
@@ -193,6 +198,8 @@ class ReturnedProjectService:
             "source_default": "建模返回的示例值（未经实测）",
         }
         view = SeedProjectService(self.c).read(application, revision, template=template, language=language)
+        if not inputs:
+            view["demand_mode"] = "reference_output"
         labels = self._display_labels(application, language)
         for field in view["fields"]:
             key = f"{field['process_id']}::{field['port_id']}"

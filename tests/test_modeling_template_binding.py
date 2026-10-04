@@ -337,6 +337,26 @@ def test_a_bound_return_opens_the_workbench_on_its_own_inventory(plant_client):
     assert blocked["cbam.trial.v2"]["code"] == "MODEL_CROSS_BOUNDARY_UNDECLARED"
 
 
+def test_unsaved_return_previews_output_batch_instead_of_normalized_functional_unit(plant_client):
+    base_model_id = _seed_base(plant_client.app.state.container, template_bound=True)
+    _, result = _confirm_returned(plant_client, base_model_id)
+    container = plant_client.app.state.container
+    application, _ = _load(plant_client, result)
+    with container.database.session() as db:
+        application = db.get(Application, application.id)
+        application.context = {**application.context, "modeling_functional_unit":
+            {**application.context["modeling_functional_unit"], "amount": 1.0}}
+    workspace = _workspace(plant_client, result).json()
+    assert workspace["demand"][0]["amount"] == 1000.0
+    assert workspace["demand_mode"] == "reference_output"
+    payload = _payload(workspace, EXTENSION_ELECTRICITY, 42.0)
+    payload["demand_mode"] = "reference_output"
+    saved = _save(plant_client, result, payload)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["demand"] == workspace["demand"]
+    assert _workspace(plant_client, result, saved.json()["revision_id"]).json()["demand"] == workspace["demand"]
+
+
 def test_edit_a_still_existing_exchange_under_fixed_demand_then_reread(plant_client):
     base_model_id = _seed_base(plant_client.app.state.container, template_bound=True)
     _, result = _confirm_returned(plant_client, base_model_id)
