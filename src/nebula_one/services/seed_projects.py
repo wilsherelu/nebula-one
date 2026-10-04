@@ -428,14 +428,28 @@ class SeedProjectService:
                      seed=seed, version=version, bundle_content_sha256=bundle_content_sha256)
             _, _, _, _, item, _ = self._source(db, row.id)
             project_key = demo_project_key(key)
-            replayed = db.get(Application, project_application_id(project_key, row.id)) is not None
+            existing = db.get(Application, project_application_id(project_key, row.id))
+            if existing is not None:
+                stored = existing.context.get('seed_template', {})
+                if (existing.context.get('resource_purpose') != DEMO_PROJECT
+                        or stored.get('installation_id') != row.id
+                        or stored.get('seed_id') != seed
+                        or stored.get('seed_version') != version
+                        or stored.get('bundle_content_sha256') != bundle_content_sha256):
+                    fail('SEED_PROJECT_KEY_CONFLICT', '此创建请求已经用于另一个项目。')
+                # An installed demo is user-owned. Replay its original exact template
+                # even when the release changes its display name or template profile.
+                model = db.scalar(select(SystemModel).where(SystemModel.application_id == existing.id))
+                return 'replayed', {'application_id': existing.id, 'system_model_id': model.id,
+                    'revision_id': model.upstream_receipt['base_revision_id'], 'seed_id': seed,
+                    'seed_version': version, 'display_name': dict(existing.context.get('display_name', {}))}
         name = str(display_name.get('zh') or next(iter(display_name.values()), '')).strip()
         if not name:
             fail('SEED_DEMO_PROJECT_NAME_MISSING', '示例项目缺少可显示的简短名称。', 422)
         created = self.create(row.id, SeedProjectCreate(
             name=name, project_key=project_key, expected_template_sha256=item['template_sha256']),
             resource_purpose=DEMO_PROJECT, display_name=display_name)
-        return ('replayed' if replayed else 'executed'), {**created, 'seed_id': seed,
+        return 'executed', {**created, 'seed_id': seed,
             'seed_version': version, 'display_name': dict(display_name)}
 
     def create(self, installation_id, payload, *, resource_purpose=None, display_name=None):

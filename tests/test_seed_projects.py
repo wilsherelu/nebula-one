@@ -469,6 +469,12 @@ def test_the_release_example_project_is_created_once_and_shows_as_a_project(clie
     assert workspace.status_code == 200, workspace.text
     assert workspace.json()['template_title'] == template['title']
 
+    renamed = {'zh': '新的钢铁示例标题', 'en': 'Renamed steel example'}
+    replay, preserved = service.ensure_demo_project('steel', '1.1.0', 'b' * 64, 'steel-bf-bof-2026', renamed)
+    assert replay == 'replayed'
+    assert preserved == again
+    assert client.get('/api/v1/applications').json() == listed
+
 
 def test_the_release_example_refuses_a_seed_that_is_not_the_pinned_one(client, template):
     service = _release_example(client)
