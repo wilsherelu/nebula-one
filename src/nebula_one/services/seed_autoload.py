@@ -285,7 +285,12 @@ class SeedAutoloadService:
             display_name[language] = text
         if self.seed_projects is None:
             raise _drift("SEED_TEMPLATE_SOURCE_UNAVAILABLE", "seed project service is unavailable")
-        return self.seed_projects.ensure_demo_project(seed, version, declared_hash, key, display_name)
+        outcome, created = self.seed_projects.ensure_demo_project(seed, version, declared_hash, key, display_name)
+        if step.get("default_backgrounds"):
+            from .demo_background_defaults import ensure_demo_backgrounds
+            defaults = ensure_demo_backgrounds(self.seed_projects.c, created, step["default_backgrounds"])
+            created = {**created, "default_backgrounds": defaults}
+        return outcome, created
 
     def _register_method_package(self, step: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         declared_id = self._required(step, "package_id")

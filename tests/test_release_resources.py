@@ -62,6 +62,27 @@ def test_a_project_created_from_a_template_stays_visible(service, database) -> N
     assert [record.id for record in service.list()] == ["own-project"]
 
 
+def test_historical_and_unrecorded_internal_editor_sources_stay_hidden(database, service):
+    from uuid import NAMESPACE_URL, uuid5
+    from nebula_one.services.seed_projects import project_application_id
+    _application(database, 'seed-record')
+    _application(database, 'current-editor')
+    _application(database, 'old-editor')
+    _installation(database, 'seed-record', 'current-editor')
+    template = {'seed_id': 'steel', 'seed_version': '1.1.0',
+                'installation_id': 'install-seed-record', 'profile': {'content_sha256': 'a' * 64}}
+    key = uuid5(NAMESPACE_URL, f"nebula-one:template-editor:steel:1.1.0:{'a' * 64}")
+    recovered_id = project_application_id(key, template['installation_id'])
+    _application(database, recovered_id, seed_template=template)
+    _application(database, 'user-with-same-template', seed_template=template)
+    with database.session() as db:
+        row = db.get(SeedInstallation, 'install-seed-record')
+        row.stage_receipts = {**row.stage_receipts,
+                              'editor_source_history': [{'application_id': 'old-editor'}]}
+        db.commit()
+    assert [record.id for record in service.list()] == ['user-with-same-template']
+
+
 def test_a_requested_language_name_falls_back_to_a_name_that_exists() -> None:
     class Holder:
         context = {"display_name": {"zh": "钢铁示例"}}

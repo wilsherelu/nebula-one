@@ -16,6 +16,7 @@ from sqlalchemy import select
 from .models import SeedInstallation
 
 DEMO_PROJECT = "demo_project"
+MODELING_SOURCE = "modeling_source"
 DEMO_PROJECT_NAMESPACE = uuid5(NAMESPACE_URL, "https://nebula-one.app/demo-project")
 
 
@@ -32,9 +33,24 @@ def internal_application_ids(db) -> set[str]:
     for row in db.scalars(select(SeedInstallation)):
         if row.application_id:
             internal.add(row.application_id)
-        editor = (row.stage_receipts or {}).get("editor_source") or {}
-        if editor.get("application_id"):
-            internal.add(editor["application_id"])
+        receipts = row.stage_receipts or {}
+        for editor in [receipts.get("editor_source") or {}, *receipts.get("editor_source_history", [])]:
+            if editor.get("application_id"):
+                internal.add(editor["application_id"])
+    # Earlier versions did not keep every replaced editor receipt. Recover only the
+    # deterministic internal creation identity; template-created user projects differ.
+    from .models import Application
+    from .services.seed_projects import project_application_id
+    for app in db.scalars(select(Application)):
+        context = app.context or {}
+        if context.get("resource_purpose") == MODELING_SOURCE:
+            internal.add(app.id)
+        template = context.get("seed_template") or {}
+        profile = template.get("profile") or {}
+        if all(template.get(key) for key in ("installation_id", "seed_id", "seed_version")) and profile.get("content_sha256"):
+            key = uuid5(NAMESPACE_URL, f'nebula-one:template-editor:{template["seed_id"]}:{template["seed_version"]}:{profile["content_sha256"]}')
+            if app.id == project_application_id(key, template["installation_id"]):
+                internal.add(app.id)
     return internal
 
 

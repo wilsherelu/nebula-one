@@ -35,6 +35,8 @@ export const MESSAGES = {
   'background.validated': ['已核对 {name}；此关联仅覆盖当前投入。', 'Verified {name}; this link covers this input only.'],
   'brand.tagline': ['可持续分析台', 'Sustainability workbench'],
   'nav.home': ['首页', 'Home'],
+  'nav.collapse': ['收起导航', 'Collapse navigation'],
+  'nav.expand': ['展开导航', 'Expand navigation'],
   'nav.projects': ['我的项目', 'My projects'],
   'nav.projectsShort': ['项目', 'Projects'],
   'nav.templates': ['工艺模板', 'Process templates'],

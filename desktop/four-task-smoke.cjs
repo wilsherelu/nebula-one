@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { DesktopRuntime } = require('./runtime.cjs');
 
-async function accept(origin, directory) {
+async function accept(origin, directory, { officialDefaultsOnly = false } = {}) {
   const evidence = [];
   async function call(method, route, body) {
     const response = await fetch(origin + route, {method, ...(body ? {headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {}), signal:AbortSignal.timeout(180000)});
@@ -15,12 +15,14 @@ async function accept(origin, directory) {
     if (!response.ok) throw new Error(`${route}: ${response.status} ${text.slice(0, 2000)}`);
     return result;
   }
-  const demo = (await call('GET', '/api/v1/applications')).find(item => item.context.resource_purpose === 'demo_project');
+  const applications = await call('GET', '/api/v1/applications');
+  if (officialDefaultsOnly) assert.equal(applications.length, 1, 'Fresh install exposes only the official example');
+  const demo = applications.find(item => item.context.resource_purpose === 'demo_project');
   assert.ok(demo, 'Official demo must exist');
   const templates = (await call('GET', '/api/v1/project-templates')).items;
   const template = templates.find(item => item.seed_id === demo.context.seed_template.seed_id);
   assert.ok(template);
-  const created = await call('POST', `/api/v1/project-templates/${template.id}/projects`, {
+  const created = officialDefaultsOnly ? {application_id:demo.id} : await call('POST', `/api/v1/project-templates/${template.id}/projects`, {
     name:'Desktop runtime acceptance', project_key:randomUUID(), expected_template_sha256:template.template_sha256});
   const application = await call('GET', `/api/v1/applications/${created.application_id}`);
   const prefix = `/api/v1/applications/${application.id}`;
@@ -33,13 +35,18 @@ async function accept(origin, directory) {
   assert.ok(supplier, 'Exact public electricity background must be installed');
   const fields = initial.fields.filter(field => !field.linked && field.port_id === 'grid-electricity-in');
   assert.equal(fields.length, 2);
-  const pins = [];
-  for (const field of fields) {
+  const pins = officialDefaultsOnly ? initial.project_background_pins : [];
+  if (officialDefaultsOnly) {
+    assert.equal(pins.length, 2, 'Backgrounds must be installed defaults, not test preparation');
+    assert.equal(initial.demand_mode, 'reference_output');
+    assert.equal(initial.demand[0].amount, 1000);
+  }
+  for (const field of officialDefaultsOnly ? [] : fields) {
     pins.push((await call('POST', prefix + '/workspace/' + initial.revision_id + '/background/user-project-resolve', {
       project_id:supplier.project_id, version:1, consumer_exchange_id:field.key
     })).pin);
   }
-  const workspace = await call('POST', prefix + '/workspace/inputs', {
+  const workspace = officialDefaultsOnly ? initial : await call('POST', prefix + '/workspace/inputs', {
     revision_id: initial.revision_id, expected_content_sha256: initial.content_sha256,
     demand_mode:'reference_output', amounts:[7], project_background_pins:pins,
     values:Object.fromEntries(initial.fields.filter(field => !field.linked).map(field => [field.key,field.value])),
@@ -63,6 +70,9 @@ async function accept(origin, directory) {
       const method = (await call('GET', route + '/product-carbon-footprint/default-method')).reference;
       result = await call('POST', route + '/product-carbon-footprint', {method_package_ref:method});
       assert.ok(result.total_footprint.value > 0);
+      if (officialDefaultsOnly) assert.ok(result.contribution_analysis.hotspots.some(
+        item => item.exchange_id.startsWith('project-background-') && item.contribution_value > 0),
+        'Default electricity background must contribute to PCF');
       const exported = await fetch(origin + route + '/product-carbon-footprint/export.xlsx?method_package_ref=' + encodeURIComponent(method));
       assert.ok(exported.ok);
       const bytes = Buffer.from(await exported.arrayBuffer());
@@ -90,6 +100,10 @@ async function accept(origin, directory) {
       assert.deepEqual(persisted.result, result.result);
       assert.equal(persisted.content_sha256, result.content_sha256);
       assert.equal(persisted.solved_snapshot_id, result.solved_snapshot_id);
+      if (officialDefaultsOnly) {
+        assert.equal(result.result.climate_source.suppliers.length, 2);
+        assert.ok(result.result.climate_source.suppliers.every(item => item.contribution_value > 0));
+      }
       const report = await call('GET', prefix + '/organization-lifecycle-inventories/' + result.id + '/report.html?lang=en');
       assert.ok(report.includes('not characterized'));
       fs.writeFileSync(path.join(directory, 'organization-report.html'), report);

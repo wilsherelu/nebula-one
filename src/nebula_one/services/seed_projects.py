@@ -14,7 +14,7 @@ from ..models import Application, SeedInstallation, SystemModel, SystemRevision,
 from ..runtime_models import BoundaryDefinition, MethodPackage, Period
 from ..schemas import ModelOperationBatchCreate, ModelOperationItem
 from ..runtime_schemas import ProviderBackgroundProcessPin, ProviderProjectBackgroundPin
-from ..release_resources import DEMO_PROJECT, demo_project_key, display_labels, pick_name
+from ..release_resources import DEMO_PROJECT, MODELING_SOURCE, demo_project_key, display_labels, pick_name
 from ..model_processing_contract import PackageRef, load_model_processing_rules_by_reference, TemplateRef
 from .project_background import ProjectBackgroundService, list_background_ports
 from .project_template_profiles import load_profile
@@ -377,7 +377,7 @@ class SeedProjectService:
             project_key = uuid5(NAMESPACE_URL, f'nebula-one:template-editor:{row.seed_id}:{row.seed_version}:{definition["profile"]["content_sha256"]}')
         created = self.create(installation_id, SeedProjectCreate(
             name=f'{item["title"]} · 建模源', project_key=project_key,
-            expected_template_sha256=item['template_sha256']))
+            expected_template_sha256=item['template_sha256']), resource_purpose=MODELING_SOURCE)
         with self.c.database.session() as db:
             revision = db.get(SystemRevision, created['revision_id'])
             graph = deepcopy(revision.graph_snapshot)

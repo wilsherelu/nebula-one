@@ -48,6 +48,27 @@ def create(client, template):
     return r.json(), url, body
 
 
+def test_default_backgrounds_never_replace_saved_user_inputs(client, template):
+    from nebula_one.services.demo_background_defaults import ensure_demo_backgrounds
+    from nebula_one.models import Application, SystemRevision
+    created, _, _ = create(client, template)
+    c = client.app.state.container
+    with c.database.session() as db:
+        app = db.get(Application, created['application_id'])
+        app.context = {**app.context, 'resource_purpose': 'demo_project'}
+        revision = db.get(SystemRevision, created['revision_id'])
+        inputs = {'demand_mode': 'explicit', 'demand': [{'amount': 7}], 'project_background_pins': []}
+        revision.application_context = {**revision.application_context, 'project_inputs': inputs}
+        old_hash = revision.content_sha256
+        db.commit()
+    assert ensure_demo_backgrounds(c, created, [{'invalid': 'must not be resolved'}]) == {
+        'outcome': 'preserved_existing_inputs'}
+    with c.database.session() as db:
+        revision = db.get(SystemRevision, created['revision_id'])
+        assert revision.application_context['project_inputs'] == inputs
+        assert revision.content_sha256 == old_hash
+
+
 def test_editor_source_accepts_only_engine_serialization_changes(model_graph):
     saved = deepcopy(model_graph)
     saved['metadata']['storage_schema_version'] = 'graph_slim_v1'

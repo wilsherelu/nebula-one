@@ -21,7 +21,7 @@ async function main() {
   const startup = await runtime.start();
   const pids = runtime.children.map(child => child.pid);
   try {
-    const snapshots = await accept(startup.oneOrigin, data);
+    const snapshots = await accept(startup.oneOrigin, data, {officialDefaultsOnly:process.argv.includes('--official-defaults')});
     const evidence = JSON.parse(fs.readFileSync(path.join(data, 'four-task-http.json')));
     const reads = evidence.filter(item => item.method === 'GET'
       && (item.route.endsWith('/mfa') || /organization-lifecycle-inventories\/[a-f0-9-]+$/.test(item.route)));

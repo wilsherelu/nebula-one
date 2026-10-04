@@ -15,6 +15,9 @@
 .app-sidebar .arco-menu-item { margin-inline: var(--no-space-2); border-radius: var(--no-radius-control); }
 .app-content { min-width: 0; margin-left: var(--no-sidebar-width); }
 .app-shell > .app-content { overflow-x: clip; }
+.sidebar-toggle { align-self: center; flex-shrink: 0; margin-bottom: var(--no-space-3); }
+.app-shell--collapsed .brand-mark { padding-inline: 18px; }
+.app-shell--collapsed .brand-mark span:last-child { display: none; }
 @media (max-width: 768px) {
   .sidebar-foot { display: none; }
   .app-shell { display: block; }
@@ -30,6 +33,8 @@
   .app-sidebar .arco-menu-item-disabled,
   .app-sidebar .arco-menu-disabled { display: none; }
   .app-content { margin-left: 0; }
+  .sidebar-toggle { margin: 0 4px; }
+  .app-shell--collapsed .brand-mark { padding-inline: 10px; }
 }
 @media (max-width: 480px) {
   .brand-mark { width: 44px; box-sizing: border-box; padding-inline: 10px; }
