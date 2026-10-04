@@ -90,6 +90,9 @@ def main():
     (target / 'licenses').mkdir(exist_ok=True)
     shutil.copy2(root / 'LICENSE', target / 'licenses/nebula-one.txt')
     shutil.copy2(lca / 'LICENSE', target / 'licenses/nebula-lca.txt')
+    tiangong = lca / 'nebula-lca-api/data/Tiangong'
+    shutil.copy2(tiangong / 'LICENSE.TianGong', target / 'licenses/tiangong-MIT.txt')
+    shutil.copy2(tiangong / 'NOTICE.md', target / 'licenses/tiangong-NOTICE.md')
     shutil.copy2(root / 'docs/DATA_PROVENANCE.md', target / 'licenses/DATA_PROVENANCE.md')
     shutil.copy2(root / 'docs/RETAINED_SOURCE_DECLARATIONS.md', target / 'licenses/RETAINED_SOURCE_DECLARATIONS.md')
     shutil.copy2(root / 'docs/DESKTOP_DATA_INVENTORY.md', target / 'licenses/DESKTOP_DATA_INVENTORY.md')

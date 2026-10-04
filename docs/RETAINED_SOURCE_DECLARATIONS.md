@@ -1,6 +1,6 @@
 # Retained TianGong source declarations
 
-These are the declarations present in the exact bundled source records. Missing declarations stay missing. This is an evidence inventory, not a grant of permission by Nebula One. Process inventory, Flow metadata and unit/property metadata are distinguished; none is an ecoinvent LCI vector.
+These are the declarations present in the exact bundled source records. Missing declarations stay missing. This is an evidence inventory, not a grant of permission by Nebula One. The historical TianGong database-level MIT notice is retained separately in engine `data/Tiangong/LICENSE.TianGong` and `NOTICE.md`; an absent record-level field is not a redistribution block for those existing assets. See [DATA_PROVENANCE.md](DATA_PROVENANCE.md) for the fixed source reference. Process inventory, Flow metadata and unit/property metadata are distinguished; none is an ecoinvent LCI vector.
 
 | Kind | Exact source identity | Source record content hash | Owner / source URI | Licence declaration | Copyright declaration |
 | --- | --- | --- | --- | --- | --- |

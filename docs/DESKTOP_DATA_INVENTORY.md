@@ -7,13 +7,15 @@ Data inventory for the scoped 0.1.0 desktop payload using LCA b3a6b1a79e534add7f
 | Asset group | Source and evidence | Redistribution status |
 | --- | --- | --- |
 | EF3.1 CSVs (one copy) | European Commission/JRC EF3.1 ILCD extraction and 25-indicator reorder; two exact CSV hashes, indicator identities and local display enhancements traced | JRC attribution, transformations and Commission reuse notice recorded in DATA_PROVENANCE.md |
-| Selected elementary catalog and tidas_reference_seed | Three original metadata rows with original header; two required unit groups selected at initialization from the reference seed | Exact selection and hashes retained; legacy source attribution chain remains to be traced |
+| Selected elementary catalog and tidas_reference_seed | Three original metadata rows with original header; two required unit groups selected at initialization from the reference seed | Historical TianGong database MIT notice retained; JRC attribution preserved; exact selection and hashes retained |
 | TianGong grid Process 01.01.014 snapshot | Pinned source record declares copyright false and Free of charge for all users and uses | Declaration retained; applicability to redistribution must be confirmed separately |
 | TianGong Flow / FlowProperty / UnitGroup snapshots and engine provider profiles | Exact upstream versions, owner/source declarations and hashes retained | See retained per-version declarations; missing licence field alone does not forbid reuse |
 | Steel authored catalog, templates and seeds | Reviewed authored seed structure with retained source descriptors | Application authorship does not extend to embedded third-party records |
 | flow_mappings/nebula-flow-mapping-v1 | Runtime manifest and data retained with CC-BY-4.0 LICENSE and Nebula NOTICE | Mapping identifiers only, with attribution and non-endorsement boundary; no commercial LCI inventories or CFs |
 
 Removed from the desktop package: legacy unit XLSX, full elementary/intermediate CSVs, TianGong Process ZIP, duplicate solver-data EF copy, unused 2023 electricity seed and redundant mapping schema/documentation. The required mapping runtime manifest remains intact; NOTICE and LICENSE are also copied to the installed licenses directory. Python/JavaScript dependency notices are separate from data permission.
+
+This describes the previously scoped desktop payload selection, not a licence-driven prohibition on the historical TianGong dataset. The current Docker initialization retains the full original references and Process ZIP. The desktop builder additionally retains the TianGong MIT copyright/licence text and source NOTICE; no new installer has been produced by this source update.
 
 See [retained per-version source declarations](RETAINED_SOURCE_DECLARATIONS.md) for owner/source evidence and the concrete remaining attribution gaps. Application Apache-2.0 licensing does not grant rights over all third-party data.
 
