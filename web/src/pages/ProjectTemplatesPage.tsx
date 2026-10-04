@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { seedProjectsApi, templateName } from '../api/seedProjects';
+import { seedProjectsApi, templateName, type SeedProjectTemplate } from '../api/seedProjects';
+import { openModelingHandoff } from '../api/modeling';
 import { languageParam, useI18n } from '../i18n';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
@@ -15,7 +16,9 @@ export function ProjectTemplatesPage() {
   const seeds = useQuery({queryKey: ['seed-project-templates'], queryFn: seedProjectsApi.catalog});
   const catalog = useQuery({ queryKey: ['casepacks'], queryFn: api.casepacks });
   const [selected, setSelected] = useState<string | null>(null);
-  const editTemplate = (item: {source_application_id: string; source_model_id: string; source_revision_id: string | null}) => {
+  const edit = useMutation({mutationFn: (item: SeedProjectTemplate) => openModelingHandoff(templateName(item, lang), item.source_model_id, item.source_revision_id ?? undefined, lang)});
+  const editTemplate = (item: SeedProjectTemplate) => {
+    if (window.__NEBULA_ONE_DESKTOP__) { edit.mutate(item); return; }
     const params = new URLSearchParams({ application: item.source_application_id, model: item.source_model_id, launch: '1', template: '1' });
     if (item.source_revision_id) params.set('revision', item.source_revision_id);
     // The modelling app runs on another port, so language is carried in the URL rather than storage.
@@ -25,6 +28,7 @@ export function ProjectTemplatesPage() {
   return <main className="app-page">
     <PageHeader title={t('templates.title')} description={t('templates.subtitle')} action={<Button onClick={() => navigate('/model-import')}>{t('templates.import')}</Button>} />
     {seeds.isError ? <ErrorState error={seeds.error} onRetry={() => seeds.refetch()} /> : null}
+    {edit.isError ? <ErrorState error={edit.error} /> : null}
     <div className="template-library-grid">{seeds.data?.items.map(item => <section className="section-panel template-library-card" key={item.id}><h2>{templateName(item, lang)}</h2><p className="template-library-card__summary">{t('templates.summary', { processes: item.process_count, fields: item.field_count })}</p><p className="helper-text">{t('templates.cardHint')}</p><small>{t('templates.version', { version: item.version })}</small><div className="template-library-card__actions"><Button type="primary" onClick={() => setSelected(`seed:${item.id}`)}>{t('templates.newProject')}</Button><Button onClick={() => editTemplate(item)}>{t('templates.editTemplate')}</Button></div></section>)}</div>
     {catalog.isLoading ? <LoadingState /> : catalog.isError ? <ErrorState error={catalog.error} onRetry={() => catalog.refetch()} /> : <div className="template-library-grid">{catalog.data?.items.flatMap(pack => pack.applications.filter(item => item.lifecycle_status === 'executable').map(item => {
       const key = `${pack.id}@${pack.version}/${item.id}@${item.version}`;

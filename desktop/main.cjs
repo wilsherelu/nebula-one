@@ -1,11 +1,13 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, session, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { DesktopRuntime } = require('./runtime.cjs');
 const { ownedUrl, validateHandoff } = require('./security.cjs');
+const { DesktopWorkspace } = require('./workspace.cjs');
 
 let runtime;
 let mainWindow;
+let workspace;
 let quitting = false;
 const windows = new Set();
 if (process.env.NEBULA_ONE_DESKTOP_TEST_DATA) app.setPath('userData', path.resolve(process.env.NEBULA_ONE_DESKTOP_TEST_DATA));
@@ -16,6 +18,8 @@ else {
   app.on('before-quit', event => {
     if (!runtime || quitting) return;
     event.preventDefault();
+    if (workspace && !workspace.allowDiscard()) return;
+    if (workspace) workspace.dirty = false;
     quitting = true;
     runtime.stop().finally(() => app.quit());
   });
@@ -40,17 +44,21 @@ function createWindow() {
     if (!ownedUrl(url, origins)) { event.preventDefault(); openExternal(url); }
     else if (window === mainWindow && ownedUrl(url, [runtime.editorOrigin])) {
       event.preventDefault();
-      const editor = createWindow();
-      editor.loadURL(url).then(() => editor.show());
+      void workspace.open(url);
     }
   });
   window.webContents.on('will-redirect', (event, url) => {
     if (!ownedUrl(url, origins)) event.preventDefault();
   });
+  window.webContents.on('will-prevent-unload', event => {
+    if (dialog.showMessageBoxSync(window, {type:'question', title:'Nebula One',
+      message:'页面有未保存的修改 / Unsaved page changes',
+      buttons:['继续编辑 / Keep editing', '离开页面 / Leave page'], defaultId:0, cancelId:0}) === 1) event.preventDefault();
+  });
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (ownedUrl(url, origins)) {
-      const child = createWindow();
-      child.loadURL(url).then(() => child.show());
+      if (ownedUrl(url, [runtime.editorOrigin])) void workspace.open(url);
+      else void mainWindow.loadURL(url);
     } else openExternal(url);
     return { action: 'deny' };
   });
@@ -70,7 +78,7 @@ async function start() {
     if (!contents || !ownedUrl(contents.getURL(), [runtime.oneOrigin, runtime.editorOrigin])) {
       event.preventDefault(); return;
     }
-    const owner = BrowserWindow.fromWebContents(contents);
+    const owner = mainWindow;
     const choice = dialog.showSaveDialogSync(owner, { defaultPath: path.basename(item.getFilename()) });
     if (choice) item.setSavePath(choice); else item.cancel();
   });
@@ -79,20 +87,34 @@ async function start() {
       throw new Error('Invalid modelling handoff');
     }
     if (event.sender !== mainWindow.webContents) return false;
-    const editor = createWindow();
-    try {
-      await editor.loadURL(runtime.oneOrigin);
-      const key = `nebula-one:modeling:${payload.handoff_id}`;
-      const value = JSON.stringify({ state: payload.state, confirmation_token: payload.confirmation_token });
-      await editor.webContents.executeJavaScript(`sessionStorage.setItem(${JSON.stringify(key)}, ${JSON.stringify(value)})`);
-      await editor.loadURL(payload.url);
-      editor.show();
-      return true;
-    } catch (error) { editor.destroy(); throw error; }
+    // Credentials remain in the original One renderer's sessionStorage.
+    return workspace.open(payload.url);
+  });
+  ipcMain.handle('desktop:editor-home', (event, lang) => {
+    if (event.sender !== mainWindow.webContents || !ownedUrl(event.senderFrame.url, [runtime.oneOrigin]) || !['zh', 'en'].includes(lang)) throw new Error('Invalid editor request');
+    return workspace.home(lang);
+  });
+  ipcMain.handle('desktop:return-one', event => {
+    if (event.sender !== workspace.editor.webContents || !ownedUrl(event.senderFrame.url, [runtime.editorOrigin])) throw new Error('Invalid return request');
+    workspace.showOne();
+    return true;
+  });
+  ipcMain.on('desktop:editor-dirty', (event, dirty) => {
+    if (event.sender === workspace.editor.webContents && ownedUrl(event.senderFrame.url, [runtime.editorOrigin]) && typeof dirty === 'boolean') workspace.dirty = dirty;
   });
   mainWindow = createWindow();
+  workspace = new DesktopWorkspace(mainWindow, runtime, openExternal);
+  Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'工作区 / Workspace', submenu:[
+    {label:'Nebula One', accelerator:'CmdOrCtrl+1', click:() => workspace.showOne()},
+    {label:'Nebula LCA', accelerator:'CmdOrCtrl+2', click:() => void workspace.home()},
+  ]}]));
+  mainWindow.setAutoHideMenuBar(false);
   await mainWindow.loadURL(runtime.oneOrigin);
   mainWindow.show();
+  if (process.argv.includes('--window-smoke')) {
+    if (!process.env.NEBULA_ONE_DESKTOP_TEST_DATA || !process.env.NEBULA_ONE_DESKTOP_WINDOW_REPORT) throw new Error('Isolated acceptance paths required');
+    await require('./window-acceptance.cjs').accept({app, mainWindow, workspace, runtime});
+  }
   // An explicit package acceptance entry reports owned process identities, not credentials.
   if (process.argv.includes('--runtime-smoke')) {
     const file = process.env.NEBULA_ONE_DESKTOP_SMOKE_REPORT;

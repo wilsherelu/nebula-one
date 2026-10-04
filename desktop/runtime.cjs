@@ -54,7 +54,7 @@ function editorServer(root, apiOrigin) {
   return http.createServer((request, response) => {
     const parsed = new URL(request.url, 'http://127.0.0.1');
     if (parsed.pathname === '/api' || parsed.pathname.startsWith('/api/')) {
-      const upstream = http.request(apiOrigin + parsed.pathname.slice(4) + parsed.search, {
+      const upstream = http.request(apiOrigin + parsed.pathname + parsed.search, {
         method: request.method, headers: { ...request.headers, host: new URL(apiOrigin).host }
       }, incoming => {
         response.writeHead(incoming.statusCode, incoming.headers);

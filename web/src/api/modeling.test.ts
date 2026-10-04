@@ -3,7 +3,7 @@ import { handoffStorageKey, modelingApi, openModelingHandoff } from './modeling'
 
 afterEach(() => { vi.restoreAllMocks(); delete window.__NEBULA_ONE_DESKTOP__; sessionStorage.clear(); });
 
-it('transfers only the exact handoff to a separate desktop editor while retaining the current page', async () => {
+it('transfers only the exact handoff to the desktop editor while retaining the current page', async () => {
   const result = {handoff_id:'abcf2b9a-58fa-46e8-b6d8-21bec0529a7a', state:'exact-state', confirmation_token:'private-confirmation',
     editor_url:'http://127.0.0.1:32123/projects/id?handoff_id=abcf2b9a-58fa-46e8-b6d8-21bec0529a7a&state=exact-state'};
   vi.spyOn(modelingApi, 'start').mockResolvedValue(result);

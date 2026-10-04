@@ -10,6 +10,7 @@ declare global {
   interface Window {
     __NEBULA_ONE_DESKTOP__?: {
       openEditor(payload: {url: string; handoff_id: string; state: string; confirmation_token: string}): Promise<boolean>;
+      openEditorHome?: (lang: Lang) => Promise<boolean>;
     };
   }
 }
@@ -39,8 +40,11 @@ export async function openModelingHandoff(name: string, baseModelId: string, bas
   const result = await modelingApi.start(name, baseModelId, baseRevisionId);
   sessionStorage.setItem(handoffStorageKey(result.handoff_id), JSON.stringify({state: result.state, confirmation_token: result.confirmation_token}));
   const url = withLanguage(result.editor_url, lang);
-  if (window.__NEBULA_ONE_DESKTOP__ && await window.__NEBULA_ONE_DESKTOP__.openEditor({
+  if (window.__NEBULA_ONE_DESKTOP__) {
+    await window.__NEBULA_ONE_DESKTOP__.openEditor({
     url, handoff_id: result.handoff_id, state: result.state, confirmation_token: result.confirmation_token,
-  })) return;
+    });
+    return;
+  }
   window.location.assign(url);
 }

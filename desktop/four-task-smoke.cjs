@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { DesktopRuntime } = require('./runtime.cjs');
 
-async function accept(origin, directory, { officialDefaultsOnly = false } = {}) {
+async function accept(origin, directory, { officialDefaultsOnly = false, resourceDirectory = path.join(__dirname, 'resources') } = {}) {
   const evidence = [];
   async function call(method, route, body) {
     const response = await fetch(origin + route, {method, ...(body ? {headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {}), signal:AbortSignal.timeout(180000)});
@@ -30,7 +30,7 @@ async function accept(origin, directory, { officialDefaultsOnly = false } = {}) 
   const revisions = await call('GET', `/api/v1/system-models/${model.id}/revisions`);
   const initial = await call('GET', prefix + '/workspace/' + revisions[revisions.length-1].id);
   const suppliers = await call('GET', prefix + '/workspace/' + initial.revision_id + '/background/user-projects');
-  const supplyResource = JSON.parse(fs.readFileSync(path.join(__dirname, 'resources/src/nebula_one/resources/public_supply/tiangong-china-grid-2022.v1.json'), 'utf8'));
+  const supplyResource = JSON.parse(fs.readFileSync(path.join(resourceDirectory, 'src/nebula_one/resources/public_supply/tiangong-china-grid-2022.v1.json'), 'utf8'));
   const supplier = suppliers.items.find(item => item.name === supplyResource.project_name);
   assert.ok(supplier, 'Exact public electricity background must be installed');
   const fields = initial.fields.filter(field => !field.linked && field.port_id === 'grid-electricity-in');

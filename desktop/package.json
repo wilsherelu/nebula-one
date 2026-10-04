@@ -19,7 +19,7 @@
     "appId": "org.nebula.one",
     "productName": "Nebula One",
     "directories": { "output": "../../nebula-one-desktop-release" },
-    "files": ["main.cjs", "preload.cjs", "runtime.cjs", "security.cjs", "package.json"],
+    "files": ["main.cjs", "preload.cjs", "runtime.cjs", "security.cjs", "workspace.cjs", "window-acceptance.cjs", "four-task-smoke.cjs", "package.json"],
     "extraResources": [{ "from": "resources", "to": "runtime" }],
     "asar": true,
     "win": { "target": "nsis", "artifactName": "Nebula-One-${version}-windows-x64.exe" },

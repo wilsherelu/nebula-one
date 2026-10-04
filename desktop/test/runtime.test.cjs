@@ -39,7 +39,8 @@ test('editor serves SPA and proxies HTTP method, path and body', async () => {
     assert.equal(await (await fetch(origin + '/projects/id')).text(), '<main>editor</main>');
     assert.equal((await fetch(origin + '/missing.js')).status, 404);
     const response = await fetch(origin + '/api/projects?version=7', {method:'POST', body:'exact-body'});
-    assert.deepEqual(await response.json(), {method:'POST', url:'/projects?version=7', body:'exact-body'});
+    assert.deepEqual(await response.json(), {method:'POST', url:'/api/projects?version=7', body:'exact-body'});
+    assert.equal((await (await fetch(origin + '/api/stats')).json()).url, '/api/stats');
   } finally {
     await Promise.all([new Promise(resolve => editor.close(resolve)), new Promise(resolve => api.close(resolve))]);
     fs.rmSync(root, {recursive:true});

@@ -35,7 +35,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           if (key === 'applications') navigate('/applications');
           // The modelling screen is a different app on a different port, so the language travels
           // as an explicit parameter instead of relying on storage both apps cannot share.
-          if (key === 'modeling') window.open(`/modeling?${languageParam(lang)}`, '_blank', 'noopener,noreferrer');
+          if (key === 'modeling') {
+            if (window.__NEBULA_ONE_DESKTOP__?.openEditorHome) void window.__NEBULA_ONE_DESKTOP__.openEditorHome(lang);
+            else window.open(`/modeling?${languageParam(lang)}`, '_blank', 'noopener,noreferrer');
+          }
         }}>
           <Menu.Item key="home" aria-label={t('nav.home')} aria-current={active === 'home' ? 'page' : undefined} renderItemInTooltip={() => t('nav.home')}><IconHome /><span>{t('nav.home')}</span></Menu.Item>
           <Menu.Item key="applications" aria-label={t('nav.projects')} aria-current={active === 'applications' ? 'page' : undefined} renderItemInTooltip={() => t('nav.projects')}><IconApps /><span className="nav-full">{t('nav.projects')}</span><span className="nav-short">{t('nav.projectsShort')}</span></Menu.Item>
