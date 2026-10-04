@@ -90,7 +90,7 @@ export function ContributionBars({ rows, description }: {
       aria: { enabled: true, description },
       tooltip: { trigger: 'axis', renderMode: 'richText', axisPointer: { type: 'shadow' } },
       grid: { left: 12, right: 60, top: 32, bottom: 16, containLabel: true },
-      xAxis: { type: 'value', name: unit, nameLocation: 'middle', nameGap: 22, position: 'top', splitLine: { lineStyle: { type: 'dashed' } } },
+      xAxis: { type: 'value', name: unit, nameLocation: 'middle', nameGap: 22, position: 'top', splitNumber: narrow ? 2 : 5, axisLabel: { hideOverlap: true }, splitLine: { lineStyle: { type: 'dashed' } } },
       yAxis: { type: 'category', inverse: true, data: items.map((row) => row.label.split('\n').map(short).join('\n')), axisLabel: { width: narrow ? 120 : 270, overflow: 'truncate', lineHeight: 16, hideOverlap: false, showMinLabel: true, showMaxLabel: true }, axisTick: { show: false }, axisLine: { show: false } },
       series: [{ type: 'bar', barMaxWidth: 22, label: { show: true, position: 'right', formatter: (params: { value: number }) => formatNumber(params.value, { maximumSignificantDigits: 6 }) }, data: items.map((row) => ({ value: row.value, itemStyle: { color: theme.getPropertyValue(row.value < 0 ? '--no-color-success' : '--no-color-primary').trim() } })) }],
     }} />;
