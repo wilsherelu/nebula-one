@@ -71,6 +71,10 @@ async function accept({app, mainWindow, workspace, runtime}) {
       dialog.showMessageBoxSync=()=>0;
       assert.equal(await workspace.open(runtime.editorOrigin+'/?from_nebula_one=1'),false);
       assert.equal(editor.getURL(),editorUrl.toString());
+      app.quit();
+      assert.equal(mainWindow.isDestroyed(),false);
+      assert.equal((await fetch(runtime.oneOrigin+'/health')).status,200);
+      assert.equal((await fetch(runtime.lcaOrigin+'/health')).status,200);
     } finally {dialog.showMessageBoxSync=originalDialog;}
     await button(editor,'返回 Nebula One');
     assert.equal(one.getURL(),originalUrl);
@@ -81,7 +85,7 @@ async function accept({app, mainWindow, workspace, runtime}) {
     let saved;
     await until(async()=>{saved=await call(runtime.editorOrigin,`/api/projects/${projectId}/latest`);return saved.version>before.version && saved.graph.nodes.some(item=>item.name===name);},'Saved model did not reread');
     await until(()=>!workspace.dirty,'Saved model still marked unsaved');
-    evidence.edit={version:saved.version,graph_hash:saved.graph_hash,process_name:name,draft_retained:true,discard_cancelled:true};
+    evidence.edit={version:saved.version,process_name:name,draft_retained:true,discard_cancelled:true,close_cancel_keeps_services:true};
     await until(()=>evaluate(editor,`[...document.querySelectorAll('button')].filter(item=>item.textContent.trim()==='返回 Nebula One').length===2`),'Saved return action unavailable');
     await evaluate(editor,`[...document.querySelectorAll('button')].filter(item=>item.textContent.trim()==='返回 Nebula One').at(-1).click()`);
     await until(()=>evaluate(one,`Boolean([...document.querySelectorAll('button')].find(item=>item.textContent.trim()==='确认版本，创建分析项目'))`),'One exact version confirmation not rendered');
