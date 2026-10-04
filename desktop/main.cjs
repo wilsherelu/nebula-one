@@ -18,8 +18,8 @@ else {
   app.on('before-quit', event => {
     if (!runtime || quitting) return;
     event.preventDefault();
-    if (workspace && !workspace.allowDiscard()) return;
-    if (workspace) workspace.dirty = false;
+    // Let both renderer draft guards cancel closing before shutting down their services.
+    if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.close(); return; }
     quitting = true;
     runtime.stop().finally(() => app.quit());
   });
