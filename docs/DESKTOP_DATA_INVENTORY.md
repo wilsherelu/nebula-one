@@ -1,6 +1,6 @@
 # Desktop bundled data inventory
 
-Data inventory for the scoped 0.1.0 desktop payload using LCA b3a6b1a79e534add7f86ae3b327c8e576be76b09. Paths below are relative to installed resources/runtime. SHA-256 is the file byte hash, not a source-record or licence hash. The payload manifest retains the exact source revisions and full dependency/file inventory.
+Historical selected-file inventory for an earlier scoped 0.1.0 desktop payload using LCA b3a6b1a79e534add7f86ae3b327c8e576be76b09. This table is not the r4 inventory. For r4, installed resources/runtime/payload-manifest.json is authoritative and pins One 3c2cd79e7d87e9166990c59a9df5a0440182c66e and LCA 958c51b8d58480b32b1f0fa76bdce9c4dbad4941. Paths below are relative to installed resources/runtime. SHA-256 is the file byte hash, not a source-record or licence hash. The payload manifest retains the exact source revisions and full dependency/file inventory.
 
 ## Source and permission review
 
@@ -15,7 +15,7 @@ Data inventory for the scoped 0.1.0 desktop payload using LCA b3a6b1a79e534add7f
 
 Removed from the desktop package: legacy unit XLSX, full elementary/intermediate CSVs, TianGong Process ZIP, duplicate solver-data EF copy, unused 2023 electricity seed and redundant mapping schema/documentation. The required mapping runtime manifest remains intact; NOTICE and LICENSE are also copied to the installed licenses directory. Python/JavaScript dependency notices are separate from data permission.
 
-This describes the previously scoped desktop payload selection, not a licence-driven prohibition on the historical TianGong dataset. The current Docker initialization retains the full original references and Process ZIP. The desktop builder additionally retains the TianGong MIT copyright/licence text and source NOTICE; no new installer has been produced by this source update.
+This describes the previously scoped desktop payload selection, not a licence-driven prohibition on the historical TianGong dataset. The current Docker initialization retains the full original references and Process ZIP. The desktop builder additionally retains the TianGong MIT copyright/licence text and source NOTICE; each installer retains its own exact manifest; later source documentation does not change an existing binary.
 
 See [retained per-version source declarations](RETAINED_SOURCE_DECLARATIONS.md) for owner/source evidence and the concrete remaining attribution gaps. Application Apache-2.0 licensing does not grant rights over all third-party data.
 
