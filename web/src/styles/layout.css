@@ -15,7 +15,15 @@
 .app-sidebar .arco-menu-item { margin-inline: var(--no-space-2); border-radius: var(--no-radius-control); }
 .app-content { min-width: 0; margin-left: var(--no-sidebar-width); }
 .app-shell > .app-content { overflow-x: clip; }
-.sidebar-toggle { align-self: center; flex-shrink: 0; margin-bottom: var(--no-space-3); }
+.sidebar-toggle.arco-btn {
+  position: fixed; top: 50%; left: calc(var(--no-sidebar-width) - 24px);
+  transform: translateY(-50%); z-index: 11; width: 24px; height: 40px;
+  padding: 0; border: 1px solid var(--no-color-border); border-right: 0;
+  border-radius: 8px 0 0 8px; background: var(--no-color-surface);
+  color: var(--no-color-text-secondary);
+}
+.sidebar-toggle.arco-btn:hover { background: var(--no-color-primary-soft); color: var(--no-color-primary); }
+.sidebar-toggle.arco-btn:focus-visible { outline: 2px solid var(--no-color-primary); outline-offset: -3px; }
 .app-shell--collapsed .brand-mark { padding-inline: 18px; }
 .app-shell--collapsed .brand-mark span:last-child { display: none; }
 @media (max-width: 768px) {
@@ -33,7 +41,7 @@
   .app-sidebar .arco-menu-item-disabled,
   .app-sidebar .arco-menu-disabled { display: none; }
   .app-content { margin-left: 0; }
-  .sidebar-toggle { margin: 0 4px; }
+  .sidebar-toggle.arco-btn { top: 56px; left: auto; right: 8px; width: 28px; height: 24px; border-right: 1px solid var(--no-color-border); border-radius: 6px; }
   .app-shell--collapsed .brand-mark { padding-inline: 10px; }
 }
 @media (max-width: 480px) {

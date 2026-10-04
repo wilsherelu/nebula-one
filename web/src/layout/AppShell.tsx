@@ -23,11 +23,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="brand-mark__orb" aria-hidden="true" />
           <span><strong>Nebula One</strong><small>{t('brand.tagline')}</small></span>
         </div>
-        <Tooltip content={t(collapsed ? 'nav.expand' : 'nav.collapse')}>
-          <Button className="sidebar-toggle" aria-label={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-            aria-expanded={!collapsed} aria-controls="primary-navigation"
-            icon={collapsed ? <IconMenuUnfold /> : <IconMenuFold />} onClick={() => setCollapsed(value => !value)} />
-        </Tooltip>
         <LanguageSwitch compact={collapsed} />
         <Menu id="primary-navigation" collapse={collapsed} selectedKeys={[active]} onClickMenuItem={(key) => {
           if (key === 'home') navigate('/');
@@ -46,6 +41,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Menu.Item key="modeling" aria-label={t('nav.modeling')} aria-current={active === 'modeling' ? 'page' : undefined} renderItemInTooltip={() => t('nav.modeling')}><IconBranch /><span className="nav-full">{t('nav.modeling')}</span><span className="nav-short">{t('nav.modelingShort')}</span></Menu.Item>
         </Menu>
       </Sider>
+      <Tooltip content={t(collapsed ? 'nav.expand' : 'nav.collapse')}>
+        <Button className="sidebar-toggle" aria-label={t(collapsed ? 'nav.expand' : 'nav.collapse')}
+            aria-expanded={!collapsed} aria-controls="primary-navigation"
+            icon={collapsed ? <IconMenuUnfold /> : <IconMenuFold />} onClick={() => setCollapsed(value => !value)} />
+      </Tooltip>
       <Content className="app-content">{children}</Content>
     </Layout>
   );
