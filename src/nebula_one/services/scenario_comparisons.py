@@ -676,6 +676,16 @@ class ScenarioComparisonService:
             ),
             mfa["series"][0],
         )
+        # The numeric snapshot may be shared with an earlier execution of identical inputs, and its
+        # own receipt names whoever froze that content first. This member is a separate scenario
+        # execution, so its frozen association - and the identity the comparison exports and queries
+        # - is the current scenario, never the first creator's. Only the scenario identity is
+        # re-bound here; the shared numeric evidence stays intact.
+        member_provider_receipt = {
+            **solved.provider_receipt,
+            "scenario_id": scenario["id"],
+            "scenario_hash": scenario["content_sha256"],
+        }
         result = {
             "scenario_id": scenario["id"],
             "scenario_name": scenario["name"],
@@ -684,7 +694,7 @@ class ScenarioComparisonService:
             "solved_snapshot_id": solved.id,
             "solved_snapshot_hash": solved.content_sha256,
             "solve_hash": solved.solve_hash,
-            "provider_receipt": solved.provider_receipt,
+            "provider_receipt": member_provider_receipt,
             "lcia_results": solved.lcia_results,
             "elementary_flow_receipts": solved.provider_receipt.get(
                 "elementary_flow_receipts", []
@@ -755,17 +765,17 @@ class ScenarioComparisonService:
                     status_code=409,
                     details={"scenario_id": scenario.id},
                 )
-        revision_ids = [
-            scenario.system_revision_id
-            for scenario in scenarios
-            if scenario is not None
-        ]
-        if len(set(revision_ids)) != len(revision_ids):
+        member_ids = [scenario.id for scenario in scenarios if scenario is not None]
+        # A comparison reviews one frozen model revision under several distinct scenarios, so a
+        # repeated revision is expected, not an error: two scenarios may bind the same revision and
+        # share the numeric snapshot. The only real constraint is distinct scenario members; the
+        # per-member scenario identity, not the revision, is what keeps the comparison meaningful.
+        if len(set(member_ids)) != len(member_ids):
             raise DomainError(
-                code="COMPARISON_REVISION_DUPLICATE",
-                message="each scenario in an executable comparison must bind a distinct revision",
+                code="COMPARISON_SCENARIO_DUPLICATE",
+                message="each scenario in a comparison must be a distinct scenario",
                 status_code=409,
-                details={"system_revision_ids": revision_ids},
+                details={"scenario_ids": member_ids},
             )
         scenario_specs = tuple(
             {

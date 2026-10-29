@@ -14,6 +14,10 @@ from ..runtime_schemas import MethodPackageCreate
 
 
 METHOD_ROOT = Path(__file__).resolve().parents[1] / "resources" / "official_methods"
+METHOD_CAPABILITIES = {"product_carbon_footprint": "pcf.product.v1",
+                       "organization_period_inventory": "organization.period.v1",
+                       "cbam_partial_review": "cbam.partial-review.v1",
+                       "organization_lifecycle_carbon": "organization.lifecycle-carbon.v1"}
 
 
 def official_template_profile(context) -> dict | None:
@@ -31,9 +35,19 @@ def _bind(db, application, package_kind: str, *, revision=None) -> str | None:
         from .returned_cbam_binding import _identity_graph
         graph_identity = canonical_json_sha256(_identity_graph(revision.graph_snapshot))
     matching = []
+    library = ((application.context or {}).get('seed_template') or {}).get('accounting_library')
+    frozen_pins = {(item['package_id'], item['version']): item['content_sha256']
+                   for item in library['methods']} if library else None
     for path in METHOD_ROOT.glob("*.json"):
         data = json.loads(path.read_text(encoding="utf-8"))
         payload = MethodPackageCreate.model_validate(data)
+        if frozen_pins is not None:
+            expected = frozen_pins.get((payload.package_id, payload.version))
+            if expected is None:
+                continue
+            if canonical_json_sha256(payload.model_dump(mode='json')) != expected:
+                raise DomainError(code='TEMPLATE_METHOD_LIBRARY_PIN_MISMATCH',
+                                  message='核算方案集的固定方法内容已变化。', status_code=409)
         reviewed_graph = payload.manifest.get("reviewed_graph_identity_sha256")
         if (payload.package_kind == package_kind and payload.manifest.get("template_profile") == profile
                 and (reviewed_graph is None or reviewed_graph == graph_identity)):
@@ -66,10 +80,7 @@ def _bind(db, application, package_kind: str, *, revision=None) -> str | None:
         refs.append(reference)
         context["method_package_refs"] = refs
     capabilities = list(context.get("project_capabilities") or [])
-    capability = {"product_carbon_footprint": "pcf.product.v1",
-                  "organization_period_inventory": "organization.period.v1",
-                  "cbam_partial_review": "cbam.partial-review.v1",
-                  "organization_lifecycle_carbon": "organization.lifecycle-carbon.v1"}[package_kind]
+    capability = METHOD_CAPABILITIES[package_kind]
     if capability not in capabilities:
         capabilities.append(capability)
         context["project_capabilities"] = capabilities

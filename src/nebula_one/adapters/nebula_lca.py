@@ -11,7 +11,7 @@ import httpx
 from pydantic import ValidationError
 
 from ..errors import UpstreamError
-from ..hashing import graph_identity_sha256
+from ..hashing import canonical_json_sha256, graph_identity_sha256
 from ..mapped_background_schemas import (
     ProviderNativeBackgroundClimateRequest,
     ProviderNativeBackgroundClimateResponse,
@@ -895,7 +895,7 @@ class NebulaLCAClient:
             )
         runtime_index = value.get("runtime_flow_index")
         factor_count = value.get("factor_count")
-        if (
+        if runtime_index is not None and (
             isinstance(runtime_index, bool)
             or not isinstance(runtime_index, int)
             or runtime_index < 0
@@ -909,14 +909,20 @@ class NebulaLCAClient:
         if (
             isinstance(factor_count, bool)
             or not isinstance(factor_count, int)
-            or factor_count <= 0
+            or factor_count < 0
         ):
             cls._raise_catalog_contract_error(
                 path=path,
                 index=index,
                 field="factor_count",
-                reason="elementary Flow has no non-zero EF 3.1 factor coverage",
+                reason="elementary Flow factor count must be a non-negative integer",
             )
+        if factor_count == 0 and value["factor_hash"] != canonical_json_sha256([]):
+            cls._raise_catalog_contract_error(path=path, index=index, field="factor_hash",
+                reason="missing factor coverage must carry the empty factor collection hash")
+        if factor_count > 0 and runtime_index is None:
+            cls._raise_catalog_contract_error(path=path, index=index, field="runtime_flow_index",
+                reason="matched factors require a runtime Flow index")
         dependency_source = value.get("reference_dependency_resolution_source")
         dependency_hash = value.get("reference_dependency_snapshot_hash")
         if dependency_source not in {

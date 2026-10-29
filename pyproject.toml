@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nebula-one"
-version = "1.0.0rc2"
+version = "0.1.1"
 description = "Application-layer backend for sustainability analysis on Nebula LCA and TIDAS"
 readme = "README.md"
 requires-python = ">=3.10"

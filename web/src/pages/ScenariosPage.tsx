@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, formatDate, shortId } from '../api/client';
+import { buildSolvePayload } from '../calculation/solveContract';
 import type { ComparisonExecuteRequest, MethodPackage } from '../api/types';
 import { RevisionLineage } from '../components/RevisionLineage';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -135,7 +136,7 @@ export function ScenariosPage() {
         throw new Error('产品碳足迹方法包未完整绑定核算方法，不能启动求解。');
       }
       const methods = [...new Set([...manualMethods, ...boundPcfLciaMethods])];
-      return api.solveAndFreeze(applicationId, latestRevision.id, {
+      return api.solveAndFreeze(applicationId, latestRevision.id, buildSolvePayload({
         demand: selectedCase.demand.map((item) => ({
           reference_flow_uuid: String(item.reference_flow_uuid ?? ''),
           amount: Number(item.amount),
@@ -143,9 +144,9 @@ export function ScenariosPage() {
           ...(typeof item.unit_group_uuid === 'string' ? { unit_group_uuid: item.unit_group_uuid } : {}),
           ...(typeof item.unit_group_version === 'string' ? { unit_group_version: item.unit_group_version } : {}),
         })),
-        idempotency_key: `case-${selectedCase.resolved_case_sha256.slice(0, 20)}-${latestRevision.content_sha256.slice(0, 20)}`,
-        ...(methods.length ? { lcia_methods: methods } : {}),
-      });
+        idempotencyKey: `case-${selectedCase.resolved_case_sha256.slice(0, 20)}-${latestRevision.content_sha256.slice(0, 20)}`,
+        lciaMethods: methods,
+      }));
     },
     onSuccess: async (snapshot) => {
       await queryClient.invalidateQueries({ queryKey: ['solved-snapshots', applicationId] });

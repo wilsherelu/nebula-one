@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SankeyViewer } from './SankeyViewer';
@@ -40,11 +40,18 @@ describe('SankeyViewer', () => {
     fireEvent.load(image);
 
     expect(screen.queryByLabelText('正在加载')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /打开全图/ })).toHaveAttribute(
-      'href',
-      '/api/mfa/sankey.svg',
-    );
+    expect(screen.getByRole('button', { name: /打开全图/ })).toBeInTheDocument();
     expect(screen.getByLabelText('桑基图滚动区域')).toHaveAttribute('tabindex', '0');
+  });
+
+  it('exits the in-page full chart with the floating button and Escape', async () => {
+    renderViewer(<SankeyViewer src="/api/exact.svg" alt="MFA" />);
+    await userEvent.click(screen.getByRole('button', { name: '打开全图' }));
+    await userEvent.click(screen.getByRole('button', { name: '退出全屏' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: '退出全屏' })).not.toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '打开全图' }));
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('button', { name: '退出全屏' })).not.toBeInTheDocument());
   });
 
   it('shows an actionable error and retries without changing the evidence URL', async () => {
@@ -58,10 +65,7 @@ describe('SankeyViewer', () => {
       'src',
       '/api/mfa/sankey.svg?retry=1',
     );
-    expect(screen.getByRole('link', { name: /打开全图/ })).toHaveAttribute(
-      'href',
-      '/api/mfa/sankey.svg',
-    );
+    expect(screen.getByRole('button', { name: /打开全图/ })).toBeInTheDocument();
   });
   it('shows chart controls in English without changing the frozen SVG URL', async () => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
@@ -69,6 +73,6 @@ describe('SankeyViewer', () => {
     fireEvent.load(screen.getByRole('img', { name: 'Material flow' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Readable scale' }));
     expect(screen.getByLabelText('Scrollable Sankey diagram')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open full chart' })).toHaveAttribute('href', '/api/exact.svg');
+    expect(screen.getByRole('button', { name: 'Open full chart' })).toBeInTheDocument();
   });
 });

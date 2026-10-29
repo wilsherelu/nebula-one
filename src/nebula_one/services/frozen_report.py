@@ -58,6 +58,10 @@ class FrozenReportService:
         record = self.c.organization_lifecycle.get(application_id, record_id)
         snapshot, graph, workspace, report = self._source(record["solved_snapshot_id"], record["result"], "organization", lang)
         report.update(organization_report(record["result"], snapshot, graph, workspace))
+        if record['result'].get('user_method_grouping'):
+            frozen_method = snapshot['provider_receipt']['user_calculation_method']
+            report['method_name'] = frozen_method['name']
+            report['method_version'] = str(frozen_method['version'])
         if lang == "en":
             with self.c.database.session() as db:
                 labels = organization_lifecycle_display(require_method_package(db, record["result"]["method_package"]["reference"]), lang)["labels"]

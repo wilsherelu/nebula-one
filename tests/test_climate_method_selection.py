@@ -9,6 +9,27 @@ from nebula_one.native_climate_contract import NativeClimateContract
 from test_api_flow import _attach_model, _create_application
 
 
+def test_new_solve_obeys_declared_library_default_without_guessing_between_bound_versions(client):
+    import json
+    from pathlib import Path
+    payload = json.loads(Path('src/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.3.json').read_text(encoding='utf-8'))
+    assert client.post('/api/v1/method-packages', json=payload).status_code == 201
+    app = _create_application(client)
+    model = _attach_model(client, app['id'])
+    revision = model['upstream_receipt']['base_revision_id']
+    preferred = 'pcf.product.ef31.foreground@1.0.4'
+    with client.app.state.container.database.session() as db:
+        row = db.get(Application, app['id'])
+        row.context = {**row.context, 'method_package_refs': ['pcf.product.ef31.foreground@1.0.3', preferred],
+            'seed_template': {'accounting_library': {'tasks': [{'role': 'complete_model', 'default_ref': preferred}]}}}
+        db.commit()
+    response = client.post(f'/api/v1/applications/{app["id"]}/system-revisions/{revision}/solve', json={
+        'demand': [{'reference_flow_uuid': 'flow-product', 'amount': 8, 'unit': 'kg'}],
+        'climate_default': True, 'idempotency_key': 'declared-default'})
+    assert response.status_code == 201, response.text
+    assert response.json()['provider_receipt']['calculation_basis']['calculation_method']['reference'] == preferred
+
+
 def test_new_nonsteel_climate_solve_pins_the_registered_ef_method(client):
     app = _create_application(client)
     model = _attach_model(client, app["id"])
@@ -23,7 +44,7 @@ def test_new_nonsteel_climate_solve_pins_the_registered_ef_method(client):
     with client.app.state.container.database.session() as db:
         run = db.get(AnalysisRun, snapshot["provider_receipt"]["analysis_run_id"])
         assert run.parameters["calculation_method"]["lcia_method"] == "EF v3.1"
-        assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.2"
+        assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.4"
         assert len(run.parameters["calculation_method"]["content_sha256"]) == 64
         assert run.parameters["lcia_methods"] == ["EF v3.1"]
     resolved = client.get(
@@ -51,7 +72,7 @@ def test_climate_default_does_not_reuse_the_same_revisions_inventory_snapshot(cl
     assert climate.json()["solve_hash"] != inventory.json()["solve_hash"]
     basis = climate.json()["provider_receipt"]["calculation_basis"]
     assert basis["lcia_methods"] == ["EF v3.1"]
-    assert basis["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.2"
+    assert basis["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.4"
     assert len(basis["calculation_method"]["content_sha256"]) == 64
 
     replay = client.post(url, json=climate_request)
@@ -93,7 +114,7 @@ def test_frozen_ef_answer_resolves_registered_method_without_project_name(client
             scaled_elementary_exchanges=[], internal_transfers=[], boundary_flows=[],
             process_balance_residuals=[], contribution_graph={}, lcia_results={
                 "method": "EF v3.1", "indicator_results": [{
-                    "canonical_indicator_key": "climate change|climate change - radiative forcing as global warming potential (gwp100)",
+                    "canonical_indicator_key": "climate change",
                     "unit": "kg CO2-Eq", "value": 3.0,
                 }],
             }, content_sha256="b" * 64))
@@ -102,7 +123,7 @@ def test_frozen_ef_answer_resolves_registered_method_without_project_name(client
         "/api/v1/solved-system-snapshots/frozen-ef-default/product-carbon-footprint/default-method"
     )
     assert response.status_code == 200, response.text
-    assert response.json()["reference"] == "pcf.product.ef31.foreground@1.0.2"
+    assert response.json()["reference"] == "pcf.product.ef31.foreground@1.0.4"
     assert response.json()["method"]["lcia_method"] == "EF v3.1"
     assert response.json()["method"]["result_unit"] == "kg CO2-Eq"
     assert len(response.json()["content_sha256"]) == 64

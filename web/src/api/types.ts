@@ -131,6 +131,7 @@ export interface ModelSourceAttachResult {
 }
 
 export interface SystemRevision {
+  graph_snapshot?: Record<string, unknown>;
   id: string;
   system_model_id: string;
   parent_revision_id: string | null;
@@ -178,6 +179,8 @@ export interface DemandItem {
 
 export interface SolveAndFreezeRequest {
   analysis_task?: 'mfa' | 'pcf' | 'cbam' | 'organization';
+  calculation_purpose?: string;
+  calculation_method_ref?: CalculationMethodRef;
   mapped_background_process_pins?: MappedBackgroundProcessPin[];
   background_process_pins?: BackgroundProcessPin[];
   project_background_pins?: ProjectBackgroundPin[];
@@ -319,6 +322,12 @@ export interface OrganizationLifecycleDisplay {
   };
 }
 
+export interface PcfBasisRequest {
+  result_basis: 'total' | 'per_reference_output';
+  base_amount?: number;
+  base_unit?: 'kg' | 't';
+}
+
 export interface ProductCarbonFootprint {
   schema_version: 'nebula_one.pcf.product.v1';
   capability_key: 'pcf.product.v1';
@@ -362,6 +371,7 @@ export interface ProductCarbonFootprint {
       share_of_total: number | null;
       cf_hash: string;
     }>;
+    user_method_grouping?: UserMethodGrouping;
   };
   boundary_claim: {
     claim_scope: string;
@@ -369,6 +379,12 @@ export interface ProductCarbonFootprint {
     complete_product_declaration: boolean;
   };
   data_quality: {
+    characterization_coverage?: {
+      schema_version: 'provider.lcia.characterization-coverage.v1';
+      status: 'partial' | 'complete';
+      value_kind: 'known_subtotal' | 'characterized_total';
+      uncharacterized_exchanges: { exchange_id: string; flow_uuid: string; flow_name?: string | null; amount: number; amount_unit: string; numeric_contribution: null }[];
+    };
     database_release?: string;
     solver_version?: string;
     elementary_flow_receipt_count?: number;
@@ -380,6 +396,22 @@ export interface ProductCarbonFootprint {
     limitations?: string[];
   } & Record<string, unknown>;
   provenance: Record<string, unknown>;
+  result_basis?: {
+    schema_version: string;
+    basis: 'per_reference_output';
+    base_amount: string;
+    base_unit: string;
+    reference_output: { amount: number; unit: string; source: string; identity?: string | null };
+    conversion_ratio_base_over_reference: string;
+    basis_sha256: string;
+    source: {
+      snapshot_id?: string;
+      solve_hash?: string;
+      lcia_method?: string;
+      indicator_key?: string;
+      raw_total: { value: number | null; unit: string };
+    };
+  } | null;
   content_sha256: string;
 }
 
@@ -1328,4 +1360,482 @@ export interface FrozenReport {
   outside_boundary: Array<{name: string; status: string}>; uncharacterized: FrozenReportRow[];
   status_labels: Record<string,string>; group_labels: Record<string,string>; sources: Record<string,unknown>;
   detail_status?: string;
+  custom_dimensions?: Array<{id:string; name:string; reconciled:boolean; categories:Array<{id:string;name:string;subtotal:number|null;unit:string|null;is_leaf:boolean}>}>;
+  user_rule_totals?: {counted:number;known_model:number;unit:string};
 }
+
+export type MethodPurpose = 'cbam' | 'organization' | 'pcf' | 'custom';
+export type RuleDirection = 'input' | 'output' | 'emission' | 'resource';
+export type BoundaryStatus = 'selected' | 'excluded' | 'pending';
+export type LocationRole = 'onsite' | 'purchased_energy' | 'upstream_supply' | 'other';
+export type ScopeValue = 'scope_1' | 'scope_2' | 'scope_3';
+export type ClassificationBasis = 'user' | 'package' | 'unclassified';
+export type MethodStatus = 'draft' | 'ready' | 'retired';
+export type AccountingBoundary = 'include' | 'exclude' | 'pending' | 'inherit';
+/** Explicit version semantics. Absent keeps the legacy boundary/Scope reading; a tag scheme
+ * declares `flow_tag.v1`, so its kind is never guessed from a purpose, a name or an empty field. */
+/** `flow_tag.v1` is the legacy, read-only scheme; `result_category.v1` is the current caliber whose
+ * membership is one assigned leaf category. Both keep their own hashes and replay semantics. */
+export type MethodSemantics = 'flow_tag.v1' | 'result_category.v1';
+
+/** One category a method declares in a reporting dimension. A category is a leaf unless it names a
+ * parent; parents only roll their leaves up, so a rule always points at a leaf id. */
+export interface MethodCategory {
+  id: string;
+  name?: string | null;
+  name_zh?: string | null;
+  name_en?: string | null;
+  parent_id?: string | null;
+  is_leaf?: boolean | null;
+}
+
+/** A user- or package-declared grouping axis. LC-Scope 1-3 is one such dimension; a non-Scope
+ * tree (onsite-production / purchased-energy / upstream-materials) is another and needs no new
+ * calculation code on either side. */
+export interface MethodDimension {
+  id: string;
+  name?: string | null;
+  source?: string;
+  mutually_exclusive?: boolean;
+  requires_full_coverage?: boolean;
+  categories: MethodCategory[];
+}
+
+export interface CalculationMethodRule {
+  process_instance_id: string;
+  exchange_id: string | null;
+  flow_uuid: string | null;
+  direction: RuleDirection;
+  boundary_status: BoundaryStatus;
+  location_role: LocationRole;
+  scope: ScopeValue | null;
+  cbam_relevant: boolean;
+  classification_basis: ClassificationBasis;
+  // Additive frozen-core fields. The editor keeps writing v1 boundary_status/scope, so these stay
+  // optional; a custom-category rule carries `categories` on top of the same legacy switches.
+  schema_version?: 1 | 2;
+  contribution_target?: string;
+  boundary?: AccountingBoundary | null;
+  categories?: Record<string, string>;
+}
+
+export interface CalculationMethodVersion {
+  id: string;
+  method_id: string;
+  version: number;
+  cbam_boundary_ref: string | null;
+  content_sha256: string | null;
+  status: string;
+  created_at: string;
+  validated_at: string | null;
+  rules: CalculationMethodRule[];
+  reporting_dimensions?: MethodDimension[];
+  /** The exact model-processing package this version binds to, or null to let the automatic
+   * resolver choose. A variant pins a reviewed explicit package here; the official default stays null. */
+  model_processing_rules_ref?: ModelProcessingRulesRef | null;
+  /** Absent on every pre-existing version. `flow_tag.v1` marks a tag scheme. */
+  semantics?: MethodSemantics | null;
+}
+
+export interface MethodCapabilityReason {
+  code: string;
+  message: string;
+}
+
+/** What a method version can actually do, so the editor never requests an unrelated package. */
+export interface CalculationMethodCapabilities {
+  method_id: string;
+  method_name: string;
+  semantics: string | null;
+  latest_version: number | null;
+  latest_status: string | null;
+  content_sha256: string | null;
+  purpose: string;
+  tag_scheme: boolean;
+  tag_grouping: boolean;
+  result_category: boolean;
+  legacy_tag_scheme: boolean;
+  legacy_method: boolean;
+  conversion_available: boolean;
+  dedicated_strategy: string | null;
+  processing_package_selection: boolean;
+  processing_package_reason: MethodCapabilityReason | null;
+}
+
+/** One processing package the user may bind to a variant of this method, with the applicability facts
+ * needed to choose it: how it handles emissions for this purpose and whether it is auto or explicit. */
+export interface ProcessingPackageOption {
+  package_id: string;
+  version: string;
+  content_sha256: string;
+  selection_mode: string;
+  purpose_declared: boolean;
+  elementary_flows_mode: string | null;
+}
+
+export interface CalculationMethod {
+  id: string;
+  application_id: string;
+  model_revision_id: string;
+  purpose: string;
+  name: string;
+  description: string | null;
+  origin_method_id: string | null;
+  origin_method_version?: number | null;
+  origin_content_sha256?: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  /** Head-version facts the list surface shows without a per-row detail request. */
+  semantics?: string | null;
+  latest_version?: number | null;
+  latest_content_sha256?: string | null;
+  latest_status?: string | null;
+  category_summary?: string[];
+}
+
+export interface CalculationMethodDetail {
+  method: CalculationMethod;
+  latest_version: number;
+  versions: CalculationMethodVersion[];
+}
+
+/** The exact method+version pointer a solve request cites so the run freezes against one immutable
+ * version rather than `latest`. The backend also requires this version to be `ready`. */
+export interface CalculationMethodRef {
+  method_id: string;
+  version: number;
+  content_sha256: string;
+}
+
+/** Identity of the executed user method carried on every solve result, including the compiled
+ * execution-plan hash and compiler version folded in by the freeze. */
+export interface UserMethodIdentity {
+  method_id?: string;
+  version?: number;
+  content_sha256?: string | null;
+  model_revision_id?: string;
+  execution_plan_sha256?: string | null;
+  compiler_version?: string | null;
+}
+
+/** One rule that is bound to a contribution path the engine returned no weighted value for. The
+ * backend emits objects, never bare strings; the code drives the reader-facing wording. */
+export interface MethodCoverageGap {
+  rule_index?: number;
+  code: string;
+  message?: string;
+  exchange_id?: string;
+}
+
+/** The grouping the user method produced on the contributions: how much was attributed, where the
+ * engine had no data, and which flows stayed unattributed. Never a completeness claim. */
+export interface UserMethodGrouping {
+  method: UserMethodIdentity;
+  grouping_mode: 'path_weighted' | 'exchange_weighted' | 'flow_tag';
+  execution_status: string;
+  counts_as_complete_pcf?: boolean;
+  coverage?: {
+    attribution_coverage?: 'complete' | 'partial' | 'missing' | 'foreground_only' | number | null;
+    coverage_gaps?: MethodCoverageGap[];
+    unattributed_exchange_ids?: string[];
+    engine_gap_exchange_ids?: string[];
+    /** Inventory elementary flows this method has no factor for: absent, never zero. */
+    uncharacterized_exchange_ids?: string[];
+    /** Flows the method characterized with a zero coefficient: a real zero, not a missing factor. */
+    zero_cf_exchange_ids?: string[];
+  };
+  grouping?: Record<string, unknown> | null;
+  /** Present only for a method that declares its own (non-Scope) reporting dimensions. A legacy
+   * Scope-only method leaves this null so the historical result/export shape is untouched. */
+  dimension_grouping?: DimensionGrouping | null;
+  /** Present only for an executed `flow_tag.v1` scheme; a legacy method leaves it absent. */
+  tag_grouping?: TagSchemeGrouping | null;
+}
+
+export interface GroupingCategoryRow {
+  id: string;
+  name: string | null;
+  parent_id: string | null;
+  is_leaf: boolean;
+  subtotal: number | null;
+  unit: string | null;
+  term_count: number;
+  missing_count: number;
+}
+
+export interface GroupingDimensionResult {
+  name?: string | null;
+  categories: GroupingCategoryRow[];
+  unattributed: { subtotal: number; term_count: number };
+  reconciled: boolean;
+  requires_full_coverage: boolean;
+  completeness: 'empty' | 'partial' | 'available' | 'unavailable';
+}
+
+export interface DimensionGrouping {
+  grouping: {
+    indicator_unit: string;
+    known_total: number;
+    known_term_count: number;
+    excluded: { value: number; unit: string; term_count: number; missing_count: number };
+    pending: { term_count: number };
+    missing_value: { count: number; source_keys: string[] };
+    dimensions: Record<string, GroupingDimensionResult>;
+    reconciled: boolean;
+    problems: unknown[];
+    reporting_statement: boolean;
+  };
+  coverage_gaps: MethodCoverageGap[];
+  uncovered_exchange_ids: string[];
+  reconciled: boolean;
+  problems: unknown[];
+  scope_1_2_3_statement: boolean;
+}
+
+export interface CalculationMethodSavePayload {
+  name?: string;
+  description?: string | null;
+  cbam_boundary_ref?: string | null;
+  rules: CalculationMethodRule[];
+  reporting_dimensions?: MethodDimension[];
+  model_processing_rules_ref?: ModelProcessingRulesRef | null;
+  semantics?: MethodSemantics | null;
+  expected_content_sha256: string;
+}
+
+export interface CalculationMethodClonePayload {
+  name: string;
+  purpose: MethodPurpose;
+  model_revision_id: string;
+  semantics?: MethodSemantics | null;
+}
+
+export interface CalculationMethodCreatePayload {
+  name: string;
+  purpose: MethodPurpose;
+  model_revision_id: string;
+  description?: string | null;
+  cbam_boundary_ref?: string | null;
+  rules?: CalculationMethodRule[];
+  reporting_dimensions?: MethodDimension[];
+  semantics?: MethodSemantics | null;
+}
+
+/** One exact tag-scheme version cited by identity, never by name or `latest`. */
+export interface TagSchemeRef {
+  method_id: string;
+  version: number;
+  content_sha256: string;
+}
+
+export interface TagGroupingRequest {
+  snapshot_id: string;
+  indicator_key: string;
+  schemes: TagSchemeRef[];
+  mode: 'separate' | 'intersection' | 'union';
+}
+
+/** A grouping problem keeps the server's own code and sentence; extra fields stay readable in the
+ * raw detail rather than being mapped onto invented wording. */
+export interface TagGroupingProblem {
+  code?: string;
+  message?: string;
+  exchange_id?: string;
+  [key: string]: unknown;
+}
+
+export interface TagCategoryRow {
+  id: string;
+  name: string | null;
+  parent_id: string | null;
+  is_leaf: boolean;
+  subtotal: number | null;
+  unit: string | null;
+  term_count: number;
+  missing_count: number;
+}
+
+export interface TagSchemeGrouping {
+  scheme: {
+    method_id: string;
+    version: number;
+    content_sha256: string;
+    name: string;
+    purpose: string;
+    model_revision_id: string;
+  };
+  semantics?: string | null;
+  /** False when no flow carries a relation yet; the reader shows "not classified" instead of zero. */
+  populated?: boolean;
+  dimension: { id: string | null; name: string | null; requires_full_coverage: boolean; categories: TagCategoryRow[] };
+  tag_total: { value: number | null; unit: string | null; term_count: number };
+  uncategorized: { subtotal: number | null; unit: string | null; term_count: number };
+  matched: { term_count: number; known_term_count: number };
+  matched_exchange_ids: string[];
+  unmatched: { term_count: number; known_term_count?: number; known_value: number | null; unit: string | null; missing_count: number; exchange_ids: string[] };
+  pending: { term_count: number; exchange_ids: string[] };
+  missing: { term_count: number; exchange_ids: string[]; no_weighted_value_ids: string[] };
+  real_zero: { term_count: number; exchange_ids: string[] };
+  coverage: {
+    weighted_term_count: number; matched_term_count: number; unmatched_term_count: number;
+    pending_term_count: number; matched_share: number | null; complete: boolean;
+  };
+  reconciled: boolean;
+  problems: TagGroupingProblem[];
+  reporting_statement: boolean;
+}
+
+export interface TagGroupingResult {
+  result_id?: string | null;
+  created_at?: string | null;
+  application_id: string;
+  snapshot_id: string;
+  snapshot_content_sha256: string;
+  indicator_key: string;
+  indicator_unit: string | null;
+  mode: string;
+  semantics: string;
+  available: boolean;
+  reason: string | null;
+  schemes: TagSchemeGrouping[];
+  union: { value: number | null; unit: string | null; term_count: number; exchange_ids: string[] } | null;
+  intersection: { value: number | null; unit: string | null; term_count: number; exchange_ids: string[] } | null;
+  overlap: { multi_scheme_term_count?: number; term_count_by_scheme?: Record<string, number> };
+  reconciled: boolean;
+  problems: TagGroupingProblem[];
+  content_sha256: string;
+}
+
+/** One legacy rule as the conversion would carry it: a leaf assignment survives, everything else
+ * becomes "无" and is counted separately so the reader sees what the copy would drop. */
+export interface ResultCategoryConversionRule {
+  rule_index: number;
+  process_instance_id: string | null;
+  exchange_id: string | null;
+  flow_uuid: string | null;
+  old_category: string | null;
+  new_category: string | null;
+  outcome: 'assigned' | 'unassigned' | 'invalid_category';
+  needs_resolution: boolean;
+  resolved: boolean;
+}
+
+export interface ResultCategoryConversionSourceDimension {
+  id: string;
+  name: string | null;
+  category_count: number;
+  rule_count: number;
+}
+
+/** One explicit mapping decision: a leaf id, or null for the reader's active “无”. */
+export interface ResultCategoryConversionResolution {
+  rule_index: number;
+  category: string | null;
+}
+
+export interface ResultCategoryConversionOptions {
+  source_dimension_id?: string | null;
+  target_dimension?: MethodDimension | null;
+  resolutions: ResultCategoryConversionResolution[];
+}
+
+export interface ResultCategoryConversionPreview {
+  source_method_id: string;
+  source_method_name: string;
+  source_version: number;
+  source_semantics: string | null;
+  source_content_sha256: string | null;
+  source_dimensions: ResultCategoryConversionSourceDimension[];
+  source_dimension_id: string | null;
+  target_semantics: string;
+  target_dimension_id: string | null;
+  dimension: MethodDimension | null;
+  counts: {
+    total: number;
+    assigned: number;
+    selected_without_category: number;
+    pending: number;
+    excluded: number;
+    invalid_category: number;
+    unresolved_invalid: number;
+    resolved_without_category: number;
+  };
+  rules: ResultCategoryConversionRule[];
+  problems: { code: string; message: string; rule_index?: number | null; exchange_id?: string | null; category?: string | null }[];
+  can_convert: boolean;
+  reason: MethodCapabilityReason | null;
+  mapping_sha256: string;
+}
+
+export interface ResultCategoryConversionPayload extends ResultCategoryConversionOptions {
+  name: string;
+  expected_mapping_sha256?: string | null;
+}
+
+export interface CalculationMethodValidationProblem {
+  code: string;
+  message: string;
+  rule_index: number | null;
+  process_instance_id: string | null;
+  exchange_id: string | null;
+}
+
+export interface CalculationMethodValidation {
+  method_id: string;
+  version: number;
+  model_revision_id: string;
+  content_sha256: string | null;
+  valid: boolean;
+  status: string;
+  validated_at: string;
+  problems: CalculationMethodValidationProblem[];
+}
+
+/** The rule a confirmed suggestion would write. `scope` is null for a port kept pending, so applying
+ * a suggestion never invents a classification the evidence did not support. */
+export interface ClassificationSuggestedRule {
+  boundary_status: BoundaryStatus;
+  location_role: LocationRole;
+  scope: ScopeValue | null;
+}
+
+/** One located, previewable suggestion for a single model port. `status` separates an actionable
+ * suggestion from a port the reader already decided (`already_classified`), one that carries no Scope
+ * by construction (`not_applicable`), and one kept pending for want of evidence (`pending_evidence`).
+ * `rationale` and `basis` are stable backend code strings the UI translates; never a flow name or factor. */
+export interface ClassificationSuggestion {
+  exchange_id: string;
+  process_id: string | null;
+  process_name: string | null;
+  flow_name: string | null;
+  unit: string;
+  direction: RuleDirection | string;
+  status: 'suggested' | 'already_classified' | 'not_applicable' | 'pending_evidence';
+  rationale: string;
+  confidence: 'high' | 'medium' | 'insufficient' | 'none';
+  basis: string[];
+  suggested: ClassificationSuggestedRule | null;
+  current: ClassificationSuggestedRule | null;
+}
+
+/** One bound method package that declared purchased-energy exchanges, cited by exact identity so a
+ * Scope 2/3 suggestion traces back to its versioned source. */
+export interface ClassificationEnergyPackage {
+  package_id: string;
+  version: string;
+  content_sha256: string;
+  declared_energy_exchange_ids: string[];
+}
+
+/** The full preview for one method version, with the evidence source it was derived from. */
+export interface ClassificationSuggestions {
+  strategy_version: string;
+  method_id: string;
+  version: number;
+  model_revision_id: string;
+  graph_content_sha256: string;
+  energy_packages: ClassificationEnergyPackage[];
+  suggestions: ClassificationSuggestion[];
+}
+

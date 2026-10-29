@@ -1,6 +1,6 @@
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {cleanup, fireEvent, render, screen, waitFor} from '@testing-library/react';
-import {MemoryRouter, useLocation} from 'react-router-dom';
+import {cleanup, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
+import {MemoryRouter, Route, Routes, useLocation} from 'react-router-dom';
 import {afterEach, expect, it, vi} from 'vitest';
 import {api} from '../api/client';
 import {seedProjectsApi} from '../api/seedProjects';
@@ -16,17 +16,50 @@ function mount() {
     <MemoryRouter><ProjectCreateDialog onClose={vi.fn()} /><Location /></MemoryRouter>
   </QueryClientProvider>);
 }
+/** Render the catalog at `entry` with the config workspace replaced by a location probe. */
+function mountAt(entry: string, items = [seed]) {
+  vi.spyOn(seedProjectsApi, 'catalog').mockResolvedValue({items});
+  vi.spyOn(api, 'casepacks').mockResolvedValue({schema_version: 'nebula.casepack-catalog.v1', items: [], issues: []});
+  render(<QueryClientProvider client={new QueryClient({defaultOptions: {queries: {retry: false}}})}>
+    <MemoryRouter initialEntries={[entry]}>
+      <Routes>
+        <Route path="/templates" element={<ProjectTemplatesPage />} />
+        <Route path="/templates/:templateId/config" element={<Location />} />
+        <Route path="/applications/:applicationId/calculation-methods" element={<Location />} />
+      </Routes>
+    </MemoryRouter>
+  </QueryClientProvider>);
+}
 afterEach(() => {cleanup(); vi.restoreAllMocks();});
 
-it('opens the exact installed template model for editing', async () => {
-  vi.spyOn(seedProjectsApi, 'catalog').mockResolvedValue({items: [seed]});
-  vi.spyOn(api, 'casepacks').mockResolvedValue({schema_version: 'nebula.casepack-catalog.v1', items: [], issues: []});
-  const open = vi.spyOn(window, 'open').mockReturnValue(null);
-  render(<QueryClientProvider client={new QueryClient({defaultOptions: {queries: {retry: false}}})}>
-    <MemoryRouter><ProjectTemplatesPage /></MemoryRouter>
-  </QueryClientProvider>);
-  fireEvent.click(await screen.findByRole('button', {name: '修改模板'}));
-  expect(open).toHaveBeenCalledWith('/modeling?application=source-app&model=source-model&launch=1&template=1&revision=source-revision&lang=zh', '_blank', 'noopener,noreferrer');
+it('gives each template card exactly two actions and no bare configuration links', async () => {
+  mountAt('/templates');
+  const heading = await screen.findByText(seed.title, {selector: 'h2'});
+  const card = heading.closest('section') as HTMLElement;
+  expect(within(card).getAllByRole('button').map(button => button.textContent)).toEqual(['新建项目', '配置模板']);
+  expect(screen.queryByRole('link', {name: '核算方法'})).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', {name: '定稿模型与规则'})).not.toBeInTheDocument();
+  expect(screen.queryByText('定稿新模板')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', {name: '配置模板'}));
+  await waitFor(() => expect(screen.getByLabelText('当前位置')).toHaveTextContent('/templates/steel/config?tab=methods'));
+});
+
+it('carries an old template deep link into the configuration workspace', async () => {
+  mountAt('/templates?source=source-app&model=source-model&revision=source-revision&template=1');
+  await waitFor(() => expect(screen.getByLabelText('当前位置')).toHaveTextContent('/templates/steel/config?tab=methods'));
+});
+
+it('lets the reader choose when one modelling source has several template versions', async () => {
+  mountAt('/templates?source=source-app', [seed, {...seed, id: 'steel-2', version: '1.2.0'}]);
+  expect(await screen.findByText('选择模板版本')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('radio', {name: /1\.2\.0/}));
+  await waitFor(() => expect(screen.getByLabelText('当前位置')).toHaveTextContent('/templates/steel-2/config?tab=model'));
+});
+
+it('reports an unresolvable template link instead of opening some template', async () => {
+  mountAt('/templates?source=another-app');
+  expect(await screen.findByText('无法确定要配置的模板版本。请返回工艺模板列表重新进入。')).toBeInTheDocument();
+  expect(screen.queryByText(seed.title, {selector: 'h2'})).not.toBeInTheDocument();
 });
 
 it('creates an installed template even when the separate example catalog fails', async () => {

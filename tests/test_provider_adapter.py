@@ -388,6 +388,20 @@ def _catalog_handler(item: dict):
     return httpx.MockTransport(handler)
 
 
+@pytest.mark.parametrize("runtime_index", [None, 17])
+def test_catalog_resolver_accepts_identity_with_explicit_empty_factor_evidence(runtime_index) -> None:
+    from nebula_one.hashing import canonical_json_sha256
+    item = _resolved_exact_elementary_flow_item()
+    item["value"].update(runtime_flow_index=runtime_index, factor_count=0, factor_hash=canonical_json_sha256([]))
+    client = NebulaLCAClient("http://nebula-lca.test", transport=_catalog_handler(item))
+    try:
+        value = client.resolve_provider_catalog({"flows": [item["key"]]}).payload["items"][0]["value"]
+        assert value["factor_count"] == 0
+        assert value["runtime_flow_index"] == runtime_index
+    finally:
+        client.close()
+
+
 def test_catalog_resolver_accepts_exact_elementary_flow_receipt() -> None:
     item = _resolved_exact_elementary_flow_item()
     client = NebulaLCAClient("http://nebula-lca.test", transport=_catalog_handler(item))
@@ -405,8 +419,9 @@ def test_catalog_resolver_accepts_exact_elementary_flow_receipt() -> None:
     [
         ("version", "03.00.004", "version"),
         ("snapshot_hash", "not-a-hash", "snapshot_hash"),
-        ("factor_count", 0, "factor_count"),
+        ("factor_count", -1, "factor_count"),
         ("runtime_flow_index", -1, "runtime_flow_index"),
+        ("runtime_flow_index", None, "runtime_flow_index"),
         ("direction", "input", "classification_path"),
         (
             "compartment",

@@ -29,6 +29,7 @@ import type {
   SolvedMfaResult,
   MethodPackage,
   ProductCarbonFootprint,
+  PcfBasisRequest,
   OrganizationPeriodRequest,
   OrganizationPeriodResult,
   OrganizationLifecycleRequest,
@@ -38,6 +39,21 @@ import type {
   CasePackMaterializeRequest,
   CasePackMaterializeResult,
   BoundaryDefinition,
+  CalculationMethod,
+  CalculationMethodDetail,
+  CalculationMethodVersion,
+  CalculationMethodSavePayload,
+  CalculationMethodClonePayload,
+  CalculationMethodCreatePayload,
+  CalculationMethodValidation,
+  CalculationMethodCapabilities,
+  ClassificationSuggestions,
+  ProcessingPackageOption,
+  TagGroupingRequest,
+  TagGroupingResult,
+  ResultCategoryConversionPreview,
+  ResultCategoryConversionPayload,
+  ResultCategoryConversionOptions,
   SpatialAggregateResult,
   SpatialEnergyResult,
   SpatialDistributionResult,
@@ -89,6 +105,22 @@ export function retryAfterTransientFailure(failureCount: number, error: unknown)
  */
 export function isStaleDataVersion(error: unknown): boolean {
   return error instanceof ApiError && error.code === 'PROJECT_INPUT_CONFLICT';
+}
+
+/** The method's head version moved under this editor; only re-reading can unblock the next save. */
+export function isCalculationMethodConflict(error: unknown): boolean {
+  return error instanceof ApiError && error.code === 'CALCULATION_METHOD_CONFLICT';
+}
+
+/** GET export/report carry the result basis as query params so the file matches the on-screen口径. */
+function pcfExportQuery(methodPackageRef: string, basis?: PcfBasisRequest): string {
+  const params = new URLSearchParams({ method_package_ref: methodPackageRef });
+  if (basis && basis.result_basis !== 'total') {
+    params.set('result_basis', basis.result_basis);
+    if (basis.base_amount !== undefined) params.set('base_amount', String(basis.base_amount));
+    if (basis.base_unit) params.set('base_unit', basis.base_unit);
+  }
+  return params.toString();
 }
 
 export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -230,25 +262,29 @@ export const api = {
     requestJson<OrganizationLifecycleResult>(`/api/v1/applications/${applicationId}/organization-lifecycle-inventories`, {
       method: 'POST', body: JSON.stringify(payload),
     }),
-  productCarbonFootprint: (snapshotId: string, methodPackageRef: string) =>
+  productCarbonFootprint: (snapshotId: string, methodPackageRef: string, basis?: PcfBasisRequest) =>
     requestJson<ProductCarbonFootprint>(`/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint`, {
       method: 'POST',
-      body: JSON.stringify({ method_package_ref: methodPackageRef }),
+      body: JSON.stringify({ method_package_ref: methodPackageRef, ...(basis && basis.result_basis !== 'total'
+        ? { result_basis: basis.result_basis, base_amount: basis.base_amount, base_unit: basis.base_unit }
+        : {}) }),
     }),
-  productCarbonFootprintChart: (snapshotId: string, methodPackageRef: string) =>
+  productCarbonFootprintChart: (snapshotId: string, methodPackageRef: string, basis?: PcfBasisRequest) =>
     requestBlob(`/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint/chart.svg`, {
       method: 'POST',
-      body: JSON.stringify({ method_package_ref: methodPackageRef }),
+      body: JSON.stringify({ method_package_ref: methodPackageRef, ...(basis && basis.result_basis !== 'total'
+        ? { result_basis: basis.result_basis, base_amount: basis.base_amount, base_unit: basis.base_unit }
+        : {}) }),
     }),
-  productCarbonFootprintExport: (snapshotId: string, methodPackageRef: string) =>
+  productCarbonFootprintExport: (snapshotId: string, methodPackageRef: string, basis?: PcfBasisRequest) =>
     requestBlob(
-      `/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint/export.xlsx?method_package_ref=${encodeURIComponent(methodPackageRef)}`,
+      `/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint/export.xlsx?${pcfExportQuery(methodPackageRef, basis)}`,
       undefined,
       '产品碳足迹 Excel 暂时无法下载，请稍后重试。',
     ),
-  productCarbonFootprintReport: (snapshotId: string, methodPackageRef: string) =>
+  productCarbonFootprintReport: (snapshotId: string, methodPackageRef: string, basis?: PcfBasisRequest) =>
     requestBlob(
-      `/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint/report.html?method_package_ref=${encodeURIComponent(methodPackageRef)}`,
+      `/api/v1/solved-system-snapshots/${snapshotId}/product-carbon-footprint/report.html?${pcfExportQuery(methodPackageRef, basis)}`,
       undefined,
       '产品碳足迹报告暂时无法打开，请稍后重试。',
     ),
@@ -332,6 +368,60 @@ export const api = {
     }),
   solvedMfa: (snapshotId: string, lang = 'zh') => requestJson<SolvedMfaResult>(`/api/v1/solved-system-snapshots/${snapshotId}/mfa?lang=${lang}`),
   boundaries: (applicationId: string) => requestJson<BoundaryDefinition[]>(`/api/v1/applications/${applicationId}/boundaries`),
+  calculationMethods: (applicationId: string, modelRevisionId?: string) =>
+    requestJson<CalculationMethod[]>(`/api/v1/applications/${applicationId}/calculation-methods${modelRevisionId ? `?model_revision_id=${encodeURIComponent(modelRevisionId)}` : ''}`),
+  createCalculationMethod: (applicationId: string, payload: CalculationMethodCreatePayload) =>
+    requestJson<CalculationMethodDetail>(`/api/v1/applications/${applicationId}/calculation-methods`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  calculationMethod: (methodId: string) => requestJson<CalculationMethodDetail>(`/api/v1/calculation-methods/${methodId}`),
+  calculationMethodVersion: (methodId: string, version: number) =>
+    requestJson<CalculationMethodVersion>(`/api/v1/calculation-methods/${methodId}/versions/${version}`),
+  saveCalculationMethodVersion: (methodId: string, version: number, payload: CalculationMethodSavePayload) =>
+    requestJson<CalculationMethodDetail>(`/api/v1/calculation-methods/${methodId}/versions/${version}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  cloneCalculationMethod: (methodId: string, version: number, payload: CalculationMethodClonePayload) =>
+    requestJson<CalculationMethodDetail>(`/api/v1/calculation-methods/${methodId}/versions/${version}/clone`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  validateCalculationMethodVersion: (methodId: string, version: number) =>
+    requestJson<CalculationMethodValidation>(`/api/v1/calculation-methods/${methodId}/versions/${version}/validate`, {
+      method: 'POST',
+    }),
+  resultCategoryConversionPreview: (methodId: string, version: number) =>
+    requestJson<ResultCategoryConversionPreview>(`/api/v1/calculation-methods/${methodId}/versions/${version}/conversion-preview`),
+  resultCategoryConversionPreviewMapping: (methodId: string, version: number, options: ResultCategoryConversionOptions) =>
+    requestJson<ResultCategoryConversionPreview>(`/api/v1/calculation-methods/${methodId}/versions/${version}/conversion-preview`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    }),
+  convertToResultCategory: (methodId: string, version: number, payload: ResultCategoryConversionPayload) =>
+    requestJson<CalculationMethodDetail>(`/api/v1/calculation-methods/${methodId}/versions/${version}/convert`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  classificationSuggestions: (methodId: string, version: number) =>
+    requestJson<ClassificationSuggestions>(`/api/v1/calculation-methods/${methodId}/versions/${version}/classification-suggestions`),
+  selectableProcessingPackages: (methodId: string) =>
+    requestJson<ProcessingPackageOption[]>(`/api/v1/calculation-methods/${methodId}/selectable-processing-packages`),
+  calculationMethodCapabilities: (methodId: string) =>
+    requestJson<CalculationMethodCapabilities>(`/api/v1/calculation-methods/${methodId}/capabilities`),
+  archiveCalculationMethod: (methodId: string) =>
+    requestJson<CalculationMethod>(`/api/v1/calculation-methods/${methodId}/archive`, { method: 'POST' }),
+  tagGrouping: (applicationId: string, payload: TagGroupingRequest) =>
+    requestJson<TagGroupingResult>(`/api/v1/applications/${applicationId}/tag-grouping`, {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
+  tagGroupingHistory: (applicationId: string, snapshotId: string) =>
+    requestJson<TagGroupingResult[]>(`/api/v1/applications/${applicationId}/tag-grouping-results?snapshot_id=${encodeURIComponent(snapshotId)}`),
+  tagGroupingResult: (applicationId: string, resultId: string) =>
+    requestJson<TagGroupingResult>(`/api/v1/applications/${applicationId}/tag-grouping-results/${encodeURIComponent(resultId)}`),
+  tagGroupingExport: (applicationId: string, resultId: string, format: 'html' | 'json') =>
+    requestBlob(`/api/v1/applications/${applicationId}/tag-grouping-results/${encodeURIComponent(resultId)}/export?format=${format}`),
   spatialAggregate: (snapshotId: string, boundaryId: string) =>
     requestJson<SpatialAggregateResult>(`/api/v1/solved-system-snapshots/${snapshotId}/spatial-aggregate`, {
       method: 'POST',

@@ -192,7 +192,34 @@ def build_pcf_contribution_analysis(
                 "cf_hash": cf_hash,
             }
         )
-    if term_ids != set(scaled_by_exchange):
+    coverage = receipt.get("characterization_coverage")
+    gap_ids: set[str] = set()
+    if coverage is not None:
+        if (not isinstance(coverage, dict)
+                or coverage.get("schema_version") != "provider.lcia.characterization-coverage.v1"
+                or coverage.get("runtime_assets_hash") != runtime_assets_hash
+                or not isinstance(coverage.get("uncharacterized_exchanges"), list)):
+            _fail("PCF_CHARACTERIZATION_COVERAGE_INVALID", "Invalid characterization coverage evidence")
+        for gap in coverage["uncharacterized_exchanges"]:
+            key = gap.get("exchange_id")
+            exchange = scaled_by_exchange.get(key)
+            flow_receipt = receipt_by_exchange.get(key)
+            if (not exchange or not flow_receipt or key in gap_ids or key in term_ids
+                    or gap.get("flow_uuid") != exchange.get("flow_uuid")
+                    or gap.get("flow_version") != flow_receipt.get("version")
+                    or gap.get("process_uuid") != exchange.get("process_id")
+                    or gap.get("amount_unit") != exchange.get("unit")
+                    or not _same_number(_number(gap.get("amount"), field="gap.amount"),
+                                        _number(exchange.get("amount"), field="exchange.amount"))
+                    or gap.get("numeric_contribution") is not None
+                    or gap.get("status") != "factor_not_found"):
+                _fail("PCF_CHARACTERIZATION_COVERAGE_INVALID", "A factor gap conflicts with frozen inventory")
+            gap_ids.add(key)
+        if coverage.get("status") != ("partial" if gap_ids else "complete"):
+            _fail("PCF_CHARACTERIZATION_COVERAGE_INVALID", "Coverage status conflicts with its missing factors")
+        if coverage.get("value_kind") != ("known_subtotal" if gap_ids else "characterized_total"):
+            _fail("PCF_CHARACTERIZATION_COVERAGE_INVALID", "Subtotal claim conflicts with its missing factors")
+    if term_ids | gap_ids != set(scaled_by_exchange):
         _fail("PCF_CONTRIBUTION_TERM_COVERAGE_MISMATCH", "PCF contribution terms do not cover every scaled elementary exchange")
     if not _same_number(supplied_total, contribution_total):
         _fail("PCF_CONTRIBUTION_TERM_TOTAL_MISMATCH", "PCF contribution terms do not reconcile with the provider total")
@@ -214,6 +241,7 @@ def build_pcf_contribution_analysis(
                 "term_count": len(hotspots),
             },
             "hotspots": hotspots,
+            **({"characterization_coverage": coverage} if coverage is not None else {}),
         },
         {
             "contribution_receipts_present": True,

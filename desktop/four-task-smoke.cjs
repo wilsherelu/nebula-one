@@ -64,20 +64,33 @@ async function accept(origin, directory, { officialDefaultsOnly = false, resourc
     assert.deepEqual(await call('POST', prefix + `/system-revisions/${workspace.revision_id}/solve`, request), snapshot);
     assert.equal(snapshot.system_revision_id, workspace.revision_id);
     const route = `/api/v1/solved-system-snapshots/${snapshot.id}`;
+    const persistedSnapshot = (await call('GET', prefix + '/solved-system-snapshots')).find(item => item.id === snapshot.id);
+    assert.ok(persistedSnapshot, 'Each task must persist a readable snapshot');
+    assert.equal(persistedSnapshot.content_sha256, snapshot.content_sha256);
     let result;
     if (task === 'mfa') result = await call('GET', route + '/mfa');
     if (task === 'pcf') {
       const method = (await call('GET', route + '/product-carbon-footprint/default-method')).reference;
       result = await call('POST', route + '/product-carbon-footprint', {method_package_ref:method});
       assert.ok(result.total_footprint.value > 0);
+      const coverage = result.data_quality.characterization_coverage;
+      assert.equal(coverage?.status, 'partial', 'Public demo retains SO2/NOx as missing climate factors');
+      assert.equal(result.total_footprint.value_kind, 'known_subtotal');
+      assert.ok(coverage.uncharacterized_exchanges.length > 0);
+      assert.ok(coverage.uncharacterized_exchanges.every(item => item.numeric_contribution === null));
       if (officialDefaultsOnly) assert.ok(result.contribution_analysis.hotspots.some(
         item => item.exchange_id.startsWith('project-background-') && item.contribution_value > 0),
         'Default electricity background must contribute to PCF');
       const exported = await fetch(origin + route + '/product-carbon-footprint/export.xlsx?method_package_ref=' + encodeURIComponent(method));
       assert.ok(exported.ok);
+      assert.equal(exported.headers.get('x-nebula-result-sha256'), result.content_sha256);
       const bytes = Buffer.from(await exported.arrayBuffer());
       assert.equal(bytes.subarray(0,2).toString(), 'PK');
       fs.writeFileSync(path.join(directory, 'product-carbon-footprint.xlsx'), bytes);
+      const report = await call('GET', route + '/product-carbon-footprint/report.html?method_package_ref=' + encodeURIComponent(method));
+      assert.ok(report.includes('已匹配贡献小计'));
+      assert.ok(report.includes('未匹配评价因子'));
+      fs.writeFileSync(path.join(directory, 'product-carbon-footprint.html'), report);
     }
     if (task === 'cbam') {
       const hash = snapshot.provider_receipt.calculation_basis.source_model.graph_sha256;

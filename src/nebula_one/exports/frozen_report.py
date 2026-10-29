@@ -1,6 +1,7 @@
 """Full-row exports of the same frozen report projection shown in One."""
 from html import escape
 from io import BytesIO
+import re
 
 from openpyxl import Workbook
 
@@ -22,7 +23,7 @@ STATUS_LABELS = {
     "case_not_modelled": "本例尚未建模", "demonstration_assumption": "演示假设，需实测依据",
     "proxy_reference_only": "仅供代理参考，未计入合计", "unassigned": "归组待确认",
 }
-GROUP_LABELS = {"direct": "直接排放", "indirect": "间接排放", "on_site_direct": "厂内直接排放",
+GROUP_LABELS = {"user_excluded": "用户排除", "engine_gap": "引擎归属待补", "direct": "直接排放", "indirect": "间接排放", "on_site_direct": "厂内直接排放",
                 "purchased_energy_lifecycle": "外购能源相关排放", "other_value_chain": "其他上下游排放", "unassigned": "归组待确认"}
 
 
@@ -34,7 +35,7 @@ def presentation(report):
                   "method_has_no_cf": "Not characterized by this method; applicability undetermined",
                   "missing_activity": "Activity data or supply link missing", "not_in_boundary": "Outside this boundary",
                   "required_missing": "Required data missing", "partial": "Partially calculated"}
-        groups = {"direct": "Included direct emissions", "indirect": "Indirect emissions",
+        groups = {"user_excluded": "User excluded", "engine_gap": "Engine attribution gap", "direct": "Included direct emissions", "indirect": "Indirect emissions",
                   "on_site_direct": "On site direct emissions", "purchased_energy_lifecycle": "Purchased energy lifecycle emissions",
                   "other_value_chain": "Other value chain emissions", "unassigned": "Grouping pending"}
     return {**report, "status_labels": {**status, **report.get("status_labels", {})}, "group_labels": groups}
@@ -53,6 +54,8 @@ def report_tables(report):
                 r["quantity"], r["quantity_unit"], r["contribution_value"], r["contribution_unit"], status(r["status"]), r.get("basis")]
                for r in report["details"]]
     return [
+        *[(dim['name'], ['分组','排放量','单位'], [[cat['name'],cat['subtotal'],cat['unit']]
+           for cat in dim['categories'] if cat['is_leaf']]) for dim in report.get('custom_dimensions',[])],
         ("摘要", ["归组", "排放量", "单位", "状态"], [[group(r["group"]), r["value"], r["unit"], status(r["status"])] for r in report["summary"]]),
         ("冻结输入", ["过程", "流", "方向", "数量", "单位", "交换身份"],
          [[r["process"], r["label"], {"input":"投入", "output":"产出", "emission":"排放", "emissions":"排放"}.get(r["group"], r["group"]), r["value"], r["unit"], r["key"]] for r in report["inputs"]]),
@@ -70,7 +73,7 @@ def export_frozen_report_xlsx(report):
     book = Workbook()
     book.remove(book.active)
     for name, headings, rows in report_tables(report):
-        sheet = book.create_sheet(name)
+        sheet = book.create_sheet(re.sub(r'[\\/*?:\[\]]', '_', name)[:31] or 'Sheet')
         sheet.append(headings)
         for row in rows:
             # Null is intentionally blank, not zero. Keep Decimal strings losslessly in the file.

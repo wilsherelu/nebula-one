@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, formatDate } from '../api/client';
+import { buildSolvePayload } from '../calculation/solveContract';
 import type { Application } from '../api/types';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
@@ -22,7 +23,7 @@ export function ProfessionalProjectPage({application}: {application: Application
   const unit = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
   const demandValid = typeof unit.flow_uuid === 'string' && !!unit.flow_uuid && typeof unit.unit === 'string' && !!unit.unit && typeof unit.amount === 'number' && Number.isFinite(unit.amount) && unit.amount > 0;
   const [amount, setAmount] = useState(demandValid ? unit.amount as number : undefined);
-  const solve = useMutation({mutationFn: () => api.solveAndFreeze(application.id, revision!.id, {demand: [{reference_flow_uuid: unit.flow_uuid as string, unit: unit.unit as string, amount: amount!}], idempotency_key: `modeling-${revision!.id}-${amount}`}), onSuccess: result => {client.invalidateQueries({queryKey: ['solved-snapshots', application.id]}); navigate(`/applications/${application.id}/results?snapshot=${result.id}&view=mfa`);}});
+  const solve = useMutation({mutationFn: () => api.solveAndFreeze(application.id, revision!.id, buildSolvePayload({demand: [{reference_flow_uuid: unit.flow_uuid as string, unit: unit.unit as string, amount: amount!}], idempotencyKey: `modeling-${revision!.id}-${amount}`})), onSuccess: result => {client.invalidateQueries({queryKey: ['solved-snapshots', application.id]}); navigate(`/applications/${application.id}/results?snapshot=${result.id}&view=mfa`);}});
   const error = models.error || revisions.error;
   return <main className="app-page modeling-page"><PageHeader title={application.name} description="使用已保存的工艺模型进行分析。" action={<Link to="/applications">我的项目</Link>} />
     {models.isLoading || revisions.isLoading ? <LoadingState /> : error ? <ErrorState error={error} /> : !model || !revision || !matchesSource ? <Alert type="error" content="所选模型或数据版本不属于本项目，请返回项目列表重新进入。" /> : <section className="section-panel modeling-start">

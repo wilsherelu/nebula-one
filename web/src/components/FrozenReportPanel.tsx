@@ -67,12 +67,18 @@ export function FrozenReportContent({ report, showSummary }: {report: FrozenRepo
     { key: 'outside', title: t('report.outside'), rows: report.outside_boundary },
   ];
   return <div className="frozen-report">
+    {report.user_rule_totals ? <p className="result-coverage-note">{t('report.userRuleTotals', {counted:value(report.user_rule_totals.counted,report.user_rule_totals.unit),known:value(report.user_rule_totals.known_model,report.user_rule_totals.unit)})}</p> : null}
     {report.kind === 'organization' ? <FrozenReportCharts report={report} /> : null}
     {showSummary ? <><Table pagination={false} rowKey="group" data={report.summary} columns={[
       {title:t('org.group'),render:(_,row)=>group(row.group)},
       {title:t('org.emissions'),align:'right',render:(_,row)=>value(row.value,row.unit)},
       {title:t('org.status'),render:(_,row)=>status(row.status)},
     ]} /><p className="result-coverage-note">{report.complete_total === null ? t('report.incomplete') : t('report.boundaryTotal')}</p></> : null}
+    {report.custom_dimensions?.map(dimension=><section key={dimension.id} className="frozen-report__dimension"><h3>{dimension.name}</h3>
+      <Table pagination={false} rowKey="id" data={dimension.categories.filter(category=>category.is_leaf)} columns={[
+        {title:t('org.group'),dataIndex:'name'},
+        {title:t('org.emissions'),align:'right',render:(_,row)=>value(row.subtotal,row.unit)},
+      ]} /></section>)}
     <h3>{t('report.processContributions')}</h3>
     {report.kind === 'cbam' ? <FrozenReportCharts report={report} /> : null}
     {report.detail_status === 'frozen_process_contribution_evidence_unavailable' ? <p>{t('report.noBreakdown')}</p> : <Table pagination={false} rowKey={row=>`${row.group}:${row.process_id}`} data={report.process_contributions} columns={[

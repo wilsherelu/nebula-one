@@ -1,0 +1,78 @@
+{
+  "schema_version": "nebula_one.model-processing-rules.v1",
+  "package_id": "steel-bf-bof.model-processing",
+  "version": "1.0.12",
+  "license": "Apache-2.0",
+  "content": {
+    "applicable_template": {
+      "id": "steel-bf-bof-inventory",
+      "version": "1.1.4",
+      "content_sha256": "70a62e4442d8fa127d25fce2b19c1110ec6bd82afaa47fa2df6b5ca93caa8829"
+    },
+    "purposes": {
+      "lca": {
+        "process_selection": {
+          "mode": "all_model_processes"
+        },
+        "background_disposition": {
+          "mode": "retain_saved_pins"
+        },
+        "cross_boundary_connections": {
+          "mode": "keep_internal_edges",
+          "boundary_exchanges": []
+        },
+        "elementary_flows": {
+          "mode": "not_applicable"
+        },
+        "precursors": {
+          "mode": "not_applicable"
+        }
+      },
+      "cbam": {
+        "process_selection": {
+          "mode": "method_package_boundary",
+          "method_package": {
+            "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+            "version": "1.2.3",
+            "content_sha256": "c40f3965569cd80196d61befdffcbea70b3d2a6e2f7a076e7a6ac47a9ab259ad"
+          },
+          "process_uuids_path": "boundary_schema.production_process_boundary.in_boundary_process_uuids"
+        },
+        "background_disposition": {
+          "mode": "unlink_all_background_links",
+          "evidence": {
+            "method_package": {
+              "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial",
+              "version": "1.2.3",
+              "content_sha256": "c40f3965569cd80196d61befdffcbea70b3d2a6e2f7a076e7a6ac47a9ab259ad"
+            },
+            "manifest_path": "boundary_schema.annex_ii_direct_only",
+            "required_value": true,
+            "clause": "Selected direct component excludes background lifecycle burdens; sinter precursor indirect activity is separately retained for CBAM review."
+          }
+        },
+        "cross_boundary_connections": {
+          "mode": "reject_undeclared",
+          "boundary_exchanges": []
+        },
+        "elementary_flows": {
+          "mode": "explicit_flow_rules",
+          "evidence": {
+            "method_package": {
+              "package_id": "cbam.eu.iron-steel.bf-bof-direct-trial-boundary-decisions",
+              "version": "1.2.6",
+              "content_sha256": "bd702bb8741aaf6f63700a05305e4cb1400cd26382304e821594419dfc876ce2"
+            },
+            "manifest_path": "classification_rules.exchange_decisions",
+            "applicable_gases_path": "boundary_schema.greenhouse_gases"
+          }
+        },
+        "precursors": {
+          "mode": "reference_only"
+        }
+      }
+    },
+    "selection_mode": "explicit_only"
+  },
+  "content_sha256": "e95a68b74a68bb60730d781fab7342789b3d9450a05e6f9a7937743a2a938415"
+}

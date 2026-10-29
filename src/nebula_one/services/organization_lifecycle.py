@@ -6,6 +6,7 @@ from math import isclose
 from sqlalchemy import select
 
 from ..analysis.organization_lifecycle import build_organization_lifecycle
+from ..analysis.organization_user_method import apply_organization_user_method
 from ..database import Database
 from ..errors import DomainError
 from ..hashing import canonical_json_sha256
@@ -68,6 +69,17 @@ class OrganizationLifecycleService:
             method = require_method_package(db, payload.method_package_ref)
             if method.package_kind != "organization_lifecycle_carbon":
                 raise DomainError(code="ORGANIZATION_LIFECYCLE_METHOD_KIND_INVALID", message="method has another kind", status_code=422)
+            frozen_user = (snapshot.provider_receipt or {}).get('user_calculation_method') or {}
+            declared_bases = {rule.get('base_method_ref') for rule in frozen_user.get('rules', [])
+                              if rule.get('base_method_ref')}
+            if declared_bases and declared_bases != {payload.method_package_ref}:
+                raise DomainError(code='ORGANIZATION_USER_METHOD_BASE_MISMATCH',
+                                  message='用户方案引用的基础方法与本次组织核算方法不一致，不能替换因子口径。',
+                                  status_code=422, details={'declared': sorted(declared_bases),
+                                                           'requested': payload.method_package_ref})
+            if (snapshot.provider_receipt or {}).get('user_calculation_method'):
+                inputs['user_method_projection_version'] = 'organization-path-overlay.v1'
+                request_hash = canonical_json_sha256(inputs)
             existing = db.scalar(select(OrganizationPeriodInventory).where(
                 OrganizationPeriodInventory.application_id == application_id,
                 OrganizationPeriodInventory.request_sha256 == request_hash))
@@ -78,11 +90,16 @@ class OrganizationLifecycleService:
             if len(demand) != 1 or demand[0].get("unit") != "kg":
                 raise DomainError(code="ORGANIZATION_LIFECYCLE_PRODUCT_INVALID", message="source solve must have one kilogram product demand", status_code=422)
             climate_source = None
+            frozen_user = (snapshot.provider_receipt or {}).get('user_calculation_method') or {}
+            user_network_paths = {target['exchange_id'] for target in (frozen_user.get('execution_plan') or {}).get('resolved_targets', [])
+                if frozen_user.get('purpose') == 'organization' and frozen_user.get('model_revision_id') == revision.id
+                and target.get('contribution_target') == 'upstream' and target.get('boundary') in {'include', 'exclude'}}
             if (method.manifest.get("classification_rules") or {}).get("energy_path_source") in {
                     "project_background_process_receipts", "optional_project_background_process_receipts"}:
                 foreground_value, background_value, climate_unit, climate_method, climate_source, mapped = (
                     project_supply_climate(snapshot, revision, method.manifest,
-                                           retain_unsupported_paths=payload.input_basis == "current_model_total"))
+                                           retain_unsupported_paths=payload.input_basis == "current_model_total",
+                                           user_network_paths=user_network_paths))
             else:
                 mapped = [item.get("consumer_exchange_id") for item in basis.get("mapped_background_process_pins") or []]
                 if not mapped or any(not item for item in mapped):
@@ -161,6 +178,7 @@ class OrganizationLifecycleService:
                                 if item.activity_id in factor_hashes else {})}
                             for item in payload.other_activities], climate_source=climate_source,
             )
+            result = apply_organization_user_method(result, snapshot)
             record = OrganizationPeriodInventory(id=new_id(), application_id=application_id,
                 system_revision_id=revision.id, solved_snapshot_id=snapshot.id,
                 period_id=period.id, request_sha256=request_hash, inputs_json=inputs,

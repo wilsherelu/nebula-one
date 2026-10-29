@@ -15,6 +15,7 @@ from ..model_derivation import DerivedCalculationModel
 from ..native_climate_contract import NativeClimateContract
 from ..native_inventory_contract import NativeInventoryContract
 from ..runtime_schemas import (
+    CalculationMethodRef,
     ProviderBackgroundProcessPin,
     ProviderProjectBackgroundPin,
     ProviderDemandItem,
@@ -32,6 +33,7 @@ from .mapped_background_receipts import validate_mapped_receipts
 from .runtime_support import require_revision
 from .runtime_support import require_method_package
 from .climate_method_selection import ensure_official_climate_methods, resolve_new_climate_method
+from .method_execution_contract import resolve_method_execution_plan
 
 
 SOLVE_AND_FREEZE_TOPIC = "solve.freeze.v1"
@@ -106,6 +108,9 @@ class ProviderSolveContext:
     # effective associations and the reviewed rule/method identities, plus the source model.
     calculation_basis: dict[str, Any] | None = None
     calculation_model: DerivedCalculationModel | None = None
+    # The re-read, validated snapshot of the exact user calculation method version this solve
+    # follows (identity + immutable rule set), stored as provenance. Never a factor source.
+    user_calculation_method: dict[str, Any] | None = None
 
 
 def _required_text(item: dict[str, Any], key: str, *, context: str) -> str:
@@ -781,22 +786,36 @@ def _validated_project_background_receipts(result: dict[str, Any], pins: list[Pr
     expected = {pin.consumer_exchange_id: pin.model_dump(mode="json") for pin in pins}
     if not isinstance(raw, list) or any(not isinstance(item, dict) for item in raw):
         raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_INVALID", message="算法服务返回的自建供应回执无效。", status_code=502)
-    actual = {str(item.get("pin", {}).get("consumer_exchange_id") or ""): item for item in raw}
-    if len(actual) != len(raw) or set(actual) != set(expected):
+    actual: dict[str, list[dict[str, Any]]] = {}
+    for item in raw:
+        actual.setdefault(str(item.get("pin", {}).get("consumer_exchange_id") or ""), []).append(item)
+    if set(actual) != set(expected):
         raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_MISMATCH", message="自建供应回执与请求入口不一致。", status_code=502)
     if pins and provenance.get("project_background_pins_hash") != canonical_json_sha256(
         [expected[key] for key in sorted(expected)]
     ):
         raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_MISMATCH", message="自建供应版本哈希回执不一致。", status_code=502)
     activities = {str(item.get("process_uuid")): item.get("activity_amount") for item in result.get("activity_vector") or []}
-    for consumer_id, item in actual.items():
+    for consumer_id, items in actual.items():
         pin = expected[consumer_id]
-        if (item.get("pin") != pin or item.get("source_graph_hash") != pin["expected_graph_hash"]
-                or item.get("claim_limit") != "user_declared_partial_background_leaf_only"
+        network = pin.get("claim_role") == "user_declared_partial_background_network"
+        if network:
+            nodes = {item.get("expanded_node_id") for item in items}
+            if (None in nodes or len(nodes) != len(items)
+                    or sum(item.get("source_node_id") == pin["source_node_id"] for item in items) != 1
+                    or any(set(item.get("expanded_network_node_ids") or []) != nodes for item in items)
+                    or len({item.get("source_process_uuid") for item in items}) != len(items)):
+                raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_MISMATCH", message="供应网络过程回执不完整或重复。", status_code=502)
+        elif len(items) != 1:
+            raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_MISMATCH", message="单过程供应回执出现重复。", status_code=502)
+        for item in items:
+            claim = "user_declared_partial_background_closed_network" if network else "user_declared_partial_background_leaf_only"
+            if (item.get("pin") != pin or item.get("source_graph_hash") != pin["expected_graph_hash"]
+                or item.get("claim_limit") != claim
                 or item.get("source_process_uuid") not in activities
                 or item.get("activity_amount") != activities.get(item.get("source_process_uuid"))):
-            raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_MISMATCH", message="自建供应过程或求解活动回执不一致。", status_code=502)
-    return [actual[key] for key in sorted(actual)]
+                raise DomainError(code="PROJECT_BACKGROUND_RECEIPT_MISMATCH", message="自建供应过程或求解活动回执不一致。", status_code=502)
+    return [item for key in sorted(actual) for item in sorted(actual[key], key=lambda value: str(value.get("expanded_node_id") or ""))]
 
 
 class ProviderSolveService:
@@ -814,6 +833,35 @@ class ProviderSolveService:
         self.native_climate = native_climate
         self.native_inventory = native_inventory or NativeInventoryContract(None)
 
+    def _resolve_user_calculation_method(
+        self,
+        db,
+        application_id: str,
+        system_revision_id: str,
+        purpose: str | None,
+        ref: CalculationMethodRef | None,
+    ) -> dict[str, Any] | None:
+        """Resolve the cited method version through the one shared execution contract.
+
+        The stored version must belong to this application, be bound to the very revision being
+        solved, answer the run's purpose, match the cited content hash, and have passed validation.
+        It need NOT be the method's head: every version is an immutable, revision-bound row, so an
+        exact validated *history* version is just as runnable as the current one, and a run created
+        against it keeps resolving to it after a newer version is saved. The new-run editor defaults
+        to the current head; a deliberate history replay names the original fixed version. A
+        reference that has drifted in any of these ways is refused rather than silently re-pointed,
+        because a frozen calculation must name one immutable grouping. Organization, PCF and CBAM
+        share this entry, so none of them re-interprets the rules on its own; the returned frozen
+        execution plan and its hash are what R6 folds into the calculation basis.
+        """
+        return resolve_method_execution_plan(
+            db,
+            application_id=application_id,
+            system_revision_id=system_revision_id,
+            purpose=purpose,
+            ref=ref,
+        )
+
     def _prepare(
         self,
         application_id: str,
@@ -826,6 +874,11 @@ class ProviderSolveService:
         with self.database.session() as db:
             revision, system_model = require_revision(
                 db, system_revision_id, application_id
+            )
+            # A named method version is re-read and proven exact before anything is solved, and the
+            # ref is persisted so a recovered run re-checks it against the method as it stands then.
+            user_calculation_method = self._resolve_user_calculation_method(
+                db, application_id, system_revision_id, payload.analysis_task, payload.calculation_method_ref
             )
             application = db.get(Application, application_id)
             if application and application.context.get("template_locked"):
@@ -900,6 +953,23 @@ class ProviderSolveService:
             parameters: dict[str, Any] = {
                 "demand": [item.model_dump(mode="json") for item in payload.demand]
             }
+            if payload.calculation_method_ref is not None:
+                parameters["calculation_method_ref"] = payload.calculation_method_ref.model_dump(mode="json")
+                if isinstance(user_calculation_method, dict):
+                    # R6: the compiled execution plan and compiler version are result-affecting, so they
+                    # enter the request fingerprint. Editing a method or bumping the compiler can therefore
+                    # never reuse a queued run's stale grouping or a frozen answer compiled from another plan.
+                    parameters["calculation_execution_plan_sha256"] = user_calculation_method.get(
+                        "execution_plan_sha256"
+                    )
+                    parameters["calculation_compiler_version"] = user_calculation_method.get("compiler_version")
+                    # The exact processing package the variant narrows against is result-affecting too,
+                    # so it enters the request fingerprint: two runs differing only by their bound
+                    # package never reuse one queued run, and recovery re-derives under the recorded one.
+                    if user_calculation_method.get("model_processing_rules_ref"):
+                        parameters["calculation_model_processing_rules_ref"] = user_calculation_method.get(
+                            "model_processing_rules_ref"
+                        )
             preliminary_derivation = None
             effective_mapped_pins = [item.model_dump(mode="json") for item in payload.mapped_background_process_pins]
             effective_background_pins = [item.model_dump(mode="json") for item in payload.background_process_pins]
@@ -914,6 +984,7 @@ class ProviderSolveService:
                 preliminary_derivation = self._derive_purpose(
                     db, revision=revision, application=application, payload=payload,
                     parameters=source_parameters, native_pin=None, accepted_basis=accepted_basis,
+                    user_calculation_method=user_calculation_method,
                 )
                 if preliminary_derivation is not None:
                     effective_mapped_pins = preliminary_derivation.derived.mapped_background_process_pins
@@ -959,9 +1030,13 @@ class ProviderSolveService:
                 ensure_official_climate_methods(db)
                 db.commit()
                 bound_refs = list((application.context or {}).get("method_package_refs") or []) if application else []
+                library = (((application.context or {}).get("seed_template") or {}).get("accounting_library") or {}) if application else {}
+                declared_default = next((task.get("default_ref") for task in library.get("tasks") or []
+                                         if task.get("role") == "complete_model"), None)
                 if accepted_climate_method is None:
                     method = resolve_new_climate_method(db, bound_refs=bound_refs,
-                                                       native=use_native_climate, native_request=native_pin)
+                                                       native=use_native_climate, native_request=native_pin,
+                                                       preferred_ref=declared_default if not use_native_climate else None)
                 else:
                     method = require_method_package(db, accepted_climate_method["reference"])
                     if method.content_sha256 != accepted_climate_method["content_sha256"]:
@@ -1020,6 +1095,7 @@ class ProviderSolveService:
                 parameters=parameters,
                 native_pin=native_pin,
                 accepted_basis=accepted_basis,
+                user_calculation_method=user_calculation_method,
             )
             if preliminary_derivation is not None and derivation is not None:
                 if preliminary_derivation.basis_sha256 != derivation.basis_sha256:
@@ -1059,7 +1135,30 @@ class ProviderSolveService:
                 native_background_inventory=inventory_pin,
                 calculation_basis=calculation_basis,
                 calculation_model=None if derivation is None else derivation.derived,
+                user_calculation_method=user_calculation_method,
             )
+
+    def _cbam_user_selection(
+        self, purpose: str, user_calculation_method: dict[str, Any] | None
+    ) -> dict[str, Any] | None:
+        """The CBAM-only overlay a user method variant narrows the reviewed selection with.
+
+        A variant narrows a reviewed CBAM boundary, so the overlay is built for a CBAM purpose with
+        a cited method only; an organization/PCF purpose or a bare solve derives the reviewed
+        package's selection untouched. ``source`` names the exact immutable variant version, so every
+        exclusion stays traceable to it and two different variants never collapse to one identity.
+        """
+        if purpose != "cbam" or not user_calculation_method:
+            return None
+        return {
+            "source": {
+                key: user_calculation_method.get(key)
+                for key in ("method_id", "version", "content_sha256")
+            },
+            "rules": user_calculation_method.get("rules") or [],
+            "execution_plan_sha256": user_calculation_method.get("execution_plan_sha256"),
+            "compiler_version": user_calculation_method.get("compiler_version"),
+        }
 
     def _derive_purpose(
         self,
@@ -1071,6 +1170,7 @@ class ProviderSolveService:
         parameters: dict[str, Any],
         native_pin: dict[str, Any] | None,
         accepted_basis: dict[str, Any] | None = None,
+        user_calculation_method: dict[str, Any] | None = None,
     ) -> PurposeDerivation | None:
         """Bind one accounting purpose to the reviewed rules, and record what will actually be sent.
 
@@ -1085,6 +1185,17 @@ class ProviderSolveService:
         """
         if payload.calculation_purpose is None:
             return None
+        user_selection = self._cbam_user_selection(
+            payload.calculation_purpose, user_calculation_method
+        )
+        # A user variant may bind an exact processing package; that binding is the pin this new run
+        # derives under, so the variant narrows against the reviewed selection it named rather than the
+        # template's current automatic one. An accepted/recovered run ignores it (basis pin wins).
+        pinned_rules_ref = (
+            user_calculation_method.get("model_processing_rules_ref")
+            if isinstance(user_calculation_method, dict)
+            else None
+        )
         derivation = resolve_purpose_derivation(
             db,
             revision=revision,
@@ -1098,6 +1209,8 @@ class ProviderSolveService:
             project_background_pins=parameters.get("project_background_pins", []),
             lcia_methods=parameters.get("lcia_methods"),
             pinned_basis=accepted_basis,
+            user_selection=user_selection,
+            pinned_rules_ref=pinned_rules_ref,
         )
         if native_pin is not None and not derivation.derived.mapped_background_process_pins:
             raise DomainError(
@@ -1288,6 +1401,7 @@ class ProviderSolveService:
                 # accounting scope instead of falling back to the whole stored model.
                 calculation_purpose=run.parameters.get("calculation_purpose"),
                 analysis_task=run.parameters.get("analysis_task"),
+                calculation_method_ref=run.parameters.get("calculation_method_ref"),
             )
         except ValidationError as exc:
             raise DomainError(
@@ -1478,6 +1592,11 @@ class ProviderSolveService:
         }
         if payload.analysis_task is not None:
             provider_receipt["analysis_task"] = payload.analysis_task
+        if context.user_calculation_method is not None:
+            # Provenance only: the exact method identity and its immutable rule grouping are
+            # recorded so the result can be traced back to it. The rules classify which exchanges
+            # the user cares about; they are never an emission factor or a regulatory conclusion.
+            provider_receipt["user_calculation_method"] = context.user_calculation_method
         if mapped_receipts:
             contribution_graph['mapped_background_process_receipts'] = mapped_receipts
             provider_receipt['mapped_background_process_receipts'] = mapped_receipts

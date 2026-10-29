@@ -25,6 +25,18 @@ def _text(value: Any) -> str:
     return str(value)
 
 
+def _basis_heading(result: dict[str, Any]) -> str:
+    # The headline must follow the actual projected basis, never a fixed word: `total` is the
+    # whole-demand solve total, only `per_reference_output` is a per-product intensity.
+    partial = (result.get("data_quality", {}).get("characterization_coverage") or {}).get("status") == "partial"
+    prefix = "已匹配贡献小计 · " if partial else ""
+    basis = (result.get("result_basis") or {}).get("basis")
+    if basis == "per_reference_output":
+        base = result["result_basis"]
+        return prefix + f"单位产品气候变化（每 {base.get('base_amount')} {base.get('base_unit')}）"
+    return prefix + "本次核算总量气候变化"
+
+
 def _append_key_values(sheet, rows: Iterable[tuple[str, Any]]) -> None:
     for key, value in rows:
         sheet.append([key, _text(value)])
@@ -68,7 +80,7 @@ def build_pcf_xlsx(result: dict[str, Any]) -> bytes:
             ("结果内容哈希", result["content_sha256"]),
             ("产品 Flow UUID", functional_unit.get("reference_flow_uuid")),
             ("功能单位", f'{functional_unit.get("amount")} {functional_unit.get("unit")}'),
-            ("产品碳足迹", f'{total.get("value")} {total.get("unit")}'),
+            (_basis_heading(result), f'{total.get("value")} {total.get("unit")}'),
             ("LCIA 方法", method.get("lcia_method")),
             ("方法包", method.get("reference")),
             ("方法包哈希", method.get("content_sha256")),
@@ -81,6 +93,21 @@ def build_pcf_xlsx(result: dict[str, Any]) -> bytes:
             ("模型图哈希", source.get("model_graph_sha256")),
         ],
     )
+
+    basis = result.get("result_basis")
+    characterization = result.get("data_quality", {}).get("characterization_coverage")
+    if characterization is not None:
+        _append_key_values(summary, [("特征化覆盖状态", characterization["status"]),
+                                    ("未匹配因子（未计入小计，非零排放声明）", characterization["uncharacterized_exchanges"])])
+    if basis:
+        raw_total = (basis.get("source") or {}).get("raw_total") or {}
+        _append_key_values(summary, [
+            ("结果口径", basis.get("basis")),
+            ("展示基准", f'{basis.get("base_amount")} {basis.get("base_unit")}'),
+            ("换算基准哈希", basis.get("basis_sha256")),
+            ("换算比率（基准/参考产出）", basis.get("conversion_ratio_base_over_reference")),
+            ("原始求解总量", f'{raw_total.get("value")} {raw_total.get("unit")}'),
+        ])
 
     components = workbook.create_sheet("LCIA结果")
     components.append(["指标", "数值", "单位"])
@@ -141,12 +168,76 @@ def build_pcf_xlsx(result: dict[str, Any]) -> bytes:
         ],
     )
 
+    # A cited user method's grouping is part of the frozen result; the export must read the same
+    # values the page shows (plan R6: 结果、历史、详情和导出读取同一冻结产物). Absent a method the
+    # sheet is omitted so a no-method PCF export keeps its historical sheet set byte-for-byte.
+    umg = analysis.get("user_method_grouping")
+    if umg:
+        _append_user_method_sheet(workbook, umg)
+
     for sheet in workbook.worksheets:
         _style_sheet(sheet)
     summary["A1"].fill = _SECTION_FILL
     stream = BytesIO()
     workbook.save(stream)
     return stream.getvalue()
+
+
+def _append_user_method_sheet(workbook: "Workbook", umg: dict[str, Any]) -> None:
+    sheet = workbook.create_sheet("用户方法归组")
+    method = umg.get("method") or {}
+    sheet.append(["项目", "值"])
+    for label, value in (
+        ("方法 ID", method.get("method_id")),
+        ("方法版本", method.get("version")),
+        ("内容哈希", method.get("content_sha256")),
+        ("执行计划哈希", method.get("execution_plan_sha256")),
+        ("编译器版本", method.get("compiler_version")),
+        ("归组模式", umg.get("grouping_mode")),
+        ("执行状态", umg.get("execution_status")),
+        ("计入完整 PCF", umg.get("counts_as_complete_pcf", False)),
+    ):
+        sheet.append([label, _text(value)])
+    dg = umg.get("dimension_grouping")
+    if dg:
+        aggregate = dg.get("grouping") or {}
+        unit = aggregate.get("indicator_unit")
+        sheet.append([])
+        sheet.append(["维度", "类别 ID", "类别名称", "小计", "单位", "项数", "缺失项"])
+        for dim_id, dim in (aggregate.get("dimensions") or {}).items():
+            for cat in dim.get("categories") or []:
+                sheet.append([
+                    dim_id, cat.get("id"), cat.get("name"),
+                    _text(cat.get("subtotal")), unit,
+                    cat.get("term_count"), cat.get("missing_count"),
+                ])
+            unattributed = dim.get("unattributed") or {}
+            sheet.append([
+                dim_id, "__unattributed__", "未归集",
+                _text(unattributed.get("subtotal")), unit,
+                unattributed.get("term_count"), "",
+            ])
+        excluded = aggregate.get("excluded") or {}
+        sheet.append([])
+        sheet.append([
+            "明确排除", "", "", _text(excluded.get("value")), unit,
+            excluded.get("term_count"), excluded.get("missing_count"),
+        ])
+        sheet.append(["已知贡献合计", "", "", _text(aggregate.get("known_total")), unit, aggregate.get("known_term_count"), ""])
+        sheet.append(["对账一致", "", "", _text(dg.get("reconciled")), "", "", ""])
+        return
+    grouping = umg.get("grouping") or {}
+    scopes = grouping.get("scopes") or {}
+    unit = grouping.get("indicator_unit")
+    sheet.append([])
+    sheet.append(["范围", "数值", "单位", "项数"])
+    for scope_key in ("scope_1", "scope_2", "scope_3"):
+        entry = scopes.get(scope_key) or {}
+        sheet.append([scope_key, _text(entry.get("value")), entry.get("unit"), entry.get("term_count")])
+    excluded = grouping.get("excluded") or {}
+    sheet.append(["明确排除", _text(excluded.get("value")), excluded.get("unit"), excluded.get("term_count")])
+    sheet.append(["贡献合计", _text(grouping.get("contribution_total")), unit, ""])
+    sheet.append(["对账一致", _text(grouping.get("reconciled")), "", ""])
 
 
 def _table(headers: list[str], rows: list[list[Any]]) -> str:
@@ -156,6 +247,61 @@ def _table(headers: list[str], rows: list[list[Any]]) -> str:
         for row in rows
     )
     return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+
+
+def _user_method_grouping_html(umg: dict[str, Any] | None) -> str:
+    if not umg:
+        return ""
+    method = umg.get("method") or {}
+    facts = "".join(
+        f'<div class="fact"><span>{html.escape(label)}</span>{html.escape(_text(value))}</div>'
+        for label, value in (
+            ("方法 ID", method.get("method_id")),
+            ("方法版本", method.get("version")),
+            ("内容哈希", method.get("content_sha256")),
+            ("执行计划哈希", method.get("execution_plan_sha256")),
+            ("归组模式", umg.get("grouping_mode")),
+            ("执行状态", umg.get("execution_status")),
+        )
+    )
+    dg = umg.get("dimension_grouping")
+    if dg:
+        aggregate = dg.get("grouping") or {}
+        unit = aggregate.get("indicator_unit")
+        rows: list[list[Any]] = []
+        for dim_id, dim in (aggregate.get("dimensions") or {}).items():
+            for cat in dim.get("categories") or []:
+                rows.append([
+                    dim_id, cat.get("id"), cat.get("name"),
+                    _text(cat.get("subtotal")), unit, cat.get("term_count"), cat.get("missing_count"),
+                ])
+            unattributed = dim.get("unattributed") or {}
+            rows.append([dim_id, "__unattributed__", "未归集", _text(unattributed.get("subtotal")), unit, unattributed.get("term_count"), ""])
+        excluded = aggregate.get("excluded") or {}
+        rows.append(["", "excluded", "明确排除", _text(excluded.get("value")), unit, excluded.get("term_count"), excluded.get("missing_count")])
+        rows.append(["", "known_total", "已知贡献合计", _text(aggregate.get("known_total")), unit, aggregate.get("known_term_count"), ""])
+        table = _table(["维度", "类别 ID", "类别名称", "小计", "单位", "项数", "缺失项"], rows)
+        reconciled = _text(dg.get("reconciled"))
+    else:
+        grouping = umg.get("grouping") or {}
+        scopes = grouping.get("scopes") or {}
+        rows = [
+            [key, _text((scopes.get(key) or {}).get("value")), (scopes.get(key) or {}).get("unit"), (scopes.get(key) or {}).get("term_count")]
+            for key in ("scope_1", "scope_2", "scope_3")
+        ]
+        excluded = grouping.get("excluded") or {}
+        rows.append(["明确排除", _text(excluded.get("value")), excluded.get("unit"), excluded.get("term_count")])
+        rows.append(["贡献合计", _text(grouping.get("contribution_total")), grouping.get("indicator_unit"), ""])
+        table = _table(["范围", "数值", "单位", "项数"], rows)
+        reconciled = _text(grouping.get("reconciled"))
+    return (
+        '<section><h2>用户方法归组</h2>'
+        f'<p>所用方法版本：{html.escape(_text(method.get("version")))}；'
+        f'计入完整 PCF：{html.escape(_text(umg.get("counts_as_complete_pcf", False)))}；'
+        f'对账一致：{html.escape(reconciled)}</p>'
+        f'<div class="facts">{facts}</div>'
+        f'<div class="table-wrap">{table}</div></section>'
+    )
 
 
 def build_pcf_html(result: dict[str, Any], chart_svg: str) -> str:
@@ -191,6 +337,7 @@ def build_pcf_html(result: dict[str, Any], chart_svg: str) -> str:
         f'<div class="fact"><span>基本流映射依赖包</span><code>{html.escape(_text(dependencies))}</code></div>'
         if dependencies else ""
     )
+    grouping_html = _user_method_grouping_html(analysis.get("user_method_grouping"))
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nebula One 产品碳足迹技术核算报告</title>
@@ -210,7 +357,7 @@ table{{width:100%;border-collapse:collapse;font-size:12px}} th,td{{border:1px so
 </style></head><body><main class="page">
 <div class="toolbar"><button type="button" onclick="window.print()">打印 / 另存 PDF</button></div>
 <h1>产品碳足迹技术核算报告</h1><div class="subtitle">Nebula One · {html.escape(_text(result['method_package'].get('reference')))}</div>
-<section class="metric"><span>单位产品气候变化</span><strong>{html.escape(_text(total.get('value')))} {html.escape(_text(total.get('unit')))}</strong><small>功能单位：{html.escape(_text(functional_unit.get('amount')))} {html.escape(_text(functional_unit.get('unit')))}</small></section>
+<section class="metric"><span>{html.escape(_basis_heading(result))}</span><strong>{html.escape(_text(total.get('value')))} {html.escape(_text(total.get('unit')))}</strong><small>功能单位：{html.escape(_text(functional_unit.get('amount')))} {html.escape(_text(functional_unit.get('unit')))}</small></section>
 <section><h2>核算对象与边界</h2><div class="facts">
 <div class="fact"><span>产品 Flow</span>{html.escape(_text(functional_unit.get('reference_flow_uuid')))}</div>
 <div class="fact"><span>LCIA 方法</span>{html.escape(_text(result['method_package'].get('lcia_method')))}</div>
@@ -220,6 +367,7 @@ table{{width:100%;border-collapse:collapse;font-size:12px}} th,td{{border:1px so
 <section class="chart"><h2>气候变化结果</h2>{chart_svg}</section>
 <section><h2>LCIA 分项</h2><div class="table-wrap">{_table(['指标','数值','单位'], component_rows)}</div></section>
 <section><h2>贡献热点</h2><p>状态：{html.escape(_text(analysis.get('status')))}；覆盖：{html.escape(_text(analysis.get('coverage')))}</p><div class="table-wrap">{_table(['排名','Process','Exchange','Flow','贡献值','单位','占总量'], hotspot_rows)}</div></section>
+{('<section><h2>未匹配评价因子</h2><p>下列流保留在清单中，未计入已匹配贡献小计；缺因子不代表零排放。</p>' + _table(['流 UUID', '数量', '单位'], [[g.get('flow_uuid'), g.get('amount'), g.get('amount_unit')] for g in result['data_quality']['characterization_coverage']['uncharacterized_exchanges']]) + '</section>') if (result.get('data_quality', {}).get('characterization_coverage') or {}).get('status') == 'partial' else ''}{grouping_html}
 <section><h2>限制条件</h2><ul>{limitations_html}</ul></section>
 <section><h2>审计与追溯</h2><div class="facts">
 <div class="fact"><span>结果哈希</span><code>{html.escape(_text(result.get('content_sha256')))}</code></div>

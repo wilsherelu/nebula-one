@@ -48,6 +48,54 @@ def create(client, template):
     return r.json(), url, body
 
 
+def test_installed_template_can_finalize_user_rules_without_a_modeling_roundtrip(client, template):
+    revision = client.get(f"/api/v1/system-revisions/{template['source_revision_id']}").json()
+    method = client.post(f"/api/v1/applications/{template['source_application_id']}/calculation-methods", json={
+        "name": "Steel template PCF", "purpose": "pcf", "model_revision_id": template["source_revision_id"],
+        "rules": [{"process_instance_id": "ore-sintering", "direction": "emission",
+                   "boundary_status": "selected", "location_role": "onsite",
+                   "scope": "scope_1", "classification_basis": "user"}]}).json()
+    method_id = method["method"]["id"]
+    assert client.post(f"/api/v1/calculation-methods/{method_id}/versions/1/validate").json()["valid"]
+    from sqlalchemy import select
+    from nebula_one.runtime_models import BoundaryDefinition
+    with client.app.state.container.database.session() as db:
+        boundary = db.scalar(select(BoundaryDefinition).where(
+            BoundaryDefinition.application_id == template["source_application_id"]))
+        boundary_id = boundary.id
+    cbam = client.post(f"/api/v1/applications/{template['source_application_id']}/calculation-methods", json={
+        "name": "Steel template CBAM", "purpose": "cbam", "model_revision_id": template["source_revision_id"],
+        "cbam_boundary_ref": boundary_id,
+        "rules": [{"process_instance_id": "ore-sintering", "direction": "emission", "cbam_relevant": True,
+                   "boundary_status": "selected", "location_role": "onsite",
+                   "scope": "scope_1", "classification_basis": "user"}]}).json()
+    cbam_id = cbam["method"]["id"]
+    assert client.post(f"/api/v1/calculation-methods/{cbam_id}/versions/1/validate").json()["valid"]
+    payload = {"title": "Steel with own rules", "version": "1.0.0",
+        "source_application_id": template["source_application_id"],
+        "source_model_id": template["source_model_id"], "source_revision_id": template["source_revision_id"],
+        "expected_revision_sha256": revision["content_sha256"], "methods": [],
+        "user_methods": [{"method_id": method_id, "version": 1,
+                          "content_sha256": method["versions"][0]["content_sha256"]},
+                         {"method_id": cbam_id, "version": 1,
+                          "content_sha256": cbam["versions"][0]["content_sha256"]}]}
+    published = client.post("/api/v1/project-templates/authored", json=payload)
+    assert published.status_code == 200, published.text
+    target, _, _ = create(client, published.json())
+    copies = client.get(f"/api/v1/applications/{target['application_id']}/calculation-methods").json()
+    assert len(copies) == 2 and {copy["origin_method_id"] for copy in copies} == {method_id, cbam_id}
+    cbam_copy = next(copy for copy in copies if copy["purpose"] == "cbam")
+    cbam_version = client.get(f"/api/v1/calculation-methods/{cbam_copy['id']}").json()["versions"][0]
+    assert cbam_version["cbam_boundary_ref"] != boundary_id
+    with client.app.state.container.database.session() as db:
+        target_boundary = db.get(BoundaryDefinition, cbam_version["cbam_boundary_ref"])
+        assert target_boundary.application_id == target["application_id"]
+    assert client.post(f"/api/v1/calculation-methods/{cbam_copy['id']}/versions/1/validate").json()["valid"]
+    assert client.post("/api/v1/project-templates/authored", json={**payload,
+        "source_application_id": target["application_id"], "source_model_id": target["system_model_id"],
+        "source_revision_id": target["revision_id"]}).status_code == 422
+
+
 def test_default_backgrounds_never_replace_saved_user_inputs(client, template):
     from nebula_one.services.demo_background_defaults import ensure_demo_backgrounds
     from nebula_one.models import Application, SystemRevision

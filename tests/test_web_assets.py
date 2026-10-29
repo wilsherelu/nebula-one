@@ -33,3 +33,6 @@ def test_built_web_assets_and_spa_fallback(tmp_path):
         assert "Nebula One packaged smoke" in fallback.text
         assert client.get("/applications/example/scenarios", headers={"If-None-Match": fallback.headers["etag"]}).status_code == 200
         assert client.get("/health").json()["status"] == "ok"
+        unknown = client.get("/api/v1/nonexistent-route")
+        assert unknown.status_code == 404
+        assert "Nebula One packaged smoke" not in unknown.text

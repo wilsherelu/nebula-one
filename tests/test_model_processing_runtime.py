@@ -16,10 +16,16 @@ from nebula_one.database import Database
 from nebula_one.errors import DomainError
 from nebula_one.hashing import canonical_json_sha256
 from nebula_one.model_processing_contract import (
+    list_model_processing_rules_for_template,
     load_bundled_model_processing_rules,
     load_model_processing_rules_by_reference,
     load_model_processing_rules_for_template,
 )
+from nebula_one.services.calculation_methods import (
+    _require_variant_ref_selectable,
+    version_content_sha256,
+)
+from nebula_one.services.returned_cbam_binding import _identity_graph
 from nebula_one.models import Application, SystemModel, SystemRevision, new_id
 from nebula_one.restored_dependencies import load_restored_method_packages
 from nebula_one.runtime_models import MethodPackage
@@ -445,7 +451,14 @@ def test_a_saved_basis_claiming_another_rule_version_refuses_instead_of_re_deriv
     assert saved.basis["model_processing_rules"] in excinfo.value.details["available"]
     same_package = [row for row in excinfo.value.details["available"]
                     if row["package_id"] == saved.basis["model_processing_rules"]["package_id"]]
-    assert sorted(row["version"] for row in same_package) == ["1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4"]
+    # Numeric (not lexicographic) version order: 1.0.10 and 1.0.11 are newer than 1.0.2.
+    # The set here is loadable-by-exact-reference, so it includes the explicit-only variant package
+    # 1.0.12: a variant may pin it, even though it is invisible to the template auto-resolver.
+    order = lambda v: tuple(int(p) for p in v.split("."))
+    assert sorted((row["version"] for row in same_package), key=order) == [
+        "1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5",
+        "1.0.6", "1.0.7", "1.0.8", "1.0.9", "1.0.10", "1.0.11", "1.0.12",
+    ]
 
 
 def test_a_saved_basis_that_no_longer_matches_the_stored_model_refuses(steel_project):
@@ -521,3 +534,203 @@ def test_the_exact_rule_identity_loads_and_anything_else_lists_what_exists():
         assert excinfo.value.code == "MODEL_PROCESSING_RULES_VERSION_UNAVAILABLE"
         assert excinfo.value.details["requested"] == dict(reference, **{field: value})
         assert reference in excinfo.value.details["available"]
+
+
+# ---- an explicit_only variant package re-expresses the reviewed counted set exactly ----
+
+def _register_explicit_method_package(steel_project):
+    """Register the per-exchange decision package the explicit variant cites, from its own file."""
+    import json
+    from pathlib import Path
+    from nebula_one.hashing import canonical_json_sha256
+
+    payload = json.loads(
+        Path(
+            "src/nebula_one/resources/official_methods/"
+            "cbam-steel-direct-boundary-decisions-1.2.6.json"
+        ).read_text(encoding="utf-8")
+    )
+    steel_project.db.add(
+        MethodPackage(
+            package_id=payload["package_id"],
+            version=payload["version"],
+            package_kind=payload["package_kind"],
+            jurisdiction=payload.get("jurisdiction"),
+            manifest=deepcopy(payload["manifest"]),
+            content_sha256=canonical_json_sha256(payload),
+            status="registered",
+        )
+    )
+    steel_project.db.commit()
+    return payload
+
+
+def _pin_variant_package(steel_project, reference):
+    steel_project.revision.application_context = {
+        **steel_project.revision.application_context,
+        "project_inputs": {"model_processing_rules_ref": reference},
+    }
+
+
+def _counted_exchange_ids(derivation) -> set[str]:
+    """The emissions a derivation left on the calculation model, whichever selection it used."""
+    actions = derivation.derived.actions
+    classify = next((a for a in actions if a.get("action") == "classify_elementary_flows"), None)
+    if classify is not None:
+        return set(classify["included_exchange_ids"])
+    verify = next((a for a in actions if a.get("action") == "verify_elementary_flows"), None)
+    assert verify is not None, actions
+    return set(verify["verified_exchange_ids"])
+
+
+def test_an_explicit_variant_package_reproduces_official_a_exactly(steel_project):
+    """A per-exchange reviewed selection must count the same set as the whole-plant pre-limitation.
+
+    This is the faithfulness gate for a variant the operator can later narrow: if the re-expressed
+    decisions left a different emission set, a variant exclusion would subtract from a boundary nobody
+    reviewed, so the full explicit selection is pinned to equal official A here before any narrowing
+    is trusted. The awaiting gate supplies the force - a decision set that missed a real emission
+    would refuse rather than silently under-count.
+    """
+    _register_explicit_method_package(steel_project)
+
+    official = _resolve(steel_project, purpose="cbam")
+    assert official.basis["model_processing_rules"]["version"] == "1.0.11"
+
+    variant = load_bundled_model_processing_rules("steel-bf-bof-model-processing-1.0.12.json")
+    _pin_variant_package(steel_project, variant.reference())
+
+    explicit = _resolve(steel_project, purpose="cbam")
+    assert explicit.basis["model_processing_rules"] == {
+        key: variant.reference()[key]
+        for key in ("package_id", "version", "content_sha256")
+    }
+    selection = flow_selection_of(explicit.derived)
+    assert selection["mode"] == "explicit_flow_rules"
+    assert selection["excluded_exchange_ids"] == []
+    assert _counted_exchange_ids(explicit) == _counted_exchange_ids(official)
+    # Same counted set on the same model is the same calculation model, so an exclusion later
+    # subtracts from exactly what official A counted.
+    assert explicit.derived.derived_graph_sha256 == official.derived.derived_graph_sha256
+    # The variant's basis carries both the boundary method and the reviewed per-exchange decisions.
+    cited = {(p["package_id"], p["version"]) for p in explicit.basis["method_packages"]}
+    assert ("cbam.eu.iron-steel.bf-bof-direct-trial", "1.2.3") in cited
+    assert ("cbam.eu.iron-steel.bf-bof-direct-trial-boundary-decisions", "1.2.6") in cited
+
+
+def test_the_explicit_variant_refuses_without_its_registered_method_package(steel_project):
+    """Formal reachability is real: a pin to an unregistered method package cannot derive.
+
+    If the derivation quietly fell back to another package it would answer a variant from a boundary
+    nobody registered, so the missing exact content is a refusal, not a default.
+    """
+    variant = load_bundled_model_processing_rules("steel-bf-bof-model-processing-1.0.12.json")
+    _pin_variant_package(steel_project, variant.reference())
+    with pytest.raises(DomainError) as error:
+        _resolve(steel_project, purpose="cbam")
+    assert error.value.code == "METHOD_PACKAGE_NOT_FOUND"
+
+
+# ---- a user variant binds an exact processing package (T5.3 selection seam) ----
+
+
+def _variant_ref(filename: str) -> dict:
+    ref = load_bundled_model_processing_rules(filename).reference()
+    return {key: ref[key] for key in ("package_id", "version", "content_sha256")}
+
+
+def test_a_variant_can_bind_the_explicit_steel_package_and_it_folds_into_the_hash(steel_project):
+    ref = _variant_ref("steel-bf-bof-model-processing-1.0.12.json")
+    identity = _require_variant_ref_selectable(
+        ref, steel_project.revision, steel_project.application, "cbam"
+    )
+    assert identity == ref
+    assert set(identity) == {"package_id", "version", "content_sha256"}
+    # Binding a package changes the version identity; leaving it unbound keeps the historical hash.
+    assert version_content_sha256("cbam", None, [], [], ref) != version_content_sha256(
+        "cbam", None, [], []
+    )
+
+
+def test_the_selectable_surface_offers_the_explicit_package_and_marks_the_official_one(steel_project):
+    graph_identity = canonical_json_sha256(_identity_graph(steel_project.graph))
+    selectable = list_model_processing_rules_for_template(
+        steel_project.identity,
+        graph_identity_sha256=graph_identity,
+        graph=steel_project.graph,
+    )
+    by_version = {
+        rules.version: rules.purpose("cbam").elementary_flows.mode for rules in selectable
+    }
+    assert by_version.get("1.0.12") == "explicit_flow_rules"  # narrowing-capable variant binding
+    assert by_version.get("1.0.11") == "template_prelimited"  # official A, not a variant binding
+
+
+def test_a_variant_refusing_the_official_template_prelimited_package_names_why(steel_project):
+    ref = _variant_ref("steel-bf-bof-model-processing-1.0.11.json")
+    with pytest.raises(DomainError) as error:
+        _require_variant_ref_selectable(
+            ref, steel_project.revision, steel_project.application, "cbam"
+        )
+    assert error.value.code == "CALCULATION_METHOD_PROCESSING_PACKAGE_NOT_EXPLICIT"
+    assert error.value.details["elementary_flows_mode"] == "template_prelimited"
+
+
+def test_a_variant_refusing_a_package_from_another_template_version_names_why(steel_project):
+    ref = _variant_ref("steel-bf-bof-1.0.1.json")  # reviewed against inventory 1.1.2, not this 1.1.4
+    with pytest.raises(DomainError) as error:
+        _require_variant_ref_selectable(
+            ref, steel_project.revision, steel_project.application, "cbam"
+        )
+    assert error.value.code == "CALCULATION_METHOD_PROCESSING_PACKAGE_NOT_SELECTABLE"
+
+
+def test_a_variant_refusing_a_tampered_content_hash_fails_before_applicability(steel_project):
+    ref = {
+        **_variant_ref("steel-bf-bof-model-processing-1.0.12.json"),
+        "content_sha256": "f" * 64,
+    }
+    with pytest.raises(DomainError) as error:
+        _require_variant_ref_selectable(
+            ref, steel_project.revision, steel_project.application, "cbam"
+        )
+    assert error.value.code == "MODEL_PROCESSING_RULES_VERSION_UNAVAILABLE"
+
+
+def test_a_variant_ref_missing_an_identity_field_is_rejected(steel_project):
+    with pytest.raises(DomainError) as error:
+        _require_variant_ref_selectable(
+            {
+                "package_id": "steel-bf-bof.model-processing",
+                "version": "1.0.12",
+                "content_sha256": "",
+            },
+            steel_project.revision,
+            steel_project.application,
+            "cbam",
+        )
+    assert error.value.code == "CALCULATION_METHOD_PROCESSING_PACKAGE_IDENTITY_INCOMPLETE"
+
+
+def test_a_bound_pinned_rules_ref_drives_a_new_run_derivation(steel_project):
+    """A user variant's exact bound package is the pin a NEW run derives under (T5.3 solve seam).
+
+    Without a project_inputs forward pin and without an accepted basis, only the caller-supplied
+    pinned_rules_ref can move the derivation off the automatic official selection. An accepted or
+    recovered run ignores it, because its persisted basis pin wins above this path.
+    """
+    _register_explicit_method_package(steel_project)
+    # The same fixture has no project_inputs pin, so a bare resolve stays on the official package.
+    official = _resolve(steel_project, purpose="cbam")
+    assert official.basis["model_processing_rules"]["version"] == "1.0.11"
+
+    variant = load_bundled_model_processing_rules(
+        "steel-bf-bof-model-processing-1.0.12.json"
+    )
+    ref = {k: variant.reference()[k] for k in ("package_id", "version", "content_sha256")}
+    narrowed = _resolve(steel_project, purpose="cbam", pinned_rules_ref=ref)
+    assert narrowed.basis["model_processing_rules"] == ref
+    # The re-expressed selection counts the same set, so a later variant exclusion subtracts from
+    # exactly what official A counted - the pin moved the selection without changing its result.
+    assert _counted_exchange_ids(narrowed) == _counted_exchange_ids(official)
+    assert narrowed.derived.derived_graph_sha256 == official.derived.derived_graph_sha256

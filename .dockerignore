@@ -1,4 +1,7 @@
 .git
+drafts
+.local-evidence
+deploy/local-test.env
 .env
 .pytest_cache
 __pycache__

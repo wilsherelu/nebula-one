@@ -7,6 +7,29 @@ const path = require('node:path');
 const { availablePort, editorServer } = require('../runtime.cjs');
 const { ownedUrl, validateHandoff } = require('../security.cjs');
 
+test('desktop validates accounting release separately from structural model', () => {
+  const { matchesTemplateRelease } = require('../runtime.cjs');
+  const { createHash } = require('node:crypto');
+  // Fixture keys are written in recursive sorted order so JSON.stringify reproduces the runtime
+  // serializer's canonical hash independently. The library carries a task declaration exactly as the
+  // seeded steel-1.1.7 release does, and the backend always exposes `tasks` on accounting_library.
+  const library = {id:'library', methods:[], schema_version:'nebula_one.template-method-library.v1',
+    tasks:[{default_ref:'pcf@1.0.3', refs:['pcf@1.0.3'], role:'complete_model'}],
+    template_profile:{content_sha256:'a'.repeat(64), id:'steel', version:'1.1.4'}, version:'1.1.7'};
+  const hash = createHash('sha256').update(JSON.stringify(library)).digest('hex');
+  const profile = {id:'steel',version:'1.1.4',source_seed:{seed_id:'seed'}};
+  const item = {seed_id:'seed',version:'1.1.7',accounting_library:{id:library.id,version:library.version,
+    content_sha256:hash,template_profile:library.template_profile,methods:[],tasks:library.tasks}};
+  assert.equal(matchesTemplateRelease(item,profile,[library]),true);
+  assert.equal(matchesTemplateRelease({...item,version:'1.1.4'},profile,[library]),false);
+  assert.equal(matchesTemplateRelease({...item,accounting_library:{...item.accounting_library,content_sha256:'b'.repeat(64)}},profile,[library]),false);
+  // A diverging task declaration is a different accounting release and must not be waved through.
+  assert.equal(matchesTemplateRelease({...item,accounting_library:{...item.accounting_library,
+    tasks:[{default_ref:'cbam@1.0.7', refs:['cbam@1.0.7'], role:'cbam'}]}},profile,[library]),false);
+  assert.equal(matchesTemplateRelease(item,profile,[library,library]),false);
+  assert.equal(matchesTemplateRelease({seed_id:'seed',version:'1.1.4'},profile,[]),true);
+});
+
 test('occupied preferred port selects a new loopback port', async () => {
   const server = http.createServer();
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

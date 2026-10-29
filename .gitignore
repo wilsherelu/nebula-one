@@ -44,12 +44,22 @@ test-results/
 /cases/standard-lca-seeds/hydrogen-*/
 /deploy/seeds/hydrogen-demo.json
 
+# Raw live-acceptance evidence stays on disk only; commits carry the desensitized
+# summary and the replayable script, never solve snapshots.
+/deploy/s4-evidence/
+
 # User-imported commercial databases are never release inputs.
 commercial-data/
 licensed-data/
 local-databases/
 local-imports/
 import-cache/
+/.local-evidence/
+/evidence/
+/review/
+/deploy/local-test.env
+/drafts/*
+!/drafts/README.md
 *.spold
 *.spold2
 *ecoinvent*.zip

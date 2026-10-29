@@ -3,6 +3,28 @@ const path = require('node:path');
 const net = require('node:net');
 const http = require('node:http');
 const { spawn } = require('node:child_process');
+const { createHash } = require('node:crypto');
+const { isDeepStrictEqual } = require('node:util');
+
+function matchesTemplateRelease(item, profile, libraries) {
+  if (item.seed_id !== profile.source_seed.seed_id) return false;
+  const matches = libraries.filter(library => library.template_profile.id === profile.id
+    && library.template_profile.version === profile.version);
+  if (!matches.length) return !item.accounting_library && item.version === profile.version;
+  if (matches.length !== 1) return false;
+  const library = matches[0];
+  const sorted = value => Array.isArray(value) ? value.map(sorted)
+    : value && typeof value === 'object'
+      ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sorted(value[key])])) : value;
+  const hash = createHash('sha256').update(JSON.stringify(sorted(library))).digest('hex');
+  // The backend always exposes `tasks` on accounting_library (null when the release declares none),
+  // so the expected shape must carry it too or a task-declaring release never matches itself.
+  const tasks = Array.isArray(library.tasks) && library.tasks.length ? library.tasks : null;
+  return item.version === library.version && isDeepStrictEqual(item.accounting_library, {
+    id: library.id, version: library.version, content_sha256: hash,
+    template_profile: library.template_profile, methods: library.methods, tasks,
+  });
+}
 
 async function availablePort(preferred = 0) {
   const probe = net.createServer();
@@ -101,13 +123,14 @@ class DesktopRuntime {
     }
     const lca = startChild(path.join(this.resources, 'backends/nebula-lca-api/nebula-lca-api.exe'), {
       ...env, NEBULA_DESKTOP: '1', NEBULA_DATA_DIR: lcaData,
+      NEBULA_PUBLIC_CHARACTERIZATION_ONLY: '1',
       NEBULA_API_PORT: String(lcaPort), AUTO_BOOTSTRAP_REFERENCE_DATA_ON_STARTUP: 'false',
       AUTO_STARTUP_MAINTENANCE_ON_STARTUP: 'true',
-      NEBULA_LCA_EF31_DIR: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/EF3.1'),
-      NEBULA_PROVIDER_ELEMENTARY_CATALOG_PATH: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_elementary_catalog.v1.csv'),
-      NEBULA_REFERENCE_BOOTSTRAP_PROFILE: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_elementary_catalog.v1.provenance.json'),
+      NEBULA_LCA_EF31_DIR: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/ef31-characterization'),
+      NEBULA_PROVIDER_ELEMENTARY_CATALOG_PATH: path.join(this.resources, 'config/desktop_elementary_catalog.v1.csv'),
+      NEBULA_REFERENCE_BOOTSTRAP_PROFILE: path.join(this.resources, 'config/desktop_elementary_catalog.v1.provenance.json'),
       NEBULA_LCA_ENGINE_COMMIT: payload.lca_commit,
-      NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_tiangong_open_flows.v2.json'),
+      NEBULA_PROVIDER_TIDAS_FLOW_SNAPSHOT_PATH: path.join(this.resources, 'config/desktop_tiangong_open_flows.v1.json'),
       NEBULA_PROVIDER_TIDAS_REFERENCE_DEPENDENCY_SNAPSHOT_PATH: path.join(this.resources, 'backends/nebula-lca-api/_internal/data/provider_profiles/steel_tiangong_open_references.v1.json')
     }, logs, 'lca');
     this.children.push(lca);
@@ -136,11 +159,15 @@ class DesktopRuntime {
     const profileRoot = path.join(this.resources, 'cases/project-templates');
     const profiles = fs.readdirSync(profileRoot).map(name =>
       JSON.parse(fs.readFileSync(path.join(profileRoot, name, 'template.json'), 'utf8')));
+    const libraryRoot = path.join(this.resources, 'src/nebula_one/resources/template_method_libraries');
+    const libraries = fs.existsSync(libraryRoot) ? fs.readdirSync(libraryRoot)
+      .filter(name => name.endsWith('.json'))
+      .map(name => JSON.parse(fs.readFileSync(path.join(libraryRoot, name), 'utf8'))) : [];
     for (const expected of catalog.seed_templates) {
       const profile = profiles.find(item => item.source_seed.seed_id === expected.seed_id
         && item.source_seed.version === expected.version
         && item.source_seed.bundle_content_sha256 === expected.bundle_content_sha256);
-      if (!profile || !templates.items.some(item => item.seed_id === expected.seed_id && item.version === profile.version)) {
+      if (!profile || !templates.items.some(item => matchesTemplateRelease(item, profile, libraries))) {
         throw new Error('Packaged steel template is unavailable; inspect the initialization log');
       }
     }
@@ -153,4 +180,4 @@ class DesktopRuntime {
   }
 }
 
-module.exports = { availablePort, waitHealthy, stopChild, editorServer, DesktopRuntime };
+module.exports = { availablePort, waitHealthy, stopChild, editorServer, DesktopRuntime, matchesTemplateRelease };

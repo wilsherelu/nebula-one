@@ -63,6 +63,7 @@ def _process_catalog(graph: dict[str, Any]) -> tuple[dict[str, dict[str, str]], 
             "label": _text(raw.get("name")) or process_id,
             "kind": "process",
             "process_id": process_id,
+            **({"background": True} if raw.get("mfa_background") else {}),
         }
     return processes, node_to_process
 
@@ -1075,6 +1076,8 @@ def render_sankey_svg(
         )
         if node.get("claim_role") == "partial_background_leaf":
             fill, stroke, role = "#f3edff", "#7b61c9", L("部分背景", "PARTIAL BACKGROUND")
+        if node.get("background"):
+            fill, stroke, role = "#f3edff", "#7b61c9", L("背景过程", "BACKGROUND PROCESS")
         if node.get("kind") == "system_boundary" and node.get("direction") == "output":
             fill, stroke, role = "#e8f6f8", "#4aa7b5", L("系统输出", "SYSTEM OUTPUT")
         if standard_mode and node.get("kind") == "environment" and node.get("direction") == "input":
@@ -1103,15 +1106,20 @@ def render_sankey_svg(
         chunks.append(
             f'<circle cx="{x - card_width / 2 + 18:.1f}" cy="{y - 21:.1f}" r="5" fill="{stroke}"/>'
         )
-        if not standard_mode:
+        if not standard_mode or node.get("background"):
             chunks.append(
                 f'<text class="node-role" x="{x - card_width / 2 + 31:.1f}" y="{y - 17:.1f}" fill="{stroke}">{escape(role)}</text>'
             )
+        if node.get("background"):
+            visible_label = _shorten(full_label, 78)
+            for line_index, start in enumerate(range(0, len(visible_label), 26)):
+                chunks.append(f'<text class="node-title" style="font-size:10px" x="{x - card_width / 2 + 16:.1f}" y="{y - 4 + line_index * 12:.1f}">{escape(visible_label[start:start + 26])}</text>')
+        else:
+            chunks.append(
+                f'<text class="node-title" x="{x - card_width / 2 + 16:.1f}" y="{y + 4:.1f}">{escape(_shorten(full_label, 27))}</text>'
+            )
         chunks.append(
-            f'<text class="node-title" x="{x - card_width / 2 + 16:.1f}" y="{y + 4:.1f}">{escape(_shorten(full_label, 27))}</text>'
-        )
-        chunks.append(
-            f'<text class="node-total" x="{x - card_width / 2 + 16:.1f}" y="{y + 25:.1f}">{escape(total_label)}</text>'
+            f'<text class="node-total" x="{x - card_width / 2 + 16:.1f}" y="{y + (38 if node.get("background") else 25):.1f}">{escape(total_label)}</text>'
         )
     legend_y = height - 28
     legend = (

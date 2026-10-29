@@ -31,7 +31,10 @@ def main():
                         '--workpath', str(build), '--noconfirm'], cwd=working, env=env, check=True)
     subprocess.run([str(python), str(root / 'desktop/build_payload.py'), '--lca-root', str(lca)], cwd=root, check=True)
     subprocess.run(['npm.cmd', 'ci', '--no-audit', '--no-fund'], cwd=root / 'desktop', check=True)
-    subprocess.run(['npm.cmd', 'run', 'build', '--', f'--config.directories.output={output}'], cwd=root / 'desktop', check=True)
+    # Local preview packages are unsigned. Do not require privileged symlink extraction
+    # for signing helpers; formal signing is configured separately when publishing.
+    subprocess.run(['npm.cmd', 'run', 'build', '--', '--config.win.signAndEditExecutable=false',
+                    f'--config.directories.output={output}'], cwd=root / 'desktop', check=True)
 
 
 if __name__ == '__main__':

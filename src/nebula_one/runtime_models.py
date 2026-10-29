@@ -488,3 +488,94 @@ class EvidencePack(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utcnow
     )
+
+
+class TagGroupingResult(Base):
+    """Immutable tag view; independent of later edits or retirement of its schemes."""
+
+    __tablename__ = "tag_grouping_results"
+    __table_args__ = (UniqueConstraint("application_id", "request_sha256", name="uq_tag_grouping_request"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    application_id: Mapped[str] = mapped_column(ForeignKey("applications.id"), nullable=False, index=True)
+    snapshot_id: Mapped[str] = mapped_column(ForeignKey("solved_system_snapshots.id"), nullable=False, index=True)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    result: Mapped[dict] = mapped_column(JSON, nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class CalculationMethod(Base):
+    """A user-defined calculation method bound to one exact Nebula LCA model revision.
+
+    Identity lives here; the versioned rule content lives in CalculationMethodVersion.
+    ``model_revision_id`` is always a concrete revision, never ``latest``.
+    """
+
+    __tablename__ = "calculation_methods"
+    __table_args__ = (
+        UniqueConstraint(
+            "application_id", "model_revision_id", "name", name="uq_calculation_method_name"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    application_id: Mapped[str] = mapped_column(
+        ForeignKey("applications.id"), nullable=False, index=True
+    )
+    model_revision_id: Mapped[str] = mapped_column(
+        ForeignKey("system_revisions.id"), nullable=False, index=True
+    )
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    origin_method_id: Mapped[str | None] = mapped_column(
+        ForeignKey("calculation_methods.id"), nullable=True, index=True
+    )
+    origin_method_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    origin_content_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow
+    )
+
+
+class CalculationMethodVersion(Base):
+    """An immutable-by-version snapshot of the user's boundary/Scope/location rules."""
+
+    __tablename__ = "calculation_method_versions"
+    __table_args__ = (
+        UniqueConstraint("method_id", "version", name="uq_calculation_method_version"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    method_id: Mapped[str] = mapped_column(
+        ForeignKey("calculation_methods.id"), nullable=False, index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    rules: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    reporting_dimensions: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    # The exact model-processing package a user CBAM/variant version narrows against, in the
+    # {package_id, version, content_sha256} shape a derivation pin reads. Null keeps the version on
+    # the automatic official selection, so a pre-migration snapshot and its content hash are unchanged;
+    # only a version that binds a package folds this reference into its identity.
+    model_processing_rules_ref: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # The version's explicit semantics. NULL keeps every pre-existing method on the legacy
+    # boundary/Scope reading; "flow_tag.v1" declares a flow-tag scheme, where the single declared
+    # dimension is the scheme's category set and each rule is one confirmed flow match. The marker
+    # is persisted, never inferred from purpose or an empty field, and folds into the content hash
+    # only when present so a historical version keeps its byte-for-byte identity.
+    semantics: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    cbam_boundary_ref: Mapped[str | None] = mapped_column(
+        ForeignKey("boundary_definitions.id"), nullable=True, index=True
+    )
+    content_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    validated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

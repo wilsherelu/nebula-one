@@ -9,6 +9,15 @@ from ..analysis.energy_carrier import EnergyCarrierSolved
 from ..errors import DomainError
 from ..hashing import canonical_json_sha256
 from .dependency_gap import dependency_gap
+from .method_path_grouping import group_path_weighted_scopes, select_path_weighted_receipt
+from .method_scope_grouping import group_organization_scopes
+from .method_grouping import build_dimension_grouping, path_rows_to_weighted_terms
+from .tag_grouping import (
+    TAG_SEMANTICS,
+    consumer_path_exchanges,
+    group_tag_scheme,
+    tag_dimension,
+)
 
 
 def _fail(code: str, message: str, **details: Any) -> None:
@@ -305,6 +314,163 @@ def _contribution_attribution(
     })
 
 
+def _attach_user_method_grouping(
+    *,
+    carbon_attribution: dict[str, Any],
+    provider_receipt: dict[str, Any],
+    scaled_elementary_exchanges: list[dict[str, Any]],
+    lcia_results: dict[str, Any] | None = None,
+    indicator_key: str | None = None,
+) -> dict[str, Any]:
+    """Make a referenced user calculation method actually move the reported numbers.
+
+    When the solve publishes R3's path-weighted contribution receipts for this indicator, the
+    method's rules are grouped over those rows so a background emission shared by several consumer
+    paths is decomposed per consumption path and every path is kept (never collapsed by an
+    exchange-id dict overwrite); a path the engine itself could not attribute is reported as an
+    ``engine_gap`` rather than folded into a user Scope. When the snapshot predates that contract,
+    the rules fall back to the flat per-exchange weighted values (foreground elementary flows), so
+    an include/exclude change is still accountable while background Scope 2/3 stays an honest gap,
+    never a zero. Excluding a path moves its value into ``excluded``; it never deletes a
+    technosphere node. A run with no user method is returned untouched so historical snapshots
+    keep their exact persisted shape.
+    """
+    user_method = provider_receipt.get("user_calculation_method") if isinstance(provider_receipt, dict) else None
+    tag_scheme = isinstance(user_method, dict) and user_method.get("semantics") == TAG_SEMANTICS
+    if not isinstance(user_method, dict) or (not user_method.get("rules") and not tag_scheme):
+        return carbon_attribution
+
+    identity = {
+        key: user_method.get(key)
+        for key in (
+            "method_id",
+            "version",
+            "content_sha256",
+            "model_revision_id",
+            "execution_plan_sha256",
+            "compiler_version",
+        )
+    }
+    indicator_unit = (carbon_attribution.get("indicator_receipt") or {}).get("unit")
+    path_receipt = (
+        select_path_weighted_receipt(lcia_results, canonical_indicator_key=str(indicator_key or ""))
+        if indicator_key
+        else None
+    )
+
+    if path_receipt is not None and tag_scheme:
+        # A tag scheme has no LC-Scope column: it reports its own matched range and keeps
+        # untagged, pending and missing paths separate from a real zero.
+        if not indicator_unit:
+            indicator_unit = path_receipt.get("indicator_unit")
+        tag_grouping = group_tag_scheme(
+            rules=user_method.get("rules") or [],
+            scaled_exchanges=scaled_elementary_exchanges,
+            weighted_terms=path_rows_to_weighted_terms(path_receipt),
+            dimension=tag_dimension(user_method),
+            indicator_unit=indicator_unit or "",
+            consumer_paths=consumer_path_exchanges(path_receipt),
+        )
+        partial = (
+            not tag_grouping["coverage"]["complete"]
+            or bool(tag_grouping["missing"]["term_count"])
+            or not tag_grouping["reconciled"]
+        )
+        carbon_attribution["user_method_grouping"] = {
+            "method": identity,
+            "grouping_mode": "flow_tag",
+            "execution_status": "executed_partial" if partial else "executed_full",
+            "coverage": {
+                "matched_share": tag_grouping["coverage"]["matched_share"],
+                "unmatched_exchange_ids": tag_grouping["unmatched"]["exchange_ids"],
+                "pending_exchange_ids": tag_grouping["pending"]["exchange_ids"],
+                "missing_exchange_ids": tag_grouping["missing"]["exchange_ids"],
+            },
+            "grouping": None,
+            "dimension_grouping": None,
+            "tag_grouping": tag_grouping,
+        }
+        return carbon_attribution
+
+    if path_receipt is not None:
+        if not indicator_unit:
+            indicator_unit = path_receipt.get("indicator_unit")
+        grouping = group_path_weighted_scopes(
+            rules=user_method["rules"],
+            scaled_exchanges=scaled_elementary_exchanges,
+            path_receipt=path_receipt,
+            indicator_unit=indicator_unit or "",
+        )
+        coverage_gaps = grouping["coverage_gaps"]
+        unattributed_ids = grouping["unattributed"]["exchange_ids"]
+        engine_gap_ids = grouping["engine_gap"]["exchange_ids"]
+        partial = bool(coverage_gaps) or bool(unattributed_ids) or bool(engine_gap_ids) or not grouping["reconciled"]
+        carbon_attribution["user_method_grouping"] = {
+            "method": identity,
+            "grouping_mode": "path_weighted",
+            "execution_status": "executed_partial" if partial else "executed_full",
+            "coverage": {
+                "attribution_coverage": grouping.get("attribution_coverage"),
+                "coverage_gaps": coverage_gaps,
+                "unattributed_exchange_ids": unattributed_ids,
+                "engine_gap_exchange_ids": engine_gap_ids,
+            },
+            "grouping": grouping,
+            "dimension_grouping": build_dimension_grouping(
+                user_method=user_method,
+                scaled_exchanges=scaled_elementary_exchanges,
+                weighted_terms=path_rows_to_weighted_terms(path_receipt),
+                indicator_unit=indicator_unit or "",
+                path_receipt=path_receipt,
+            ),
+        }
+        return carbon_attribution
+
+    hotspots = carbon_attribution.get("hotspots") or []
+    if not hotspots or not indicator_unit:
+        # Rules were referenced but the snapshot carries no weighted per-path values: report
+        # the gap honestly rather than fabricate a Scope total.
+        carbon_attribution["user_method_grouping"] = {
+            "method": identity,
+            "grouping_mode": "exchange_weighted",
+            "execution_status": "no_weighted_contributions",
+            "grouping": None,
+            "dimension_grouping": None,
+        }
+        return carbon_attribution
+
+    terms = [
+        {"exchange_id": hotspot["exchange_id"], "contribution_value": hotspot["contribution_value"]}
+        for hotspot in hotspots
+    ]
+    grouping = group_organization_scopes(
+        rules=user_method["rules"],
+        scaled_exchanges=scaled_elementary_exchanges,
+        terms=terms,
+        indicator_unit=indicator_unit,
+    )
+    coverage_gaps = grouping["coverage_gaps"]
+    unattributed_ids = grouping["unattributed"]["exchange_ids"]
+    partial = bool(coverage_gaps) or bool(unattributed_ids) or not grouping["reconciled"]
+    carbon_attribution["user_method_grouping"] = {
+        "method": identity,
+        "grouping_mode": "exchange_weighted",
+        "execution_status": "executed_partial" if partial else "executed_full",
+        "coverage": {
+            "coverage_gaps": coverage_gaps,
+            "unattributed_exchange_ids": unattributed_ids,
+        },
+        "grouping": grouping,
+        "dimension_grouping": build_dimension_grouping(
+            user_method=user_method,
+            scaled_exchanges=scaled_elementary_exchanges,
+            weighted_terms=terms,
+            indicator_unit=indicator_unit or "",
+        ),
+    }
+    return carbon_attribution
+
+
 def build_carbon_management(
     *,
     solved_snapshot_id: str,
@@ -498,6 +664,13 @@ def build_carbon_management(
         scaled_elementary_exchanges=scaled_elementary_exchanges,
         elementary_receipts=receipt_by_exchange,
         emission_rules=emission_rules,
+    )
+    carbon_attribution = _attach_user_method_grouping(
+        carbon_attribution=carbon_attribution,
+        provider_receipt=provider_receipt,
+        scaled_elementary_exchanges=scaled_elementary_exchanges,
+        lcia_results=lcia_results,
+        indicator_key=climate_total.get("indicator_key") if isinstance(climate_total, dict) else None,
     )
     issues = energy_issues + climate_issues + contribution_issues
     result: dict[str, Any] = {

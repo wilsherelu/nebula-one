@@ -407,6 +407,21 @@ describe('CBAM rule trial panel', () => {
     expect(api.cbamTrial).toHaveBeenCalledWith('snapshot-1', expect.objectContaining({boundary_definition_id: 'edited-boundary'}));
   });
 
+  it('uses the frozen source graph for a narrowed variant and excludes unrelated graph boundaries', async () => {
+    mockReads();
+    vi.spyOn(api, 'cbamTrial').mockResolvedValue({ ...v2Result, claim_boundary: { ...v2Result.claim_boundary, user_declared_variant: true } });
+    const narrowed = { ...snapshot, provider_receipt: { snapshot_ref: { graph_hash: 'narrowed-graph' },
+      calculation_basis: { source_model: { graph_sha256: 'source-graph' } } } };
+    renderPanel('/applications/app-1/results?view=cbam&cbam-tab=simple', <Panel snapshot={narrowed}
+      boundaryRequiredFor={['cbam.simple@1.0.0']} cbamBoundaries={[
+        { ...cbamBoundary, id: 'other-graph', geographic_scope: { graph_sha256: 'another-graph' } },
+        { ...cbamBoundary, id: 'exact-source', geographic_scope: { graph_sha256: 'source-graph', source_system_revision_id: snapshot.system_revision_id } },
+      ]} />);
+    await screen.findByText('Crude steel');
+    expect(api.cbamTrial).toHaveBeenCalledWith('snapshot-1', expect.objectContaining({ boundary_definition_id: 'exact-source' }));
+    expect(screen.getByText(/本结果按用户声明的纳入与排除规则计算/)).toBeInTheDocument();
+  });
+
   it('names the missing frozen boundary instead of sending a v2 request that can only be refused', async () => {
     mockReads();
     vi.spyOn(api, 'cbamTrial').mockResolvedValue(v2Result);

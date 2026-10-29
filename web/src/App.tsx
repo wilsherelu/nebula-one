@@ -15,6 +15,8 @@ import { ModelingReturnPage } from './pages/ModelingReturnPage';
 import { ProjectHistoryPage } from './pages/ProjectHistoryPage';
 import { OrganizationCalculationPage } from './pages/OrganizationCalculationPage';
 import { CalculationInputsPage } from './pages/CalculationInputsPage';
+import { CalculationMethodsPage } from './pages/CalculationMethodsPage';
+import { TemplateConfigPage } from './pages/TemplateConfigPage';
 
 export function App() {
   const [params, setParams] = useSearchParams();
@@ -24,6 +26,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/templates" element={<ProjectTemplatesPage />} />
+        <Route path="/templates/:templateId/config" element={<TemplateConfigPage />} />
         <Route path="/casepacks" element={<CasePacksPage />} />
         <Route path="/applications" element={<ApplicationsPage />} />
         <Route path="/model-import" element={<ModelImportPage />} />
@@ -33,6 +36,7 @@ export function App() {
         <Route path="/applications/:applicationId/workbench" element={<ProjectWorkspacePage />} />
         <Route path="/applications/:applicationId/history" element={<ProjectHistoryPage />} />
         <Route path="/applications/:applicationId/calculation-inputs" element={<CalculationInputsPage />} />
+        <Route path="/applications/:applicationId/calculation-methods" element={<CalculationMethodsPage />} />
         <Route path="/applications/:applicationId/organization" element={<OrganizationCalculationPage />} />
         <Route path="/applications/:applicationId/results" element={<AnalysisResultsPage />} />
         <Route path="/comparison-runs/:runId" element={<ComparisonResultsPage />} />

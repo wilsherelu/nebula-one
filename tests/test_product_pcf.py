@@ -32,6 +32,7 @@ def _prepare_snapshot(
     include_contribution_receipts=False,
     mapped_receipts=None,
     provenance_extra=None,
+    with_factor_gap=False,
 ):
     package_payload = json.loads(METHOD_PACKAGE.read_text(encoding="utf-8"))
     package = client.post("/api/v1/method-packages", json=package_payload)
@@ -166,6 +167,23 @@ def _prepare_snapshot(
             }
         )
         lcia_results["contribution_receipts_hash"] = canonical_json_sha256([receipt])
+    if with_factor_gap:
+        assert include_contribution_receipts
+        gap = {"exchange_id": "process::missing", "process_uuid": "process",
+               "flow_uuid": "missing-cf-flow", "flow_version": "1", "amount": 0.1,
+               "amount_unit": "kg", "status": "factor_not_found", "numeric_contribution": None}
+        scaled_elementary_exchanges.append({"exchange_id": gap["exchange_id"], "process_id": "process",
+            "flow_uuid": gap["flow_uuid"], "amount": 0.1, "unit": "kg", "direction": "output",
+            "exchange_type": "elementary", "unit_group": "mass"})
+        elementary_flow_receipts.append({"exchange_id": gap["exchange_id"], "flow_uuid": gap["flow_uuid"],
+            "version": "1", "factor_count": 0, "factor_hash": canonical_json_sha256([])})
+        receipt["characterization_coverage"] = {
+            "schema_version": "provider.lcia.characterization-coverage.v1", "status": "partial",
+            "value_kind": "known_subtotal", "uncharacterized_exchanges": [gap],
+            "runtime_assets_hash": runtime_assets_hash,
+        }
+        receipt["content_hash"] = canonical_json_sha256({k: v for k, v in receipt.items() if k != "content_hash"})
+        lcia_results["contribution_receipts_hash"] = canonical_json_sha256([receipt])
     snapshot_payload = {
         "system_revision_id": revision_id,
         "provider": "nebula_lca",
@@ -186,7 +204,18 @@ def _prepare_snapshot(
         "database_release": "EF3.1",
         "solver_version": "gold-standard",
         "activity_vector": [],
-        "scaled_technosphere_exchanges": [],
+        "scaled_technosphere_exchanges": [
+            {
+                "process_id": "process",
+                "exchange_id": "process::product-out",
+                "flow_uuid": "flow-product",
+                "amount": 1.0,
+                "unit": "kg",
+                "unit_group": "mass",
+                "direction": "output",
+                "exchange_type": "technosphere",
+            }
+        ],
         "scaled_elementary_exchanges": scaled_elementary_exchanges,
         "internal_transfers": [],
         "boundary_flows": [],
@@ -221,6 +250,26 @@ def test_mapped_background_is_partial_coverage_not_a_complete_declaration(client
     )
     assert report.status_code == 200
     assert "model_defined_partial_background" in report.text
+
+
+def test_partial_characterization_is_visible_in_http_and_exports(client) -> None:
+    snapshot, package_ref = _prepare_snapshot(client, include_contribution_receipts=True, with_factor_gap=True)
+    path = f"/api/v1/solved-system-snapshots/{snapshot['id']}/product-carbon-footprint"
+    response = client.post(path, json={"method_package_ref": package_ref})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["total_footprint"]["value"] == 2.0
+    assert result["total_footprint"]["value_kind"] == "known_subtotal"
+    assert result["data_quality"]["characterization_coverage"]["status"] == "partial"
+    assert result["data_quality"]["characterization_coverage"]["uncharacterized_exchanges"][0]["numeric_contribution"] is None
+    assert result["boundary_claim"]["complete_product_declaration"] is False
+    exported = client.get(path + "/export.xlsx", params={"method_package_ref": package_ref})
+    assert exported.status_code == 200
+    book = load_workbook(BytesIO(exported.content))
+    assert any("已匹配贡献小计" in str(row[0]) for row in book.worksheets[0].values)
+    report = client.get(path + "/report.html", params={"method_package_ref": package_ref})
+    assert report.status_code == 200
+    assert "已匹配贡献小计" in report.text
 
 
 def test_product_pcf_gold_standard_is_deterministic(client) -> None:
@@ -263,6 +312,81 @@ def test_product_pcf_gold_standard_is_deterministic(client) -> None:
     )
     assert chart_get.status_code == 200
     assert chart_get.text == chart.text
+
+
+def test_unit_product_projection_reuses_the_solve_and_rescales_the_whole_result(client) -> None:
+    snapshot, package_ref = _prepare_snapshot(client)
+    path = f"/api/v1/solved-system-snapshots/{snapshot['id']}/product-carbon-footprint"
+
+    # total basis (default) is the historical identity: no result_basis envelope is invented.
+    total = client.post(path, json={"method_package_ref": package_ref}).json()
+    assert total["total_footprint"]["value"] == 2.0 and "result_basis" not in total
+    solve_hash = total["source_snapshot"]["content_sha256"]
+
+    # per_reference_output over a 1 t base for a 1 kg reference output: T * 1000 / 1.
+    intensity = client.post(
+        path,
+        json={"method_package_ref": package_ref, "result_basis": "per_reference_output",
+              "base_amount": 1, "base_unit": "t"},
+    )
+    assert intensity.status_code == 200, intensity.text
+    body = intensity.json()
+    assert body["total_footprint"]["value"] == 2000.0
+    assert body["total_footprint"]["unit"] == "kg CO2-Eq/1 t"
+    # the same frozen solve is reused, never re-run: solve hash is byte-identical
+    assert body["source_snapshot"]["content_sha256"] == solve_hash
+    assert body["result_basis"]["source"]["solve_hash"] == solve_hash
+    assert body["result_basis"]["source"]["raw_total"] == {"value": 2.0, "unit": "kg CO2-Eq"}
+    # the seam that broke silently: the foreground HTTP path must resolve the bound reference flow
+    # against the snapshot's actual producing outputs and freeze the unique hit's identities.
+    reference = body["result_basis"]["reference_output"]
+    assert reference["selector"] == "reference_flow_uuid" and reference["value"] == "flow-product"
+    assert reference["producing_process_uuid"] == "process"
+    assert reference["producing_exchange_id"] == "process::product-out"
+    assert reference["identity"] == "process::product-out"
+    # the projected product re-hashes over its own body so the API is self-consistent
+    unsigned = dict(body)
+    unsigned.pop("content_sha256")
+    assert body["content_sha256"] == canonical_json_sha256(unsigned)
+
+    # the headline follows the basis: intensity is per-product, the default is the raw total.
+    report_intensity = client.get(
+        f"{path}/report.html",
+        params={"method_package_ref": package_ref, "result_basis": "per_reference_output",
+                "base_amount": 1, "base_unit": "t"},
+    )
+    assert report_intensity.status_code == 200
+    assert "单位产品气候变化" in report_intensity.text
+    assert "2000" in report_intensity.text
+    report_total = client.get(
+        f"{path}/report.html", params={"method_package_ref": package_ref}
+    )
+    assert "单位产品气候变化" not in report_total.text
+    assert "本次核算总量气候变化" in report_total.text
+
+    # an intensity export carries its own ETag distinct from the total export.
+    xlsx_total = client.get(f"{path}/export.xlsx", params={"method_package_ref": package_ref})
+    xlsx_intensity = client.get(
+        f"{path}/export.xlsx",
+        params={"method_package_ref": package_ref, "result_basis": "per_reference_output",
+                "base_amount": 1, "base_unit": "t"},
+    )
+    assert xlsx_total.status_code == xlsx_intensity.status_code == 200
+    assert xlsx_total.headers["ETag"] != xlsx_intensity.headers["ETag"]
+
+
+def test_intensity_projection_requires_an_exact_base(client) -> None:
+    snapshot, package_ref = _prepare_snapshot(client)
+    path = f"/api/v1/solved-system-snapshots/{snapshot['id']}/product-carbon-footprint"
+    response = client.post(
+        path, json={"method_package_ref": package_ref, "result_basis": "per_reference_output"},
+    )
+    assert response.status_code == 422
+    bad_unit = client.post(
+        path, json={"method_package_ref": package_ref, "result_basis": "per_reference_output",
+                    "base_amount": 1, "base_unit": "kWh"},
+    )
+    assert bad_unit.status_code == 422
 
 
 def test_product_pcf_fails_closed_without_elementary_receipts(client) -> None:

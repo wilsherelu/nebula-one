@@ -1,0 +1,8 @@
+{
+  "source_asset": "TianGong elementary_flows_sample.csv",
+  "source_sha256": "5d72690c98b7ec120dd598148251479f73f5c3f4f808bd0ee54e28d5ac41fda0",
+  "selected_asset": "desktop_extra_elementary_catalog.v1.csv",
+  "selected_sha256": "db3fb133b8b338739aa6e15774d8ea78b7c85f5da01773b21b48dad9aaaf140e",
+  "exact_flow_snapshot_hash": "ca7f381cb102e93aadef21c7f9d0bad778abe228a9b9eddd6afa1432976d8c3e",
+  "claim": "Identity and unit metadata only; no factors or inventory vectors"
+}

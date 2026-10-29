@@ -1122,6 +1122,52 @@ def test_an_included_gas_the_declared_boundary_does_not_accept_refuses():
     assert error.details["applicable_gases"] == ["CO2"]
 
 
+def test_excluding_an_emission_drops_its_elementary_flow_reference_too():
+    """A narrowed emission must leave no elementary-flow reference behind, or the solver reports a
+    reference to an exchange that is no longer in the inventory it was handed."""
+    graph = _plant()
+    graph["metadata"]["elementary_flow_refs"] = [
+        {"exchange_id": "sintering::co2-sinter-out", "flow_uuid": "co2-fossil",
+         "direction": "output", "compartment": "Emissions to air, unspecified"},
+        {"exchange_id": "furnace::co2-furnace-out", "flow_uuid": "co2-fossil",
+         "direction": "output", "compartment": "Emissions to air, unspecified"},
+        {"exchange_id": "furnace::ch4-furnace-out", "flow_uuid": "ch4-fossil",
+         "direction": "output", "compartment": "Emissions to air, unspecified"},
+    ]
+    rules, package = _explicit(decisions=_whole_plant_decisions())
+    background, mapped = _saved_pins()
+    excluded = "sintering::co2-sinter-out"
+    user_selection = {
+        "source": {"method_id": "m-variant", "version": 1, "content_sha256": "a" * 64},
+        "rules": [
+            {"process_instance_id": "sintering", "exchange_id": excluded, "flow_uuid": None,
+             "direction": "emission", "boundary_status": "excluded", "location_role": "onsite",
+             "scope": None, "cbam_relevant": True, "classification_basis": "user",
+             "schema_version": 1, "contribution_target": "direct", "boundary": None,
+             "categories": {}, "base_method_ref": None},
+        ],
+    }
+    derived = derive_calculation_model(
+        graph=graph,
+        demand=[{"process_uuid": CASTING, "amount": 1.0, "unit": "kg"}],
+        rules=rules,
+        purpose="cbam",
+        method_packages=[package],
+        background_process_pins=background,
+        mapped_background_process_pins=mapped,
+        user_selection=user_selection,
+    )
+    refs = {ref["exchange_id"] for ref in derived.graph["metadata"]["elementary_flow_refs"]}
+    assert excluded not in refs
+    assert "furnace::co2-furnace-out" in refs
+    # The port is gone from the graph too, and the retained emissions keep their references.
+    assert excluded not in {
+        f"{node['id']}::{port['id']}"
+        for node in derived.graph["nodes"]
+        for port in (node.get("outputs") or [])
+    }
+
+
 def test_a_model_port_missing_its_flow_identity_is_never_read_as_agreeing():
     graph = _plant()
     node = next(item for item in graph["nodes"] if item["id"] == "sintering")

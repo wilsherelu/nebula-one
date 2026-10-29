@@ -26,15 +26,27 @@ from nebula_one.mapped_background_schemas import ProviderMappedBackgroundProcess
 from nebula_one.model_derivation import (
     _FLOW_IDENTITY_FIELDS,
     _REQUIRED_FLOW_IDENTITY,
+    derive_calculation_model,
 )
 from nebula_one.model_processing_contract import (
     ModelProcessingRules,
     load_model_processing_rules_for_template,
 )
-from nebula_one.models import AnalysisRun, SeedInstallation, SystemRevision
+from nebula_one.models import (
+    AnalysisRun,
+    Application,
+    SeedInstallation,
+    SystemModel,
+    SystemRevision,
+)
 from nebula_one.runtime_models import MethodPackage, SolvedSystemSnapshot
 from nebula_one.runtime_schemas import MethodPackageCreate, ProviderDemandItem
-from nebula_one.services.model_processing_runtime import flow_selection_of
+from nebula_one.services.model_processing_runtime import (
+    derivation_basis_from_receipt,
+    flow_selection_of,
+    resolve_purpose_derivation,
+)
+from nebula_one.services.method_execution_contract import recover_cbam_user_selection
 from nebula_one.services.analysis_runs import _provider_elementary_flow_refs
 from nebula_one.services.project_mapped_background import ProjectMappedBackgroundService
 from nebula_one.services.runtime_support import require_method_package
@@ -332,6 +344,45 @@ def _solve_reference_output(client, steel_project, reference_output: dict, purpo
             "calculation_purpose": purpose,
         },
     )
+
+
+def _revision_node_ids(client, revision_id: str) -> list[str]:
+    snapshot = client.get(f"/api/v1/system-revisions/{revision_id}").json()["graph_snapshot"]
+    return [node["id"] for node in snapshot.get("nodes") or []]
+
+
+def _ready_organization_method(client, application_id: str, revision_id: str):
+    """Create and validate a ready user method on the exact revision, returning (id, hash, rule)."""
+    node = _revision_node_ids(client, revision_id)[0]
+    # The stored rule materializes every schema field, including the None-valued v1 identity
+    # keys and the additive v2 core fields (which default onto the persisted JSON).
+    rule = {
+        "process_instance_id": node,
+        "exchange_id": None,
+        "flow_uuid": None,
+        "direction": "emission",
+        "boundary_status": "selected",
+        "location_role": "onsite",
+        "scope": "scope_1",
+        "cbam_relevant": False,
+        "classification_basis": "user",
+        "schema_version": 1,
+        "contribution_target": "direct",
+        "boundary": None,
+        "categories": {},
+        "base_method_ref": None,
+    }
+    created = client.post(
+        f"/api/v1/applications/{application_id}/calculation-methods",
+        json={"name": "User grouping", "purpose": "organization", "model_revision_id": revision_id, "rules": [rule]},
+    )
+    assert created.status_code == 201, created.text
+    method_id = created.json()["method"]["id"]
+    content_hash = created.json()["versions"][0]["content_sha256"]
+    validated = client.post(f"/api/v1/calculation-methods/{method_id}/versions/1/validate")
+    assert validated.status_code == 200, validated.text
+    assert validated.json()["valid"] is True, validated.text
+    return method_id, content_hash, rule
 
 
 def test_reference_output_demand_flows_verbatim_into_the_lca_and_cbam_purposes(
@@ -703,10 +754,35 @@ def test_ef_default_uses_the_effective_cbam_source_after_reviewed_unlink(steel_p
     assert frozen.status_code == 201, frozen.text
     snapshot = frozen.json()
     run = steel_project.run(snapshot["provider_receipt"]["analysis_run_id"])
-    assert run.parameters["calculation_method"]["reference"] == "pcf.product.ef31.foreground@1.0.2"
+    assert run.parameters["calculation_method"]["reference"] == "pcf.iron-steel.ef31-model@1.0.0"
     assert run.parameters["lcia_methods"] == ["EF v3.1"]
     assert run.parameters["calculation_basis"]["effective_mapped_background_process_pins"] == []
     assert "mapped_background_process_pins" not in steel_project.solve_requests()[0]
+
+
+def test_a_complete_model_solves_with_no_user_method_ref_yet_still_carries_the_base_characterization(steel_project):
+    # P4 gate 无规则完整LCIA: a complete model is computed directly, without the operator having to
+    # create or cite any calculation_method_ref, but the solve MUST still carry an applicable base
+    # characterization method (a non-empty LCIA indicator + its registered package). It must never
+    # fold in a user scheme it was not given, so nothing "last edited" can leak into the answer.
+    frozen = steel_project.solve("lca", climate_default=True)
+    assert frozen.status_code == 201, frozen.text
+    snapshot = frozen.json()
+    run = steel_project.run(snapshot["provider_receipt"]["analysis_run_id"])
+    parameters = run.parameters
+    # No user rule was required or cited.
+    assert "calculation_method_ref" not in parameters
+    # The base characterization method travels with the run: a registered package reference and a
+    # non-empty indicator, resolved by the climate-default path rather than by any user scheme.
+    assert parameters["calculation_method"]["reference"]
+    assert parameters["lcia_methods"] == ["EF v3.1"]
+    # The complete model did not read or misuse a user calculation method: none is frozen into the
+    # receipt, because the user-method seam is only entered when a ref is present.
+    assert run.provider_receipt.get("user_calculation_method") is None
+    # The engine request itself carried the base indicator, so the characterization is real, not a
+    # client-side label.
+    sent = steel_project.solve_requests()[-1]
+    assert sent["lcia_methods"] == ["EF v3.1"]
 
 
 def test_a_new_rule_version_leaves_an_already_frozen_answer_alone(steel_project, monkeypatch):
@@ -1238,3 +1314,503 @@ def test_a_receipt_that_rewrites_the_counted_set_refuses_the_freeze(
     ]
     # Nothing new froze, and the answer that was frozen is still listed.
     assert [item["id"] for item in steel_project.snapshots()] == [frozen["id"]]
+
+
+def test_solve_freezes_referenced_user_method_and_older_records_stay_fixed(client, steel_project):
+    """§3/§4/§5 at the calculation seam, over real HTTP against the synthetic transport.
+
+    A validated method version is referenced by exact id + version + hash, its identity and
+    immutable rule snapshot are frozen into the snapshot provenance, and a later new method
+    version cannot rewrite that earlier record. No number here is a live-engine answer; what is
+    real is the reference re-check, the persisted provenance and the frozen-record immutability.
+    """
+    ro = _save_reference_output(client, steel_project, 1500)
+    application_id = steel_project.application_id
+    method_id, content_hash, rule = _ready_organization_method(client, application_id, ro["revision_id"])
+
+    solved = client.post(
+        f"/api/v1/applications/{application_id}/system-revisions/{ro['revision_id']}/solve",
+        json={
+            "demand": ro["demand"],
+            "mapped_background_process_pins": ro["mapped_background_process_pins"],
+            "calculation_purpose": "lca",
+            "calculation_method_ref": {"method_id": method_id, "version": 1, "content_sha256": content_hash},
+        },
+    )
+    assert solved.status_code == 201, solved.text
+    snapshot = solved.json()
+
+    with steel_project.container.database.session() as db:
+        row = db.get(SolvedSystemSnapshot, snapshot["id"])
+        frozen_method = row.provider_receipt["user_calculation_method"]
+    assert frozen_method["method_id"] == method_id
+    assert frozen_method["version"] == 1
+    assert frozen_method["content_sha256"] == content_hash
+    assert frozen_method["model_revision_id"] == ro["revision_id"]
+    assert frozen_method["rules"] == [rule]
+
+    # The user then saves a new method version (head moves to v2), but the frozen record is fixed.
+    moved = client.put(
+        f"/api/v1/calculation-methods/{method_id}/versions/1",
+        json={
+            "rules": [{**rule, "location_role": "purchased_energy", "scope": "scope_2"}],
+            "expected_content_sha256": content_hash,
+        },
+    )
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["latest_version"] == 2
+
+    with steel_project.container.database.session() as db:
+        row = db.get(SolvedSystemSnapshot, snapshot["id"])
+        still_frozen = row.provider_receipt["user_calculation_method"]
+    assert still_frozen["version"] == 1
+    assert still_frozen["content_sha256"] == content_hash
+    assert still_frozen["rules"] == [rule]
+
+
+def test_a_user_variant_narrows_the_reviewed_derivation_at_the_deriver_seam():
+    """R4.2: a variant's exclusion drives the same formal pipeline a reviewed exclusion does.
+
+    Not a test of the compiler (pure, covered in ``test_cbam_user_selection.py``): it is the
+    wiring seam. The overlay is threaded through ``derive_calculation_model``, and the sibling
+    emission leaves ``included_exchange_ids``, lands in ``excluded_exchange_ids`` with a clause
+    naming the variant's exact source version, and is physically cut from the derived graph so
+    what reaches the engine cannot count it. No HTTP, no synthetic transport, no numbers.
+    """
+    rules, package = _synthetic_classifying_rules_and_package()
+    method = dict(package, content_sha256=canonical_json_sha256(package))
+    packages = [dict(EFFECTIVE_PACKAGE), method]
+    graph = _graph()
+    blast = next(node for node in graph["nodes"] if node["id"] == "blast-furnace")
+    demand = [{"process_uuid": blast["process_uuid"], "amount": 1, "unit": "kg"}]
+    source = {"method_id": "user.variant.steel-bf-bof", "version": 3, "content_sha256": "a" * 64}
+    overlay = {
+        "source": source,
+        "rules": [{
+            "process_instance_id": "blast-furnace",
+            "exchange_id": SYNTHETIC_KEPT_SIBLING,
+            "boundary": "exclude",
+            "cbam_relevant": True,
+            "contribution_target": "direct",
+        }],
+    }
+
+    base = derive_calculation_model(
+        graph=deepcopy(graph), demand=demand, rules=rules, purpose="cbam", method_packages=packages
+    )
+    narrowed = derive_calculation_model(
+        graph=deepcopy(graph), demand=demand, rules=rules, purpose="cbam",
+        method_packages=packages, user_selection=overlay,
+    )
+    base_selection = flow_selection_of(base)
+    selection = flow_selection_of(narrowed)
+
+    # The overlay removes exactly one emission and leaves every other decision alone.
+    assert selection["mode"] == "explicit_flow_rules"
+    assert selection["excluded_exchange_ids"] == sorted(
+        set(base_selection["excluded_exchange_ids"]) | {SYNTHETIC_KEPT_SIBLING}
+    )
+    assert SYNTHETIC_KEPT_SIBLING not in selection["included_exchange_ids"]
+    assert set(selection["included_exchange_ids"]) == (
+        set(base_selection["included_exchange_ids"]) - {SYNTHETIC_KEPT_SIBLING}
+    )
+
+    # The narrowed decision carries a clause naming the exact immutable source version, so the
+    # frozen answer and the report can trace it back; the reviewed exclusions keep their own clause.
+    decision = next(item for item in selection["decisions"] if item["exchange_id"] == SYNTHETIC_KEPT_SIBLING)
+    assert decision["state"] == "excluded"
+    assert decision["clause"] == (
+        f"user-variant-exclusion@{source['method_id']}@{source['version']}#{source['content_sha256']}"
+    )
+
+    # The sibling port is physically gone from the derived graph, so the engine cannot compute a
+    # value for an emission the operator excluded; every other emission the base kept is still on it.
+    ports_after = set(_emission_ports(narrowed.graph))
+    ports_base = set(_emission_ports(base.graph))
+    assert ports_after == ports_base - {SYNTHETIC_KEPT_SIBLING}
+    assert SYNTHETIC_EXCLUDED_EMISSION not in ports_after
+
+
+def test_a_user_variant_on_the_shipped_prelimited_cbam_basis_refuses_closed():
+    """Fail closed, do not silently ignore: the shipped basis counts a whole pre-limited set.
+
+    The template the shipped steel CBAM package uses declares no per-exchange decision to narrow,
+    so a variant that would take an emission out cannot express that through the reviewed machinery
+    and the deriver refuses rather than answering with the whole regulated set as though the
+    operator's boundary had been applied. A variant that narrows nothing still runs the reviewed
+    package unchanged -- the overlay is only a refusal when it would actually take something out.
+    """
+    rules = load_model_processing_rules_for_template(_template_identity())
+    graph = _graph()
+    blast = next(node for node in graph["nodes"] if node["id"] == "blast-furnace")
+    demand = [{"process_uuid": blast["process_uuid"], "amount": 1, "unit": "kg"}]
+    overlay = {
+        "source": {"method_id": "user.variant.steel-bf-bof", "version": 1, "content_sha256": "b" * 64},
+        "rules": [{
+            "process_instance_id": "blast-furnace",
+            "exchange_id": SYNTHETIC_KEPT_SIBLING,
+            "boundary": "exclude",
+            "cbam_relevant": True,
+        }],
+    }
+
+    with pytest.raises(DomainError) as refused:
+        derive_calculation_model(
+            graph=deepcopy(graph), demand=demand, rules=rules, purpose="cbam",
+            method_packages=[dict(EFFECTIVE_PACKAGE)], user_selection=overlay,
+        )
+    assert refused.value.code == "MODEL_PROCESSING_USER_SELECTION_MODE_UNSUPPORTED"
+    assert refused.value.details["mode"] == "template_prelimited"
+
+    # A variant that excludes nothing still derives exactly the reviewed pre-limited set.
+    empty_overlay = {"source": overlay["source"], "rules": []}
+    derived = derive_calculation_model(
+        graph=deepcopy(graph), demand=demand, rules=rules, purpose="cbam",
+        method_packages=[dict(EFFECTIVE_PACKAGE)], user_selection=empty_overlay,
+    )
+    assert flow_selection_of(derived) is None
+    plain = derive_calculation_model(
+        graph=deepcopy(graph), demand=demand, rules=rules, purpose="cbam",
+        method_packages=[dict(EFFECTIVE_PACKAGE)],
+    )
+    assert flow_selection_of(plain) is None
+    assert derived.derived_graph_sha256 == plain.derived_graph_sha256
+
+
+def _ready_cbam_variant(client, application_id, revision_id, excluded_exchange_id):
+    """Create and validate a CBAM variant that excludes one emission exchange, return (id, v, hash).
+
+    The variant is created directly (not cloned from a source) so it can be validated against
+    synthetic rules that name one exchange and take it out; the exchange is CBAM-relevant, which
+    R4.1 established is a legal narrowing rather than a conflict.
+    """
+    boundary = client.post(
+        f"/api/v1/applications/{application_id}/boundaries",
+        json={"name": "R4.3 variant boundary", "boundary_type": "cbam_production"},
+    )
+    assert boundary.status_code == 201, boundary.text
+    boundary_id = boundary.json()["id"]
+    node, _, _ = excluded_exchange_id.partition("::")
+    created = client.post(
+        f"/api/v1/applications/{application_id}/calculation-methods",
+        json={
+            "name": "Steel BF-BOF minus one emission",
+            "purpose": "cbam",
+            "model_revision_id": revision_id,
+            "cbam_boundary_ref": boundary_id,
+            "rules": [
+                {
+                    "process_instance_id": node,
+                    "exchange_id": excluded_exchange_id,
+                    "direction": "emission",
+                    "boundary_status": "excluded",
+                    "cbam_relevant": True,
+                    "classification_basis": "user",
+                }
+            ],
+        },
+    )
+    assert created.status_code == 201, created.text
+    method_id = created.json()["method"]["id"]
+    content_hash = created.json()["versions"][0]["content_sha256"]
+    validated = client.post(f"/api/v1/calculation-methods/{method_id}/versions/1/validate")
+    assert validated.status_code == 200, validated.text
+    assert validated.json()["valid"] is True, validated.text
+    return method_id, 1, content_hash
+
+
+def test_a_cbam_variant_excludes_one_port_from_the_solved_graph_and_freezes_its_identity(
+    client, steel_project, monkeypatch
+):
+    """R4.3 end-to-end: a user CBAM variant actually takes an emission out of the calculation model.
+
+    The variant is created against the same revision as the reviewed synthetic boundary with one
+    exchange-level exclusion, and the solve is issued against that exact version + content hash
+    so the frozen record traces to it. The sibling emission the reviewed boundary counted in
+    leaves both the derived graph the engine sees AND the receipt's counted set, while the
+    original LCA purpose still computes over the whole model. The build_cbam_trial_v2 counted-set
+    equality guard runs unmodified against the regenerated ledger -- this is the same formal
+    pipeline a reviewed exclusion goes through, not a relaxation of any check.
+    """
+    rules, package = _synthetic_classifying_rules_and_package()
+    _bind_synthetic_rules(steel_project, monkeypatch, rules, package)
+
+    # A baseline cbam solve, without a variant, proves the reviewed boundary is the reference.
+    baseline = steel_project.solve("cbam")
+    assert baseline.status_code == 201, baseline.text
+    baseline_stamp = steel_project.run(
+        baseline.json()["provider_receipt"]["analysis_run_id"]
+    ).provider_receipt["model_derivation"]
+    assert baseline_stamp["flow_selection"]["excluded_exchange_ids"] == [SYNTHETIC_EXCLUDED_EMISSION]
+    assert SYNTHETIC_KEPT_SIBLING in baseline_stamp["flow_selection"]["included_exchange_ids"]
+
+    method_id, version, content_hash = _ready_cbam_variant(
+        client,
+        steel_project.application_id,
+        steel_project.revision_id,
+        SYNTHETIC_KEPT_SIBLING,
+    )
+    solve_url = (
+        f"/api/v1/applications/{steel_project.application_id}/system-revisions"
+        f"/{steel_project.revision_id}/solve"
+    )
+    narrowed = client.post(
+        solve_url,
+        json={
+            "demand": steel_project.workspace["demand"],
+            "mapped_background_process_pins": steel_project.workspace["mapped_background_process_pins"],
+            "calculation_purpose": "cbam",
+            "calculation_method_ref": {
+                "method_id": method_id,
+                "version": version,
+                "content_sha256": content_hash,
+            },
+        },
+    )
+    assert narrowed.status_code == 201, narrowed.text
+    narrowed = narrowed.json()
+
+    # The receipt's counted set actually took the sibling out, and the clause on the new
+    # exclusion names the exact immutable variant version so the frozen answer traces back to it.
+    stamp = steel_project.run(
+        narrowed["provider_receipt"]["analysis_run_id"]
+    ).provider_receipt["model_derivation"]
+    selection = stamp["flow_selection"]
+    assert selection["excluded_exchange_ids"] == sorted(
+        [SYNTHETIC_EXCLUDED_EMISSION, SYNTHETIC_KEPT_SIBLING]
+    )
+    assert SYNTHETIC_KEPT_SIBLING not in selection["included_exchange_ids"]
+    sibling_decision = next(
+        item for item in selection["decisions"] if item["exchange_id"] == SYNTHETIC_KEPT_SIBLING
+    )
+    assert sibling_decision["state"] == "excluded"
+    assert sibling_decision["clause"] == (
+        f"user-variant-exclusion@{method_id}@{version}#{content_hash}"
+    )
+
+    # The engine was handed the narrowed graph, not the stored one: the sibling port is physically
+    # gone from what was sent for CBAM, but still present for the LCA purpose that never classifies
+    # exchange by exchange, so an operator exclusion cannot leak into a lifecycle answer.
+    lca = steel_project.solve("lca")
+    assert lca.status_code == 201, lca.text
+    _baseline_cbam_request, narrowed_cbam_request, lca_request = steel_project.solve_requests()
+    assert SYNTHETIC_KEPT_SIBLING in _sent_ports(lca_request)
+    assert SYNTHETIC_KEPT_SIBLING in _sent_ports(_baseline_cbam_request)
+    assert SYNTHETIC_KEPT_SIBLING not in _sent_ports(narrowed_cbam_request)
+    assert SYNTHETIC_EXCLUDED_EMISSION not in _sent_ports(narrowed_cbam_request)
+
+    # The frozen record carries the variant's exact identity, so a recovery re-checks against
+    # that version and hash rather than the source method's current head.
+    with steel_project.container.database.session() as db:
+        row = db.get(SolvedSystemSnapshot, narrowed["id"])
+        frozen = row.provider_receipt["user_calculation_method"]
+    assert frozen["method_id"] == method_id
+    assert frozen["version"] == version
+    assert frozen["content_sha256"] == content_hash
+
+    # The baseline record's own frozen flow_selection is untouched: only the variant narrowed
+    # its graph, and no cache key or receipt was rewritten in place.
+    baseline_run = steel_project.run(
+        baseline.json()["provider_receipt"]["analysis_run_id"]
+    )
+    assert baseline_run.provider_receipt["model_derivation"]["flow_selection"][
+        "excluded_exchange_ids"
+    ] == [SYNTHETIC_EXCLUDED_EMISSION]
+
+
+def test_a_cbam_variant_read_back_re_derives_under_its_own_overlay(
+    client, steel_project, monkeypatch
+):
+    """Reading a bound variant's answer back must reproduce its narrowed basis, or CBAM refuses it.
+
+    A CBAM run that cites a version folds a ``user_calculation_method`` identity into the frozen
+    basis, so the trial's read-back re-derivation has to rebuild that very overlay through the shared
+    execution contract. Deriving against the whole stored model instead produces a different basis
+    hash and the read-back refuses with MODEL_PROCESSING_BASIS_DRIFT -- which is exactly what it did
+    before the overlay was reconstructed here. This is the seam every CBAM numeric and product
+    assertion in the acceptance depends on: no drift, and the re-derived counted set still excludes
+    the sibling the operator took out.
+    """
+    rules, package = _synthetic_classifying_rules_and_package()
+    _bind_synthetic_rules(steel_project, monkeypatch, rules, package)
+
+    method_id, version, content_hash = _ready_cbam_variant(
+        client,
+        steel_project.application_id,
+        steel_project.revision_id,
+        SYNTHETIC_KEPT_SIBLING,
+    )
+    narrowed = client.post(
+        f"/api/v1/applications/{steel_project.application_id}/system-revisions"
+        f"/{steel_project.revision_id}/solve",
+        json={
+            "demand": steel_project.workspace["demand"],
+            "mapped_background_process_pins": steel_project.workspace[
+                "mapped_background_process_pins"
+            ],
+            "calculation_purpose": "cbam",
+            "calculation_method_ref": {
+                "method_id": method_id,
+                "version": version,
+                "content_sha256": content_hash,
+            },
+        },
+    )
+    assert narrowed.status_code == 201, narrowed.text
+    narrowed = narrowed.json()
+
+    service = steel_project.container.cbam_trials
+    with steel_project.container.database.session() as db:
+        row = db.get(SolvedSystemSnapshot, narrowed["id"])
+        derivation = service._derivation(db, row)
+
+    # The read-back reproduces the frozen, variant-narrowed basis exactly -- the same one the solve
+    # accepted -- not the whole-model basis a bare re-derivation drifted to.
+    assert derivation is not None
+    assert derivation.basis_sha256 == _derivation(narrowed)["basis_sha256"]
+    assert derivation.basis == {
+        key: value
+        for key, value in _derivation(narrowed).items()
+        if key != "basis_sha256"
+    }
+    # And it reproduces the *narrowed* model, so the trial reads the answer under the operator's own
+    # boundary rather than the whole regulated set.
+    assert SYNTHETIC_KEPT_SIBLING not in flow_selection_of(derivation.derived)[
+        "included_exchange_ids"
+    ]
+
+    # Negative control: derive against the same pinned basis WITHOUT the overlay -- exactly what the
+    # read-back did before the reconstruction -- and the frozen answer refuses. The overlay is what
+    # makes the read-back reproduce, so this guard is load-bearing rather than incidental.
+    with steel_project.container.database.session() as db:
+        row = db.get(SolvedSystemSnapshot, narrowed["id"])
+        basis = derivation_basis_from_receipt(row.provider_receipt)
+        parameters = db.get(
+            AnalysisRun, row.provider_receipt["analysis_run_id"]
+        ).parameters
+        revision = db.get(SystemRevision, row.system_revision_id)
+        model = db.get(SystemModel, revision.system_model_id)
+        with pytest.raises(DomainError) as refused:
+            resolve_purpose_derivation(
+                db,
+                revision=revision,
+                application=db.get(Application, model.application_id),
+                purpose="cbam",
+                demand=parameters.get("demand") or [],
+                background_process_pins=parameters.get("background_process_pins") or [],
+                mapped_background_process_pins=parameters.get(
+                    "mapped_background_process_pins"
+                )
+                or [],
+                project_background_pins=parameters.get("project_background_pins") or [],
+                lcia_methods=parameters.get("lcia_methods"),
+                pinned_basis=basis,
+                user_selection=None,
+            )
+        assert refused.value.code == "MODEL_PROCESSING_BASIS_DRIFT"
+        # The shared contract rebuilds the very overlay the solve folded in.
+        overlay = recover_cbam_user_selection(
+            db,
+            application_id=model.application_id,
+            system_revision_id=revision.id,
+            purpose="cbam",
+            parameters=parameters,
+        )
+        assert overlay is not None and overlay["source"]["method_id"] == method_id
+
+
+def test_a_user_variant_pinning_its_source_version_survives_a_later_source_edit(
+    client, steel_project, monkeypatch
+):
+    """A variant's own identity is not the source head: the source moving forward changes nothing.
+
+    After a variant is created from a source method, editing the source adds a version; the
+    variant still names the exact source version and hash it was copied from, so a frozen CBAM
+    ledger cannot silently drift as its source moves.
+    """
+    rules, package = _synthetic_classifying_rules_and_package()
+    _bind_synthetic_rules(steel_project, monkeypatch, rules, package)
+
+    # Create the source: a CBAM method with one CBAM-relevant selected rule for blast-furnace.
+    boundary = client.post(
+        f"/api/v1/applications/{steel_project.application_id}/boundaries",
+        json={"name": "R4.3 source boundary", "boundary_type": "cbam_production"},
+    )
+    source_created = client.post(
+        f"/api/v1/applications/{steel_project.application_id}/calculation-methods",
+        json={
+            "name": "Steel BF-BOF baseline",
+            "purpose": "cbam",
+            "model_revision_id": steel_project.revision_id,
+            "cbam_boundary_ref": boundary.json()["id"],
+            "rules": [
+                {
+                    "process_instance_id": "blast-furnace",
+                    "direction": "emission",
+                    "boundary_status": "selected",
+                    "location_role": "onsite",
+                    "scope": "scope_1",
+                    "cbam_relevant": True,
+                    "classification_basis": "user",
+                }
+            ],
+        },
+    )
+    assert source_created.status_code == 201, source_created.text
+    source_method = source_created.json()["method"]["id"]
+    source_hash = source_created.json()["versions"][0]["content_sha256"]
+    validated = client.post(
+        f"/api/v1/calculation-methods/{source_method}/versions/1/validate"
+    )
+    assert validated.status_code == 200, validated.text
+    assert validated.json()["status"] == "ready"
+
+    # Clone to a variant on the same revision: the variant remembers the exact source version + hash.
+    cloned = client.post(
+        f"/api/v1/calculation-methods/{source_method}/versions/1/clone",
+        json={
+            "name": "Steel BF-BOF variant",
+            "purpose": "cbam",
+            "model_revision_id": steel_project.revision_id,
+        },
+    )
+    assert cloned.status_code == 201, cloned.text
+    variant = cloned.json()
+    assert variant["method"]["origin_method_id"] == source_method
+    assert variant["method"]["origin_method_version"] == 1
+    assert variant["method"]["origin_content_sha256"] == source_hash
+    # A clone is a fresh variant that has to earn its own compliance claim: the source's
+    # validated status does not carry over, so it starts as a draft.
+    assert variant["method"]["status"] == "draft"
+    assert variant["versions"][0]["status"] == "draft"
+    assert variant["versions"][0]["validated_at"] is None
+
+    # Move the source head forward; the variant's pinned identity must not follow it.
+    moved = client.put(
+        f"/api/v1/calculation-methods/{source_method}/versions/1",
+        json={
+            "rules": [
+                {
+                    "process_instance_id": "blast-furnace",
+                    "direction": "emission",
+                    "boundary_status": "pending",
+                    "location_role": "onsite",
+                    "cbam_relevant": True,
+                    "classification_basis": "user",
+                }
+            ],
+            "expected_content_sha256": source_hash,
+        },
+    )
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["latest_version"] == 2
+    # Versions come back newest-first; versions[0] is the advanced head, versions[1] the pinned v1.
+    moved_hash = moved.json()["versions"][0]["content_sha256"]
+    assert moved_hash != source_hash
+    assert moved.json()["versions"][1]["content_sha256"] == source_hash
+
+    still_pinned = client.get(
+        f"/api/v1/calculation-methods/{variant['method']['id']}"
+    ).json()
+    assert still_pinned["method"]["origin_method_version"] == 1
+    assert still_pinned["method"]["origin_content_sha256"] == source_hash

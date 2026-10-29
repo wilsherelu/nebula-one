@@ -1,4 +1,5 @@
 * text=auto
+src/nebula_one/resources/desktop_extra_elementary_catalog.v1.csv text eol=lf
 .gitattributes text eol=lf
 *.md text eol=lf
 *.py text eol=lf

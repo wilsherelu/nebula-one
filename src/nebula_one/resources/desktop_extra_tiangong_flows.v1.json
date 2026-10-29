@@ -1,0 +1,164 @@
+{
+  "schema_version": "tiangong-open-dataset-snapshot.v1",
+  "source_namespace": "tiangong_open_data",
+  "dataset_kind": "flow",
+  "state_scope": "open",
+  "filters": {
+    "exact_refs": [
+      "08a91e70-3ddc-11dd-9610-0050c2490048@03.00.004"
+    ]
+  },
+  "declared_total": 0,
+  "records": [
+    {
+      "dataset_kind": "flow",
+      "source_namespace": "tiangong_open_data",
+      "source_object_id": "08a91e70-3ddc-11dd-9610-0050c2490048",
+      "source_version": "03.00.004",
+      "source_modified_at": "2026-09-29T02:36:53.892982+00:00",
+      "type_of_data_set": "Elementary flow",
+      "payload": {
+        "flowDataSet": {
+          "@xmlns": "http://lca.jrc.it/ILCD/Flow",
+          "@version": "1.1",
+          "@locations": "../ILCDLocations.xml",
+          "@xmlns:ecn": "http://eplca.jrc.ec.europa.eu/ILCD/Extensions/2018/ECNumber",
+          "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+          "@xmlns:common": "http://lca.jrc.it/ILCD/Common",
+          "flowProperties": {
+            "flowProperty": {
+              "meanValue": "1.0",
+              "@dataSetInternalID": "0",
+              "referenceToFlowPropertyDataSet": {
+                "@uri": "../flowproperties/93a60a56-a3c8-11da-a746-0800200b9a66.xml",
+                "@type": "flow property data set",
+                "@version": "03.00.003",
+                "@refObjectId": "93a60a56-a3c8-11da-a746-0800200b9a66",
+                "common:shortDescription": {
+                  "#text": "Mass",
+                  "@xml:lang": "en"
+                }
+              }
+            }
+          },
+          "flowInformation": {
+            "geography": {},
+            "dataSetInformation": {
+              "name": {
+                "baseName": [
+                  {
+                    "#text": "methane (fossil)",
+                    "@xml:lang": "en"
+                  },
+                  {
+                    "#text": "甲烷 (化石源)",
+                    "@xml:lang": "zh"
+                  }
+                ]
+              },
+              "CASNumber": "74-82-8",
+              "common:UUID": "08a91e70-3ddc-11dd-9610-0050c2490048",
+              "common:other": {
+                "ecn:ECNumber": "200-812-7"
+              },
+              "common:synonyms": [
+                {
+                  "#text": "(11c)methane;(13c)methane;(2R,3R)-Butanediol bis(methanesulfonate);(2R,3R)-Butanediol dimesylate;1,3-DICHLORO-PROPAN-2-ONE;1-Chlorobenzylethyl-3,5,7,9,11,13,15-heptaisobutylpentacyclo[9.5.1.1(3,9).1(5,15).1(7,13)]octasiloxane;6C;AC1L18XA;AC1L3VZR;AC1NUWBM;AC1Q2825;AG 1500;AG 3 (Adsorbent);AG 5;AG 5 (Adsorbent);AK (Adsorbent);AKOS005166816;AR 3;ART 2;AS 1;AT 20;ATJ-S;ATJ-S graphite;AU 3;Acetylene black;Acticarbone;Activated Charcoal Norit;Activated Charcoal Norit(R);Activated carbon;Activated charcoal;Activated charcoal, iodinated;Adsorbit;Aerodag G;Amoco PX 21;Animal bone charcoal;Anthrasorb;Aqua nuchar;Aquadag;Aroflow;Arogen;Arotone;Arovel;Arrow;Atlantic;BG 6080;Biogas;Black 140;Black Kosmos 33;Black lead;Black pearls;Bone charcoal;C.I. 77265;C.I. 77266;C.I. Pigment Black 10;C.I. Pigment Black 6;C.I. Pigment Black 7;CARBON BLACK;CF 8;CF 8 (Carbon);CHARCOAL;CHLOROMETYL-KETONE;CI 77266;CI Pigment black 7;CLF II;CMB 200;CMB 50;CPB 5000;CUZ 3;CWN 2;Calcotone Black;Cancarb;Canesorb;Canlub;Carbo activatus;Carbodis;Carbolac;Carbolac 1;Carbomet;Carbon;Carbon Activated;Carbon Black BV and V;Carbon black, acetylene;Carbon black, channel;Carbon black, furnace;Carbon black, lamp;Carbon black, thermal;Carbon nanotube, single-walled;Carbon, amorphous;Carbon, colloidal;Carbon-12;Carbone;Carbopol Extra;Carbopol M;Carbopol Z 4;Carbopol Z Extra;Carbosieve;Carbosorbit R;Cb 50;Cecarbon;Ceylon Black Lead;Channel Black;Char, from refuse burner;Charcoal bone;Charcoal activated;Charcoal activated Norit;Charcoal activated Norit(R);Charcoal bone;Coke powder;Colgon BPL;Colgon PCB 12X30;Colgon PCB-D;Collocarb;Columbia LCK;Columbia carbon;Conductex;Conductex 900;Continex;Corax A;Corax P;Croflex;Crolac;D&C Black No. 2;DC 2;DIAMOND;Darco;Degussa;Delussa Black FW;Diamond-;Durex O;EG 0;ELF 78;EXP-F;Eagle Germantown;Electrographite;Elftex;Essex;Ethyl-1-propenyl ether, mixture of cis and trans;Excelsior;Explosion Acetylene Black;Explosion Black;FLH;Farbruss;Fecto;Filtrasorb;Filtrasorb 200;Filtrasorb 400;Fire Damp;Flamruss;Fortafil 5Y;Fullerene soot;Furnace black;Furnal;Furnex;Furnex N 765;GK 2;GK 3;GP 60;GP 60S;GP 63;GRAPHITE, NATURAL;GY 70;Gas Black;Gas-furnace black;Gastex;Grafoil;Grafoil GTA;Graphite;Graphite (all forms except graphite fibers);Graphite (synthetic);Graphite, synthetic;Graphitic acid;Graphnol N 3M;Grosafe;H 451;Hitco HMG 50;Huber;Humenegro;Hydrodarco;IG 11;Impingement Black;Impingement carbons;Irgalite 1104;Jado;K 257;KST-1A1445;KST-1A1563;Ketjenblack EC;Kohlenstoff;Korobon;Kosmink;Kosmobil;Kosmolak;Kosmos;Kosmotherm;Kosmovar;Lamp black;Lampblack;MA 100 (Carbon);METHANAL, OXOMETHANE, OXYMETHYLENE, METHYLENE OXIDE, FORMIC ALDEHYDE, METHYL ALDEHYDE;MPG 6;Magecol;Marsh gas;Metanex;Methane in gaseus state;Methane-12C;Methyl hydride;Micronex;Miike 20;Mineral carbon;Modulex;Mogul;Mogul L;Molacco;Monarch 1300;Monarch 700;N-METHYL ASPARAGINE;NORIT A, U.S.P.;Natural gas;Neo Spectra Beads AG;Neo-Spectra Mark II;Neo-spectra II;Neotex;Niteron 55;Norit;Nuchar;OU-B;Oil-furnace Black;P 33 (carbon black);P1250;P68;PG 50;PSS-[2-[(Chloromethyl)phenyl]ethyl]-Heptaisobutyl substituted;Papyex;Peach black;Pelikan C 11/1431a;Pelletex;Permablak 663;Philblack;Philblack N 550;Philblack N 765;Philblack O;Pigment black 6;Pigment black 7;Plumbago;Plumbago (graphite);Point-of-Operation Cartridges;Printex;Printex 60;Pyro-Carb 406;R 50 (refrigerant);Raven;Raven 30;Raven 420;Raven 500;Raven 8000;Rebonex;Regal;Regal 300;Regal 330;Regal 400R;Regal 600;Regal 99;Regal SRF;Rocol X 7119;Royal spectra;S 1 (Graphite);SKG;SKLN 1;SKT;SKT (adsorbent);SU 2000;SWCNT;SWNT;Schungite;Sevacarb;Seval;Shawinigan Acetylene Black;Shell carbon;Shungite;Silver graphite;Single wall carbon nanotube;Special Black 1V & V;Special schwarz;Spheron;Spheron 6;Statex N 550;Sterling MT;Sterling N 765;Sterling NS;Sterling SO 1;Stove Black;Suchar 681;Super-carbovar;Super-spectra;Superba;Supersorbon IV;Supersorbon S 1;Swedish Black Lead;TM 30;Therma-atomic Black;Thermal Acetylene Black;Thermal black;Thermatomic;Thermax;Thermblack;Tinolite;Toka Black 4500;Toka Black 5500;Toka Black 8500;U 02;Ucar 38;VVP 66-95;Watercarb;Witcarb 940;XE 340;XF 4175L;carbonium;carbono;hydridocarbon(3.);hydridocarbon(3.) (quartet);metano;methane;methyl group;methyl-group;methylidyne;tetrahydridocarbon",
+                  "@xml:lang": "en"
+                },
+                {
+                  "#text": "Filtrasorb 400;Furnex N 765;(2R,3R)-丁二醇双甲磺酸酯;碳-12;撞击炭;Black pearls;胶体碳;Statex N 550;锡兰黑铅;氯甲基-酮;Nuchar;PG 50;气炉黑;气态甲烷;甲基氢化物;活性炭诺瑞特;热解炭黑;AG 3 (吸附剂);Papyex;木炭;热乙炔黑;KST-1A1445;Black 140;撞击黑;颜料黑 10;AG 5;垃圾焚烧炉炭;Mogul;超炭化物;大西洋;Pelletex;SKT;SKT (吸附剂);S 1 (石墨);CF 8;Conductex;爆炸乙炔黑;KST-1A1563;carbono;甲基基;Fortafil 5Y;乌鸦 500;Regal;Kosmolak;Calcotone Black;爆炸黑;Kosmink;乌鸦;Regal 330;Witcarb 940;Korobon;Fecto;CLF II;CPB 5000;Flamruss;Superba;CMB 50;Shawinigan 乙炔黑;Irgalite 1104;BG 6080;Ketjenblack EC;乙炔黑;K 257;GP 63;IG 11;活性炭;炭黑 BV 和 V;乙基-1-丙烯基醚，顺反异构体的混合物;Ucar 38;carbonium;乌鸦 30;ATJ-S;Eagle Germantown;Magecol;德固萨黑 FW;Niteron 55;Regal 600;Peach black;Toka 黑 8500;ELF 78;(11c)甲烷;EG 0;颜料黑 6;GP 60;Graphnol N 3M;ATJ-S 石墨;Monarch 1300;诺瑞特 A, U.S.P.;Thermatomic;Watercarb;四氢化碳;Jado;天然石墨;水溶性活性炭;GP 60S;AC1NUWBM;Mogul L;Modulex;Regal SRF;Arovel;AC1L18XA;Carbopol Z Extra;Carbosieve;甲烷;D&C 黑 2 号;Filtrasorb;Regal 400R;碳;1,3-二氯-丙酮;动物骨炭;石墨（合成）;Spheron;TM 30;Neo-Spectra Mark II;热黑;Elftex;AG 5 (吸附剂);灯黑;Permablak 663;Colgon PCB 12X30;甲醛，氧化甲烷，氧甲基，亚甲基氧化物，甲酸醛，甲醛;H 451;箭牌;SKG;Carbolac;Molacco;(13c)甲烷;Arogen;AS 1;Philblack N 550;Pyro-Carb 406;Shell 碳;XE 340;CMB 200;6C;AC1L3VZR;阿莫科 PX 21;甲烷-12C;Black Kosmos 33;炭黑;Sterling MT;哥伦比亚炭;操作点墨盒;Kosmotherm;乙炔炭黑;Seval;Miike 20;EXP-F;Canesorb;Huber;GK 3;矿物碳;Toka 黑 5500;XF 4175L;Collocarb;Neotex;OU-B;乌鸦 8000;P1250;Rebonex;Spheron 6;天然气;CI 颜料黑 7;煤气黑;Hitco HMG 50;沼气;Printex 60;Regal 300;碘化活性炭;DC 2;Philblack N 765;Darco;AR 3;Carbolac 1;黑铅;GY 70;MPG 6;诺瑞特;VVP 66-95;Sterling SO 1;AKOS005166816;FLH;Thermax;活性炭诺瑞特(R);Sterling NS;吸附炭;Durex O;Sevacarb;超级光谱;Supersorbon S 1;SU 2000;石墨（石墨）;Cancarb;银石墨;Therma-atomic 黑;哥伦比亚 LCK;Grosafe;皇家光谱;GK 2;Corax P;Neo-spectra II;Philblack O;瑞典黑铅;Crolac;Carbomet;Carbopol Extra;Excelsior;Farbruss;Pelikan C 11/1431a;无定形碳;颜料黑 7;U 02;Colgon BPL;Kosmovar;Tinolite;Cb 50;富勒烯烟尘;Gastex;PSS-[2-[(氯甲基)苯基]乙基]-七异丁基取代;Regal 99;AK (吸附剂);AG 1500;N-甲基天冬酰胺;Micronex;Essex;R 50 (制冷剂);炉黑;特殊黑 1V 和 V;电解石墨;乌鸦 420;Neo Spectra Beads AG;AU 3;Grafoil;Humenegro;焦炭粉;Grafoil GTA;P 33 (炭黑);SKLN 1;Aquadag G;骨炭;Rocol X 7119;Carbodis;Carbosorbit R;石墨（除石墨纤维外的所有形式）;Printex;Suchar 681;Furnex;Metanex;(2R,3R)-丁二醇双(甲磺酸酯);AT 20;Canlub;Colgon PCB-D;Monarch 700;P68;1-氯苄基乙基-3,5,7,9,11,13,15-七异丁基五环[9.5.1.1(3,9).1(5,15).1(7,13)]八硅氧烷;CWN 2;Shungite;特殊炭黑;氢化碳(3.) (四重态);Filtrasorb 200;Thermblack;Croflex;石墨;MA 100 (碳);单壁碳纳米管;Supersorbon IV;合成石墨;Continex;Carbopol M;Conductex 900;Kosmos;Kosmobil;AC1Q2825;Aroflow;甲基;钻石;Toka 黑 4500;Philblack;Anthrasorb;CI 77266;Corax A;Hydrodarco;Furnal;油炉黑;氢化碳(3.);CF 8 (碳);Arotone;CUZ 3;Cecarbon;石墨酸;Sterling N 765;Degussa;Carbopol Z 4;瓦斯;Aquadag;ART 2",
+                  "@xml:lang": "zh"
+                }
+              ],
+              "common:generalComment": {
+                "#text": "Reference elementary flow of the International Reference Life Cycle Data System (ILCD).",
+                "@xml:lang": "en"
+              },
+              "classificationInformation": {
+                "common:elementaryFlowCategorization": {
+                  "common:category": [
+                    {
+                      "#text": "Emissions",
+                      "@catId": "1",
+                      "@level": "0"
+                    },
+                    {
+                      "#text": "Emissions to air",
+                      "@catId": "1.3",
+                      "@level": "1"
+                    },
+                    {
+                      "#text": "Emissions to air, unspecified",
+                      "@catId": "1.3.4",
+                      "@level": "2"
+                    }
+                  ]
+                }
+              }
+            },
+            "quantitativeReference": {
+              "referenceToReferenceFlowProperty": "0"
+            }
+          },
+          "@xsi:schemaLocation": "http://lca.jrc.it/ILCD/Flow ../../schemas/ILCD_FlowDataSet.xsd",
+          "modellingAndValidation": {
+            "LCIMethod": {
+              "typeOfDataSet": "Elementary flow"
+            },
+            "complianceDeclarations": {
+              "compliance": {
+                "common:approvalOfOverallCompliance": "Fully compliant",
+                "common:referenceToComplianceSystem": {
+                  "@uri": "../sources/9ba3ac1e-6797-4cc0-afd5-1b8f7bf28c6a.xml",
+                  "@type": "source data set",
+                  "@version": "03.00.003",
+                  "@refObjectId": "9ba3ac1e-6797-4cc0-afd5-1b8f7bf28c6a",
+                  "common:shortDescription": {
+                    "#text": "ILCD Data Network - compliance (non-Process)",
+                    "@xml:lang": "en"
+                  }
+                }
+              }
+            }
+          },
+          "administrativeInformation": {
+            "dataEntryBy": {
+              "common:timeStamp": "2012-01-12T14:51:38Z",
+              "common:referenceToDataSetFormat": {
+                "@uri": "../sources/a97a0155-0234-4b87-b4ce-a45da52f2a40.xml",
+                "@type": "source data set",
+                "@version": "03.00.003",
+                "@refObjectId": "a97a0155-0234-4b87-b4ce-a45da52f2a40",
+                "common:shortDescription": {
+                  "#text": "ILCD format",
+                  "@xml:lang": "en"
+                }
+              }
+            },
+            "publicationAndOwnership": {
+              "common:dataSetVersion": "03.00.004",
+              "common:permanentDataSetURI": "http://lca.jrc.ec.europa.eu/lcainfohub/datasets/ilcd/flows/08a91e70-3ddc-11dd-9610-0050c2490048.xml",
+              "common:referenceToOwnershipOfDataSet": {
+                "@uri": "../contacts/d0d5f8bb-9311-49d1-9e30-2f20a6977f4f.xml",
+                "@type": "contact data set",
+                "@version": "01.02.004",
+                "@refObjectId": "d0d5f8bb-9311-49d1-9e30-2f20a6977f4f",
+                "common:shortDescription": {
+                  "#text": "European Commission - JRC directorate D",
+                  "@xml:lang": "en"
+                }
+              }
+            }
+          }
+        }
+      },
+      "content_hash": "23aa3f99f3bb7ef87eb2e421adb9006f12a63c4c5c8dd502f89862bec733fc17"
+    }
+  ],
+  "snapshot_hash": "ca7f381cb102e93aadef21c7f9d0bad778abe228a9b9eddd6afa1432976d8c3e",
+  "generated_at": "2026-10-13T11:32:09.659764+00:00",
+  "counts": {
+    "flow": 1
+  }
+}

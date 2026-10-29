@@ -8,6 +8,7 @@ import { api } from '../api/client';
 import { useI18n } from '../i18n';
 import { projectResultViews } from '../api/projectViews';
 import type { MethodPackage, SolvedSystemSnapshot } from '../api/types';
+import type { PcfBasisRequest } from '../api/types';
 import { EnergyCarrierResultPanel } from '../components/EnergyCarrierResultPanel';
 import { ProductCarbonFootprintPanel } from '../components/ProductCarbonFootprintPanel';
 import { CalculationTarget } from '../components/CalculationTarget';
@@ -260,22 +261,37 @@ export function AnalysisResultsPage() {
     queryFn: () => api.pcfDefaultMethod(selected!.id),
     enabled: Boolean(selected && activeResultTab === 'pcf'),
   });
-  const pcfMethodPackages = useMemo(() => (methodPackages.data ?? []).flatMap((item) => {
+  const pcfMethodCatalog = useMemo(() => (methodPackages.data ?? []).flatMap((item) => {
     const reference = `${item.package_id}@${item.version}`;
     if (item.package_kind !== 'product_carbon_footprint'
         || (!boundMethodPackageRefs.includes(reference) && pcfResolved.data?.reference !== reference)) return [];
     const formula = item.manifest.formula_graph as { lcia_method?: string; source_contract?: string } | undefined;
     const methodName = formula?.lcia_method || t('results.productClimate');
     const coverage = formula?.source_contract ? t('results.withBackground') : t('results.modelScope');
-    return [{ reference, label: `${methodName} ${t('results.climateChange')} · ${coverage} · v${item.version}` }];
+    return [{ reference, label: `${methodName} ${t('results.climateChange')} · ${coverage}` }];
   }), [boundMethodPackageRefs, methodPackages.data, pcfResolved.data?.reference, t]);
-  const pcfMethodRefs = useMemo(() => pcfMethodPackages.map((item) => item.reference), [pcfMethodPackages]);
+  const pcfMethodRefs = useMemo(() => pcfMethodCatalog.map((item) => item.reference), [pcfMethodCatalog]);
   const explicitPcfMethod = searchParams.has('pcf-method');
   const pcfSelection = useUrlSelection('pcf-method', pcfMethodRefs, {
     ready: !application.isLoading && !snapshots.isLoading && !methodPackages.isLoading
       && (explicitPcfMethod || !pcfResolved.isLoading),
   });
   const pcfMethod = { ...pcfSelection, value: explicitPcfMethod ? pcfSelection.value : (pcfSelection.pending ? '' : pcfResolved.data?.reference ?? '') };
+  // The dropdown keeps a single default entry resolved by the backend instead of listing every
+  // historical package version under the same name (user requirement §二.6). Before the default
+  // resolves, or when an explicit reference was rejected, the full catalog stays available so the
+  // analyst can still pick a method and the rejection stays actionable.
+  const pcfMethodOptions = useMemo(() => {
+    const resolved = pcfResolved.data?.reference;
+    if (!resolved) return pcfMethodCatalog;
+    const options = pcfMethodCatalog.filter((item) => item.reference === resolved);
+    const selected = pcfMethodCatalog.find((item) => item.reference === pcfMethod.value);
+    if (selected && !options.some((item) => item.reference === selected.reference)) options.push(selected);
+    return options;
+  }, [pcfMethod.value, pcfMethodCatalog, pcfResolved.data?.reference]);
+  // The 结果口径 toggle is a pure read-side view of the frozen solve; changing it re-queries the
+  // same snapshot projection, never a re-solve, so it lives here alongside the method selection.
+  const [pcfBasis, setPcfBasis] = useState<PcfBasisRequest>({ result_basis: 'total' });
   const energyResults = useQuery({
     queryKey: ['energy-carrier-results', selected?.id],
     queryFn: () => api.energyCarrierResults(selected!.id),
@@ -336,14 +352,16 @@ export function AnalysisResultsPage() {
     enabled: Boolean(selected && selectedDistributionMethodRef && selectedDistributionScenarioId && spatialDistribution.data),
   });
   const productCarbonFootprint = useQuery({
-    queryKey: ['product-carbon-footprint', selected?.id, pcfMethod.value],
-    queryFn: () => api.productCarbonFootprint(selected!.id, pcfMethod.value),
-    enabled: Boolean(selected && activeResultTab === 'pcf' && pcfMethod.value),
+    queryKey: ['product-carbon-footprint', selected?.id, pcfMethod.value, pcfBasis.result_basis, pcfBasis.base_amount, pcfBasis.base_unit],
+    queryFn: () => api.productCarbonFootprint(selected!.id, pcfMethod.value, pcfBasis),
+    enabled: Boolean(selected && activeResultTab === 'pcf' && pcfMethod.value
+      && (pcfBasis.result_basis === 'total' || (pcfBasis.base_amount && pcfBasis.base_unit))),
   });
   const productCarbonFootprintChart = useQuery({
-    queryKey: ['product-carbon-footprint-chart', selected?.id, pcfMethod.value],
-    queryFn: () => api.productCarbonFootprintChart(selected!.id, pcfMethod.value),
-    enabled: Boolean(selected && activeResultTab === 'pcf' && pcfMethod.value && productCarbonFootprint.data),
+    queryKey: ['product-carbon-footprint-chart', selected?.id, pcfMethod.value, pcfBasis.result_basis, pcfBasis.base_amount, pcfBasis.base_unit],
+    queryFn: () => api.productCarbonFootprintChart(selected!.id, pcfMethod.value, pcfBasis),
+    enabled: Boolean(selected && activeResultTab === 'pcf' && pcfMethod.value && productCarbonFootprint.data
+      && (pcfBasis.result_basis === 'total' || (pcfBasis.base_amount && pcfBasis.base_unit))),
   });
   const carbonManagement = useQuery({
     queryKey: ['carbon-management', selected?.id, selectedCarbonMethodRef, selectedEnergy?.id],
@@ -561,6 +579,8 @@ export function AnalysisResultsPage() {
                 {pcfMethod.invalid ? <InvalidReferencesAlert references={[{ label: t('pcf.methodPackage'), requested: pcfMethod.requested, key: 'pcf-method' }]} note={t('results.pcfUnknownMethod')} /> : null}
                 <ProductCarbonFootprintPanel
                   workspace={resultWorkspace.data}
+                  applicationId={applicationId ?? ''}
+                  revisionId={selected.system_revision_id}
                   snapshotId={selected.id}
                   exchangeNames={Object.fromEntries((resultWorkspace.data?.fields ?? []).filter(field => field.process_id && field.port_id).map(field => [`${field.process_id}::${field.port_id}`, `${field.label}${field.description ? ' — ' + field.description : ''}`]))}
                   processNodes={processDisplayNodes({
@@ -570,9 +590,11 @@ export function AnalysisResultsPage() {
                     backgroundReceipts: selected.provider_receipt.project_background_process_receipts,
                     backgroundLabel: t('pcf.backgroundProcess'),
                   })}
-                  methodPackages={pcfMethodPackages}
+                  methodPackages={pcfMethodOptions}
                   selectedMethodPackageRef={pcfMethod.value}
                   onMethodPackageChange={pcfMethod.select}
+                  basis={pcfBasis}
+                  onBasisChange={setPcfBasis}
                   result={productCarbonFootprint.data}
                   isLoading={methodPackages.isLoading || pcfMethod.pending || productCarbonFootprint.isLoading}
                   error={methodPackages.error || (!explicitPcfMethod && pcfResolved.error) || (pcfMethod.invalid ? null : productCarbonFootprint.error)}

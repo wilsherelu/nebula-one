@@ -13,6 +13,8 @@ from ..models import Application, AuthoredProjectTemplate, SystemModel, SystemRe
 from ..runtime_models import BoundaryDefinition, MethodPackage, Period
 from .returned_projects import reference_demand
 from .seed_projects import BOUNDARY_FIELDS, inventory_fields, process_graph_projection
+from ..runtime_schemas import CalculationMethodRef
+from .template_calculation_methods import freeze_defaults, instantiate_defaults
 
 
 class MethodPin(BaseModel):
@@ -31,6 +33,7 @@ class PublishAuthoredTemplate(BaseModel):
     source_revision_id: str = Field(min_length=1)
     expected_revision_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     methods: list[MethodPin] = Field(default_factory=list)
+    user_methods: list[CalculationMethodRef] = Field(default_factory=list)
 
 
 class CreateAuthoredProject(BaseModel):
@@ -58,7 +61,8 @@ class AuthoredProjectTemplateService:
                 "source_revision_id": row.source_revision_id,
                 "process_count": len(graph.get("nodes", [])),
                 "field_count": len(inventory_fields(graph)),
-                "capabilities": row.content["capabilities"], "kind": "authored"}
+                "capabilities": row.content["capabilities"], "kind": "authored",
+                "user_method_count": len(row.content.get("user_methods", []))}
 
     def catalog(self):
         with self.c.database.session() as db:
@@ -66,6 +70,13 @@ class AuthoredProjectTemplateService:
                     for row in db.scalars(select(AuthoredProjectTemplate).order_by(AuthoredProjectTemplate.created_at))]
 
     def publish(self, payload: PublishAuthoredTemplate):
+        # Installed seeds are also verified modelling sources; preserve their exact catalog identity.
+        from .seed_projects import SeedProjectService
+        seed_sources = SeedProjectService(self.c).catalog()["items"]
+        installed_item = next((item for item in seed_sources if item["source_application_id"] == payload.source_application_id
+            and item["source_model_id"] == payload.source_model_id
+            and item["source_revision_id"] == payload.source_revision_id), None)
+        installed_source = installed_item is not None
         with self.c.database.session() as db:
             app = db.get(Application, payload.source_application_id)
             model = db.get(SystemModel, payload.source_model_id)
@@ -73,16 +84,26 @@ class AuthoredProjectTemplateService:
             if (not app or not model or not revision or model.application_id != app.id
                     or revision.system_model_id != model.id or revision.revision_kind != "base"
                     or revision.content_sha256 != payload.expected_revision_sha256
-                    or not app.context.get("modeling_template_binding")
-                    or not app.context.get("template_locked")):
+                    or not (installed_source or (app.context.get("modeling_template_binding")
+                                                and app.context.get("template_locked")))):
                 refuse("TEMPLATE_SOURCE_NOT_REVIEWED", "请选择已核验的 LCA 返回模型基础版本。", 422)
             if model.provider_base_url != self.c.client.base_url:
                 refuse("TEMPLATE_ENGINE_CHANGED", "模型所属算法服务与当前连接不一致。")
-            exact = self.c.client.get_provider_model_snapshot(model.upstream_project_id, model.upstream_version).payload
-            if (exact["graph_hash"] != (model.upstream_receipt or {}).get("upstream_graph_hash")
-                    or not same_pinned_model(revision.graph_snapshot, exact["graph"])):
+            upstream_source = model
+            if installed_source:
+                _, upstream_source, _, _, checked_item, _ = SeedProjectService(self.c)._source(db, installed_item["id"])
+                if checked_item["template_sha256"] != installed_item["template_sha256"]:
+                    refuse("TEMPLATE_SOURCE_CHANGED", "模板来源已变化，请重新选择。")
+            exact = self.c.client.get_provider_model_snapshot(upstream_source.upstream_project_id, upstream_source.upstream_version).payload
+            if ((not installed_source and exact["graph_hash"] != (model.upstream_receipt or {}).get("upstream_graph_hash"))
+                    or not same_pinned_model(upstream_source.graph_snapshot if installed_source else revision.graph_snapshot, exact["graph"])):
                 refuse("TEMPLATE_MODEL_CHANGED", "上游精确模型版本与定稿来源不一致。")
-            demand = reference_demand(app, revision)
+            if installed_source:
+                from types import SimpleNamespace
+                demand = reference_demand(SimpleNamespace(context={
+                    **app.context, "modeling_functional_unit": exact["functional_unit"]}), revision)
+            else:
+                demand = reference_demand(app, revision)
             available = set(app.context.get("method_package_refs") or [])
             pins = []
             selected_kinds = set()
@@ -96,7 +117,10 @@ class AuthoredProjectTemplateService:
                 selected_kinds.add(package.package_kind)
             if len({(pin["package_id"], pin["version"]) for pin in pins}) != len(pins):
                 refuse("TEMPLATE_METHOD_DUPLICATE", "同一方法版本不能重复选择。", 422)
+            user_methods = freeze_defaults(db, app.id, revision.id, payload.user_methods)
             context = deepcopy(app.context)
+            if installed_source:
+                context["modeling_functional_unit"] = deepcopy(exact["functional_unit"])
             context.pop("project_inputs", None)
             context.pop("project_create_sha256", None)
             context.pop("resource_purpose", None)
@@ -116,12 +140,17 @@ class AuthoredProjectTemplateService:
                        "source_application_id": app.id, "source_model_id": model.id,
                        "source_revision_id": revision.id,
                        "source_revision_sha256": revision.content_sha256,
-                       "engine_project_id": model.upstream_project_id,
-                       "engine_version": model.upstream_version,
+                       "engine_project_id": upstream_source.upstream_project_id,
+                       "engine_version": upstream_source.upstream_version,
                        "engine_graph_hash": exact["graph_hash"],
                        "model_graph_sha256": model.graph_sha256,
                        "methods": pins, "demand": demand, "context": context,
                        "capabilities": capabilities}
+            if user_methods:
+                content["user_methods"] = user_methods
+            if installed_source:
+                content["upstream_graph_snapshot"] = deepcopy(upstream_source.graph_snapshot)
+                content["installed_template_sha256"] = installed_item["template_sha256"]
             digest = canonical_json_sha256(content)
             existing = db.scalar(select(AuthoredProjectTemplate).where(
                 AuthoredProjectTemplate.title == payload.title, AuthoredProjectTemplate.version == payload.version))
@@ -167,7 +196,7 @@ class AuthoredProjectTemplateService:
                 return {"application_id": app_id, "system_model_id": existing_model.id,
                         "revision_id": existing_model.upstream_receipt["base_revision_id"]}
             exact = self.c.client.get_provider_model_snapshot(pin["engine_project_id"], pin["engine_version"]).payload
-            if exact["graph_hash"] != pin["engine_graph_hash"] or not same_pinned_model(revision.graph_snapshot, exact["graph"]):
+            if exact["graph_hash"] != pin["engine_graph_hash"] or not same_pinned_model(pin.get("upstream_graph_snapshot", revision.graph_snapshot), exact["graph"]):
                 refuse("TEMPLATE_MODEL_CHANGED", "算法服务的定稿模型版本不再匹配。")
             graph = deepcopy(revision.graph_snapshot)
             model_id, revision_id = new_id(), new_id()
@@ -200,6 +229,7 @@ class AuthoredProjectTemplateService:
                 db.add(Period(id=period_id, application_id=app_id, key=period.key, name=period.name,
                               start_date=period.start_date, end_date=period.end_date, resolution=period.resolution))
             db.flush()
+            boundary_map = {}
             for boundary in db.scalars(select(BoundaryDefinition).where(
                     BoundaryDefinition.application_id == row.source_application_id,
                     BoundaryDefinition.status == "frozen")):
@@ -207,8 +237,12 @@ class AuthoredProjectTemplateService:
                 body["period_id"] = period_map.get(boundary.period_id)
                 if body["geographic_scope"].get("graph_sha256"):
                     body["geographic_scope"]["graph_sha256"] = base.graph_sha256
-                db.add(BoundaryDefinition(id=new_id(), application_id=app_id, **body,
+                boundary_id = new_id()
+                boundary_map[boundary.id] = boundary_id
+                db.add(BoundaryDefinition(id=boundary_id, application_id=app_id, **body,
                     content_sha256=canonical_json_sha256(body), status="frozen", frozen_at=utcnow()))
+            db.flush()
+            instantiate_defaults(db, app, base, pin.get("user_methods", []), boundary_map)
             try:
                 db.commit()
             except IntegrityError:

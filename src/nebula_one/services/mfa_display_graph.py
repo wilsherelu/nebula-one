@@ -29,6 +29,7 @@ class MFADisplayGraph:
                 node = deepcopy(nodes[0])
                 node["id"] = receipt["expanded_node_id"]
                 node["process_uuid"] = receipt["source_process_uuid"]
+                node["mfa_background"] = True
                 display_graph.setdefault("nodes", []).append(node)
                 sources.append({"project_id": pin["project_id"], "version": pin["version"], "graph_hash": pin["expected_graph_hash"],
                                 "source_node_id": pin["source_node_id"], "expanded_node_id": node["id"]})

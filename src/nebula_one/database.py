@@ -131,6 +131,8 @@ class Database:
                 )
         self._prepare_sqlite_run_idempotency()
         self._prepare_sqlite_outbox_result_ref()
+        self._prepare_sqlite_version_model_processing_ref()
+        self._prepare_sqlite_version_semantics()
         operation_columns = {
             item["name"]
             for item in inspect(self.engine).get_columns("model_operations")
@@ -216,6 +218,54 @@ class Database:
                     text(
                         "ALTER TABLE outbox_events ADD COLUMN "
                         "result_ref JSON NOT NULL DEFAULT '{}'"
+                    )
+                )
+
+    def _prepare_sqlite_version_model_processing_ref(self) -> None:
+        """Add the variant's bound processing-package column to an already-created versions table.
+
+        ``create_all`` only builds missing tables, never new columns on existing ones, so a nullable
+        column added to the model after the SQLite runtime table first came up must be reconciled here
+        - the same way prior runtimes pick up their added columns - or a variant's exact binding has
+        nowhere to persist on a shared database that predates the feature.
+        """
+        schema = inspect(self.engine)
+        if "calculation_method_versions" not in schema.get_table_names():
+            return
+        columns = {
+            item["name"]
+            for item in schema.get_columns("calculation_method_versions")
+        }
+        if "model_processing_rules_ref" not in columns:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE calculation_method_versions ADD COLUMN "
+                        "model_processing_rules_ref JSON"
+                    )
+                )
+
+    def _prepare_sqlite_version_semantics(self) -> None:
+        """Add the explicit method-version semantics column to an already-created versions table.
+
+        Same rule as the other added columns: ``create_all`` never alters an existing table, so a
+        shared SQLite database that predates flow-tag schemes must be reconciled before a tag
+        version can persist. The column is nullable, so every historical row keeps the legacy
+        reading.
+        """
+        schema = inspect(self.engine)
+        if "calculation_method_versions" not in schema.get_table_names():
+            return
+        columns = {
+            item["name"]
+            for item in schema.get_columns("calculation_method_versions")
+        }
+        if "semantics" not in columns:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "ALTER TABLE calculation_method_versions ADD COLUMN "
+                        "semantics VARCHAR(32)"
                     )
                 )
 

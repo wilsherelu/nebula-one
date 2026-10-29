@@ -6,7 +6,7 @@ This first public candidate includes the steel blast furnace–BOF template and 
 
 ## Start the local steel example
 
-Install Docker with Compose. Check out Nebula LCA revision `0a48dcaef9294b557165322425f8133cc3942952` in a clean source tree, then set `NEBULA_LCA_SOURCE_DIR` to its absolute path. Verify `git -C <engine-path> rev-parse HEAD` and `git -C <engine-path> status --porcelain` before building. Compose reads this directory; `deploy/engine.env` declares the receipt identity and does not select or verify the source checkout. From this repository root, run:
+Install Docker with Compose. Use a clean Nebula LCA checkout matching `NEBULA_LCA_ENGINE_COMMIT` in `deploy/engine.env`, then set `NEBULA_LCA_SOURCE_DIR` to its absolute path. Verify `git -C <engine-path> rev-parse HEAD` and `git -C <engine-path> status --porcelain` before building. Compose reads this directory; `deploy/engine.env` declares the receipt identity and does not select or verify the source checkout. From this repository root, run:
 
 ```sh
 docker compose -f deploy/compose.yml -f deploy/compose.steel-demo.local.example.yml up --build -d
@@ -24,11 +24,17 @@ For the Windows local preview, see [desktop installation and data backup](docs/D
 
 The One workbench edits quantities and compatible background associations on a fixed model structure. Structural changes open the Nebula LCA editor; saving there creates an exact new model version that One can import. Results always point to a selected revision and frozen solve, never to `latest`. Product climate and organizational totals include linked background contributions only when the required identity and contribution receipts exist. CBAM output is a trial, not an official declaration.
 
+Accounting schemes are managed inside each template's configuration workspace. Copy an official scheme, select a process and its flows, edit inclusion and reporting groups, then save your own template. New projects inherit independent rules. Before calculating, check and use an exact saved version. Scope and custom categories regroup characterized contributions; exclusion retains the underlying model answer and excluded detail. Closed background networks are attributed to their consuming paths. See [the current standalone trial and acceptance](docs/acceptance/LOCAL_READY_20261015.md).
+
+The custom lifecycle scheme can assign purchased-energy lifecycle contributions to its Scope 2 group. The separate GHG Protocol comparison scheme uses its own generation-only boundary; that requirement does not constrain every custom scheme. Results retain the selected method and its version. See [steel accounting boundaries and corrections](docs/STEEL_SEED_INTERPRETATION.md).
+
 For the architecture and method boundaries, see [Core development logic](docs/CORE_DEVELOPMENT_LOGIC.md), [steel template](docs/STEEL_TEMPLATE.md), [product climate](docs/PCF_PRODUCT_V1.md), and [organizational lifecycle](docs/LC_SCOPE_ORGANIZATION_METHOD.md).
 
 ## Develop and test
 
 Python 3.10 or newer and Node.js 22 are supported. Install backend test dependencies with `python -m pip install -e ".[test]"`, run `python -m pytest tests`, then run `npm ci`, `npm run typecheck`, `npm test`, and `npm run build` in `web/`. The public test suite covers the included steel and shared runtime contracts. Some real engine behavior also requires the isolated Docker stack above; unit tests alone do not establish a complete product footprint or CBAM declaration.
+
+For the maintained local workstation, use the primary One and LCA repositories and the existing shared stack at port `18938`; do not start a second stack with the generic example above. See [mainline roots, parked industry material and shared-stack commands](docs/MAINLINE_CONSOLIDATION.md). Unfinished hydrogen and other industry files stay under `drafts/`, outside runtime discovery and packaged resources. Desktop previews remain `0.1.1` until an explicitly authorized GitHub publication.
 
 The API has no public authentication boundary in this local configuration. Keep its published ports on loopback or place it behind a separately configured access layer. Do not place commercial datasets in this repository or its Docker build context.
 

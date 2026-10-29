@@ -5,7 +5,208 @@ from typing import Any
 
 from ..errors import DomainError
 from ..hashing import canonical_json_sha256
+from .method_grouping import build_dimension_grouping, path_rows_to_weighted_terms
+from .method_path_grouping import group_path_weighted_scopes, select_path_weighted_receipt
+from .method_scope_grouping import group_organization_scopes
 from .pcf_contributions import build_pcf_contribution_analysis
+from .tag_grouping import (
+    TAG_SEMANTICS,
+    consumer_path_exchanges,
+    group_tag_scheme,
+    tag_dimension,
+)
+
+
+def _receipt_gap_breakdown(
+    path_receipt: dict[str, Any],
+    scaled_elementary_exchanges: list[dict[str, Any]],
+) -> dict[str, list[str]]:
+    """Separate the two gap reasons a Scope bucket cannot express on its own.
+
+    ``uncharacterized`` is an inventory elementary flow this LCIA method gave no factor for: it
+    never appears in the receipt, so it is absent rather than zero. ``zero_cf`` is a flow the
+    method did characterize with a zero coefficient, which is a real zero and must not be reported
+    as a missing factor. Both are informational — neither changes the reconciliation invariant.
+    """
+    rows = [item for item in (path_receipt.get("terms") or []) if isinstance(item, dict)]
+    receipt_ids = {str(row.get("exchange_id") or "") for row in rows}
+    inventory_ids: set[str] = set()
+    for item in scaled_elementary_exchanges:
+        if not isinstance(item, dict):
+            continue
+        exchange_id = str(item.get("exchange_id") or "")
+        if not exchange_id:
+            continue
+        try:
+            amount = float(item.get("amount"))
+        except (TypeError, ValueError):
+            amount = 0.0
+        # A zero-quantity flow contributes nothing whether the method characterizes it or not, so
+        # it is not a missing factor and must not be reported as one.
+        if math.isfinite(amount) and amount:
+            inventory_ids.add(exchange_id)
+    return {
+        "uncharacterized_exchange_ids": sorted(inventory_ids.difference(receipt_ids) | {
+            str(row["exchange_id"]) for row in rows
+            if row.get("cf_presence") == "implicit_zero" and row.get("exchange_id")
+        }),
+        "zero_cf_exchange_ids": sorted({
+            str(row.get("exchange_id") or "")
+            for row in rows
+            if row.get("cf_presence") == "explicit_zero" and str(row.get("exchange_id") or "")
+        }),
+    }
+
+
+def _attach_pcf_user_method_grouping(
+    *,
+    contribution_analysis: dict[str, Any],
+    provider_receipt: dict[str, Any],
+    scaled_elementary_exchanges: list[dict[str, Any]],
+    lcia_results: dict[str, Any],
+    indicator_key: str,
+    indicator_unit: str,
+) -> dict[str, Any]:
+    """Apply a referenced user method to PCF's own frozen contributions, without re-solving.
+
+    This is R5's "same solve basis, choose/classify" operation: the method's include/exclude and
+    category decisions re-bucket the contributions Nebula LCA already produced for this product
+    footprint. A path-weighted receipt decomposes a shared background emission per consumption
+    path and keeps every path; a path the engine could not attribute is reported as an engine gap.
+    The engine ``total_footprint`` and its coverage evidence are NOT changed here — a method view
+    is a reporting subset, never a claim that a partial selection is a complete PCF. Exclusion moves
+    a contribution into ``excluded``; it never deletes a technosphere node or rescales a partial
+    contribution into a full footprint. A run with no user method is returned untouched.
+    """
+    user_method = provider_receipt.get("user_calculation_method") if isinstance(provider_receipt, dict) else None
+    tag_scheme = isinstance(user_method, dict) and user_method.get("semantics") == TAG_SEMANTICS
+    if not isinstance(user_method, dict) or (not user_method.get("rules") and not tag_scheme):
+        return contribution_analysis
+
+    identity = {
+        key: user_method.get(key)
+        for key in (
+            "method_id",
+            "version",
+            "content_sha256",
+            "model_revision_id",
+            "execution_plan_sha256",
+            "compiler_version",
+        )
+    }
+    path_receipt = select_path_weighted_receipt(lcia_results, canonical_indicator_key=str(indicator_key or ""))
+
+    if path_receipt is not None and tag_scheme:
+        # A tag view reports matched, unmatched, pending and missing paths apart; it never reads
+        # "not tagged" as "excluded", so the LC-Scope buckets below would misstate its range.
+        tag_grouping = group_tag_scheme(
+            rules=user_method.get("rules") or [],
+            scaled_exchanges=scaled_elementary_exchanges,
+            weighted_terms=path_rows_to_weighted_terms(path_receipt),
+            dimension=tag_dimension(user_method),
+            indicator_unit=indicator_unit or "",
+            consumer_paths=consumer_path_exchanges(path_receipt),
+        )
+        partial = (
+            not tag_grouping["coverage"]["complete"]
+            or bool(tag_grouping["missing"]["term_count"])
+            or not tag_grouping["reconciled"]
+        )
+        contribution_analysis["user_method_grouping"] = {
+            "method": identity,
+            "grouping_mode": "flow_tag",
+            "execution_status": "executed_partial" if partial else "executed_full",
+            "counts_as_complete_pcf": False,
+            "coverage": {
+                "matched_share": tag_grouping["coverage"]["matched_share"],
+                "unmatched_exchange_ids": tag_grouping["unmatched"]["exchange_ids"],
+                "pending_exchange_ids": tag_grouping["pending"]["exchange_ids"],
+                "missing_exchange_ids": tag_grouping["missing"]["exchange_ids"],
+            },
+            "grouping": None,
+            "dimension_grouping": None,
+            "tag_grouping": tag_grouping,
+        }
+        return contribution_analysis
+
+    if path_receipt is not None:
+        grouping = group_path_weighted_scopes(
+            rules=user_method["rules"],
+            scaled_exchanges=scaled_elementary_exchanges,
+            path_receipt=path_receipt,
+            indicator_unit=indicator_unit,
+        )
+        coverage_gaps = grouping["coverage_gaps"]
+        unattributed_ids = grouping["unattributed"]["exchange_ids"]
+        engine_gap_ids = grouping["engine_gap"]["exchange_ids"]
+        gap_breakdown = _receipt_gap_breakdown(path_receipt, scaled_elementary_exchanges)
+        partial = bool(coverage_gaps) or bool(unattributed_ids) or bool(engine_gap_ids) or not grouping["reconciled"]
+        contribution_analysis["user_method_grouping"] = {
+            "method": identity,
+            "grouping_mode": "path_weighted",
+            "execution_status": "executed_partial" if partial else "executed_full",
+            "counts_as_complete_pcf": False,
+            "coverage": {
+                "attribution_coverage": grouping.get("attribution_coverage"),
+                "coverage_gaps": coverage_gaps,
+                "unattributed_exchange_ids": unattributed_ids,
+                "engine_gap_exchange_ids": engine_gap_ids,
+                **gap_breakdown,
+            },
+            "grouping": grouping,
+            "dimension_grouping": build_dimension_grouping(
+                user_method=user_method,
+                scaled_exchanges=scaled_elementary_exchanges,
+                weighted_terms=path_rows_to_weighted_terms(path_receipt),
+                indicator_unit=indicator_unit or "",
+                path_receipt=path_receipt,
+            ),
+        }
+        return contribution_analysis
+
+    hotspots = contribution_analysis.get("hotspots") or []
+    if contribution_analysis.get("status") != "available" or not hotspots:
+        contribution_analysis["user_method_grouping"] = {
+            "method": identity,
+            "grouping_mode": "exchange_weighted",
+            "execution_status": "no_weighted_contributions",
+            "counts_as_complete_pcf": False,
+            "grouping": None,
+            "dimension_grouping": None,
+        }
+        return contribution_analysis
+
+    terms = [
+        {"exchange_id": hotspot["exchange_id"], "contribution_value": hotspot["contribution_value"]}
+        for hotspot in hotspots
+    ]
+    grouping = group_organization_scopes(
+        rules=user_method["rules"],
+        scaled_exchanges=scaled_elementary_exchanges,
+        terms=terms,
+        indicator_unit=indicator_unit,
+    )
+    coverage_gaps = grouping["coverage_gaps"]
+    unattributed_ids = grouping["unattributed"]["exchange_ids"]
+    partial = bool(coverage_gaps) or bool(unattributed_ids) or not grouping["reconciled"]
+    contribution_analysis["user_method_grouping"] = {
+        "method": identity,
+        "grouping_mode": "exchange_weighted",
+        "execution_status": "executed_partial" if partial else "executed_full",
+        "counts_as_complete_pcf": False,
+        "coverage": {
+            "coverage_gaps": coverage_gaps,
+            "unattributed_exchange_ids": unattributed_ids,
+        },
+        "grouping": grouping,
+        "dimension_grouping": build_dimension_grouping(
+            user_method=user_method,
+            scaled_exchanges=scaled_elementary_exchanges,
+            weighted_terms=terms,
+            indicator_unit=indicator_unit or "",
+        ),
+    }
+    return contribution_analysis
 
 
 def _required_text(source: dict[str, Any], key: str, *, context: str) -> str:
@@ -291,6 +492,17 @@ def build_product_pcf(
         scaled_elementary_exchanges=scaled_elementary_exchanges,
         elementary_flow_receipts=elementary_receipts,
     )
+    contribution_analysis = _attach_pcf_user_method_grouping(
+        contribution_analysis=contribution_analysis,
+        provider_receipt=provider_receipt,
+        scaled_elementary_exchanges=scaled_elementary_exchanges,
+        lcia_results=lcia_results,
+        indicator_key=indicator_key,
+        indicator_unit=unit,
+    )
+    characterization = contribution_analysis.get("characterization_coverage")
+    if characterization is not None:
+        total_footprint["value_kind"] = characterization["value_kind"]
     result: dict[str, Any] = {
         "schema_version": result_schema,
         "capability_key": "pcf.product.v1",
@@ -316,6 +528,7 @@ def build_product_pcf(
             "complete_product_declaration": False,
         },
         "data_quality": {
+            **({"characterization_coverage": characterization} if characterization is not None else {}),
             "database_release": provider_receipt.get("database_release"),
             "solver_version": provider_receipt.get("solver_version"),
             "elementary_flow_receipt_count": len(elementary_receipts),

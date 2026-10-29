@@ -2,6 +2,10 @@ import '@testing-library/jest-dom/vitest';
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import { vi } from 'vitest';
 import { I18nProvider } from '../i18n';
+import { webcrypto } from 'node:crypto';
+
+// Exercise the real digest implementation; jsdom does not supply SubtleCrypto.
+Object.defineProperty(globalThis.crypto, 'subtle', { configurable: true, value: webcrypto.subtle });
 
 class ResizeObserverStub {
   observe() {}

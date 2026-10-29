@@ -14,7 +14,7 @@ from ..runtime_models import MethodPackage, SolvedSystemSnapshot
 from ..runtime_schemas import MethodPackageCreate
 
 _OFFICIAL_FILES = (
-    "pcf-ef31-foreground-1.0.2.json",
+    "pcf-ef31-foreground-1.0.4.json",
     "pcf-ef31-native-model-boundary-1.0.0.json",
 )
 _NATIVE_RESPONSE = "provider.native-background-climate-total.response.v1"
@@ -75,7 +75,17 @@ def _choose(matches: list[MethodPackage], bound_refs: list[str]) -> MethodPackag
 
 def resolve_frozen_pcf_method(db, snapshot: SolvedSystemSnapshot, bound_refs: list[str]) -> MethodPackage | None:
     """Use the frozen answer; never infer a past method from catalog order."""
+    frozen = ((snapshot.provider_receipt or {}).get("calculation_basis") or {}).get("calculation_method") or {}
+    frozen_ref = frozen.get("reference")
+    if frozen_ref:
+        exact = [item for item in db.scalars(select(MethodPackage)).all()
+                 if _reference(item) == frozen_ref and item.content_sha256 == frozen.get("content_sha256")]
+        if len(exact) != 1:
+            return None
+        bound_refs = [frozen_ref]
     packages = _candidates(db, bound_refs)
+    if frozen_ref:
+        packages = [item for item in packages if _reference(item) == frozen_ref]
     envelope = snapshot.native_background_climate or {}
     answer = envelope.get("response") if isinstance(envelope, dict) else None
     if snapshot.native_background_climate is not None:
@@ -123,7 +133,7 @@ def resolve_frozen_pcf_method(db, snapshot: SolvedSystemSnapshot, bound_refs: li
 
 
 def resolve_new_climate_method(db, *, bound_refs: list[str], native: bool,
-                               native_request: dict | None = None) -> MethodPackage:
+                               native_request: dict | None = None, preferred_ref: str | None = None) -> MethodPackage:
     """Pin one authored EF method before accepting a new climate solve."""
     default_formula = _official_payloads()[0].manifest["formula_graph"]
     matches = []
@@ -144,6 +154,8 @@ def resolve_new_climate_method(db, *, bound_refs: list[str], native: bool,
               and formula.get("total_indicator_key") == default_formula["total_indicator_key"]
               and formula.get("result_unit") == default_formula["result_unit"]):
             matches.append(item)
+    if preferred_ref is not None:
+        matches = [item for item in matches if _reference(item) == preferred_ref]
     selected = _choose(matches, bound_refs)
     if selected is None:
         raise DomainError(code="CLIMATE_METHOD_UNAVAILABLE",

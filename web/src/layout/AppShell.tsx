@@ -12,6 +12,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { lang, t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
+  const focused = new URLSearchParams(location.search).has('method')
+    && (/^\/templates\/[^/]+\/config$/.test(location.pathname)
+      || /^\/applications\/[^/]+\/calculation-methods$/.test(location.pathname));
+  if (focused) return <Layout className="app-shell" style={{ '--no-sidebar-width': '0px' } as CSSProperties}>
+    <Content className="app-content">{children}</Content>
+  </Layout>;
   const active = location.pathname.startsWith('/modeling') ? 'modeling' : location.pathname === '/' ? 'home' : location.pathname.startsWith('/templates') || location.pathname.startsWith('/casepacks')
     ? 'templates'
     : 'applications';

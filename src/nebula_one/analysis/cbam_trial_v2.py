@@ -12,6 +12,7 @@ from typing import Any
 from ..emission_selectors import selected_emissions
 from ..hashing import canonical_graph_sha256, canonical_json_sha256
 from .cbam_trial import _calendar_year, _decimal, _fail, _verified_hash
+from .accounting_quantity_basis import legacy_climate_intensity, quantity_ratio_receipt
 
 
 SCHEMA_VERSION = "nebula_one.cbam.trial.v2"
@@ -2339,6 +2340,15 @@ def build_cbam_trial_v2(
             )
 
     ledger = _dispositions(boundary)
+    variant_ledger = None
+    user_method = (provider_receipt or {}).get("user_calculation_method")
+    if flow_selection is not None and isinstance(user_method, dict):
+        from .cbam_variant_ledger import compile_variant_ledger
+        emission_rules, ledger, variant_ledger = compile_variant_ledger(
+            rules=emission_rules, ledger=ledger, selection=flow_selection,
+            user_method=user_method, base_ref=method_package_ref,
+            base_hash=method_package_sha256,
+        )
     selection = _flow_selection(
         flow_selection,
         method_package_ref=method_package_ref,
@@ -2793,9 +2803,10 @@ def build_cbam_trial_v2(
     counted_coverage = {
         row["exchange_id"]: row for row in coverage_rows if row["disposition"] == "counted"
     }
-    production_tonnes = activity_kg / KG_PER_TONNE
-    direct_tonnes = direct_kg / KG_PER_TONNE
-    direct_specific = direct_tonnes / production_tonnes
+    quantity_basis = legacy_climate_intensity(manifest, counted_kg=direct_kg, product_kg=activity_kg)
+    production_tonnes = quantity_basis['denominator']
+    direct_tonnes = quantity_basis['numerator']
+    direct_specific = quantity_basis['value']
     total_unrounded = direct_specific + (precursor_tonnes if three_component else Decimal("0"))
     partial_result = three_component and (indirect_term.get("value") is None
         or any(row.get("source_coverage_status") == "partial" for row in precursor_rows))
@@ -3018,6 +3029,12 @@ def build_cbam_trial_v2(
             "free_allocation_adjustment_not_calculated": True,
         },
     }
+    if 'accounting_quantity_basis' in manifest:
+        content['direct_quantity_basis_receipt'] = quantity_ratio_receipt(quantity_basis)
+    if variant_ledger is not None:
+        content["user_declared_counted_ledger"] = variant_ledger
+        content["claim_boundary"]["user_declared_variant"] = True
+        content["claim_boundary"]["regulatory_baseline"] = False
     if selection is not None:
         # The report carries the counted set itself, so an export or a reader downstream filters by
         # this record instead of resolving a list of its own from the method package. A trial with no

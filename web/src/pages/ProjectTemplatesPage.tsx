@@ -1,40 +1,39 @@
 import { Alert, Button, Input, Modal, Radio } from '@arco-design/web-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { seedProjectsApi, templateName, type SeedProjectTemplate } from '../api/seedProjects';
-import { openModelingHandoff } from '../api/modeling';
+import { seedProjectsApi, templateName } from '../api/seedProjects';
 import { languageParam, useI18n } from '../i18n';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingState } from '../components/ui/States';
-import { TemplateFinalizePanel } from '../components/TemplateFinalizePanel';
+import { TemplateContextRedirect, templateConfigPath } from './templateConfig/TemplateContextRedirect';
 
 export function ProjectTemplatesPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, lang } = useI18n();
   const seeds = useQuery({queryKey: ['seed-project-templates'], queryFn: seedProjectsApi.catalog});
   const catalog = useQuery({ queryKey: ['casepacks'], queryFn: api.casepacks });
   const [selected, setSelected] = useState<string | null>(null);
-  const edit = useMutation({mutationFn: (item: SeedProjectTemplate) => openModelingHandoff(templateName(item, lang), item.source_model_id, item.source_revision_id ?? undefined, lang)});
-  const editTemplate = (item: SeedProjectTemplate) => {
-    if (window.__NEBULA_ONE_DESKTOP__) { edit.mutate(item); return; }
-    const params = new URLSearchParams({ application: item.source_application_id, model: item.source_model_id, launch: '1', template: '1' });
-    if (item.source_revision_id) params.set('revision', item.source_revision_id);
-    // The modelling app runs on another port, so language is carried in the URL rather than storage.
-    params.set('lang', lang);
-    window.open(`/modeling?${params}`, '_blank', 'noopener,noreferrer');
-  };
+  // Old deep links name a modelling source rather than a template version; they land in the
+  // configuration workspace, which resolves the exact version or asks the reader to choose.
+  const legacy = new URLSearchParams(location.search);
+  if (legacy.get('source')) {
+    return <main className="app-page">
+      <PageHeader title={t('templates.title')} description="" action={<Link className="arco-btn arco-btn-text" to="/templates">{t('tm.backToTemplates')}</Link>} />
+      <TemplateContextRedirect source={legacy.get('source')} model={legacy.get('model')} revision={legacy.get('revision')}
+        tab={legacy.get('template') === '1' ? 'methods' : 'model'} />
+    </main>;
+  }
   return <main className="app-page">
     <PageHeader title={t('templates.title')} description={t('templates.subtitle')} action={<Button onClick={() => navigate('/model-import')}>{t('templates.import')}</Button>} />
     {seeds.isError ? <ErrorState error={seeds.error} onRetry={() => seeds.refetch()} /> : null}
-    {edit.isError ? <ErrorState error={edit.error} /> : null}
-    <div className="template-library-grid">{seeds.data?.items.map(item => <section className="section-panel template-library-card" key={item.id}><h2>{templateName(item, lang)}</h2><p className="template-library-card__summary">{t('templates.summary', { processes: item.process_count, fields: item.field_count })}</p><p className="helper-text">{t('templates.cardHint')}</p><small>{t('templates.version', { version: item.version })}</small><div className="template-library-card__actions"><Button type="primary" onClick={() => setSelected(`seed:${item.id}`)}>{t('templates.newProject')}</Button><Button onClick={() => editTemplate(item)}>{t('templates.editTemplate')}</Button></div></section>)}</div>
+    <div className="template-library-grid">{seeds.data?.items.map(item => <section className="section-panel template-library-card" key={item.id}><h2>{templateName(item, lang)}</h2><p className="template-library-card__summary">{t('templates.summary', { processes: item.process_count, fields: item.field_count })}</p><p className="helper-text">{t('templates.cardHint')}</p><small>{t('templates.version', { version: item.version })}</small><div className="template-library-card__actions"><Button type="primary" onClick={() => setSelected(`seed:${item.id}`)}>{t('templates.newProject')}</Button><Button onClick={() => navigate(templateConfigPath(item.id))}>{t('templates.configure')}</Button></div></section>)}</div>
     {catalog.isLoading ? <LoadingState /> : catalog.isError ? <ErrorState error={catalog.error} onRetry={() => catalog.refetch()} /> : <div className="template-library-grid">{catalog.data?.items.flatMap(pack => pack.applications.filter(item => item.lifecycle_status === 'executable').map(item => {
       const key = `${pack.id}@${pack.version}/${item.id}@${item.version}`;
       return <section className="section-panel template-library-card" key={key}><h2>{item.title}</h2><p className="helper-text">{item.study_frame_title}</p><p>{item.editable_parameter_count ? t('dialog.editableParams', { count: item.editable_parameter_count }) : t('dialog.scaleOnly')}</p><div><small>{t('templates.version', { version: item.version })}</small><Button type="primary" onClick={() => setSelected(key)}>{t('templates.useNew')}</Button></div></section>;
     }))}</div>}
-    <TemplateFinalizePanel />
     {selected !== null ? <ProjectCreateDialog key={selected} initialSelection={selected} onClose={() => setSelected(null)} /> : null}
   </main>;
 }

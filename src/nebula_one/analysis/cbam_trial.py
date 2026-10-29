@@ -6,6 +6,7 @@ from typing import Any
 
 from ..errors import DomainError
 from ..hashing import canonical_json_sha256
+from .accounting_quantity_basis import legacy_climate_intensity, quantity_ratio_receipt
 
 
 SCHEMA_VERSION = "nebula_one.cbam.trial.v1"
@@ -365,9 +366,10 @@ def build_cbam_trial(
             }
         )
 
-    production_tonnes = activity_kg / Decimal("1000")
-    direct_tonnes = direct_kg / Decimal("1000")
-    specific = (direct_tonnes / production_tonnes).quantize(
+    quantity_basis = legacy_climate_intensity(manifest, counted_kg=direct_kg, product_kg=activity_kg)
+    production_tonnes = quantity_basis['denominator']
+    direct_tonnes = quantity_basis['numerator']
+    specific = quantity_basis['value'].quantize(
         Decimal("0.000000000001"), rounding=ROUND_HALF_EVEN
     )
     limitations = (manifest.get("validation_rules") or {}).get("limitations")
@@ -449,4 +451,6 @@ def build_cbam_trial(
             "free_allocation_adjustment_not_calculated": True,
         },
     }
+    if 'accounting_quantity_basis' in manifest:
+        content['direct_quantity_basis_receipt'] = quantity_ratio_receipt(quantity_basis)
     return {**content, "content_sha256": canonical_json_sha256(content)}

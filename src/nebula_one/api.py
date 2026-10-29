@@ -45,6 +45,7 @@ from .casepacks.catalog import CasePackCatalogResponse
 from .services.project_workspace import ProjectInputs, ProjectWorkspaceService
 from .services.seed_projects import SeedProjectCreate, SeedProjectService
 from .services.authored_project_templates import AuthoredProjectTemplateService, PublishAuthoredTemplate
+from .services.template_accounting_methods import TemplateAccountingMethodsService, TemplateMethodCopy, TemplateSave
 from .models import AuthoredProjectTemplate
 from .services.project_background import BackgroundSelection, ProjectBackgroundService
 from .services.project_mapped_background import MappedBackgroundSelection, ProjectMappedBackgroundService
@@ -64,6 +65,38 @@ def seed_project_templates(request: Request):
 @router.post('/api/v1/project-templates/authored')
 def publish_authored_project_template(payload: PublishAuthoredTemplate, request: Request):
     return AuthoredProjectTemplateService(_container(request)).publish(payload)
+
+
+@router.get("/api/v1/project-templates/{template_id}/accounting-methods")
+def template_accounting_methods(template_id: str, request: Request, lang: str | None = None):
+    """The accounting methods one exact template version binds, with their real rule sources."""
+    return TemplateAccountingMethodsService(_container(request)).read(template_id, read_language(lang))
+
+
+@router.post("/api/v1/project-templates/{template_id}/accounting-methods/copy", status_code=201)
+def copy_template_accounting_method(template_id: str, payload: TemplateMethodCopy, request: Request):
+    """Copy one official scheme of this exact template version into an editable user draft.
+
+    The official package stays immutable; the copy is an ordinary draft method on the template's
+    own source revision, carrying exactly the rules the package declares plus its stated gaps.
+    """
+    return TemplateAccountingMethodsService(_container(request)).copy_official(template_id, payload)
+
+
+@router.get("/api/v1/project-templates/{template_id}/save-plan")
+def template_save_plan(template_id: str, request: Request):
+    """What saving this exact template version as the reader's own would freeze, before they choose."""
+    return TemplateAccountingMethodsService(_container(request)).save_plan(template_id)
+
+
+@router.post("/api/v1/project-templates/{template_id}/save-template", status_code=201)
+def save_template_as_mine(template_id: str, payload: TemplateSave, request: Request):
+    """Save this template version, with the reader's checked working methods, through the finalize service.
+
+    The source application, model revision and package pins come from the template being saved, so the
+    reader names only the new template and which of their own schemes it carries.
+    """
+    return TemplateAccountingMethodsService(_container(request)).save_as_template(template_id, payload)
 
 
 @router.post('/api/v1/project-templates/{installation_id}/projects')

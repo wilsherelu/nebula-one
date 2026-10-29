@@ -1,4 +1,4 @@
-import { Button, Radio } from '@arco-design/web-react';
+import { Button, Modal, Radio } from '@arco-design/web-react';
 import { IconExpand } from '@arco-design/web-react/icon';
 import { useEffect, useState } from 'react';
 import { ErrorState, LoadingState } from './ui/States';
@@ -25,6 +25,7 @@ export function SankeyViewer({
 }: SankeyViewerProps) {
   const { t } = useI18n();
   const [attempt, setAttempt] = useState(0);
+  const [expanded, setExpanded] = useState(false);
   const [zoom, setZoom] = useState(defaultZoom);
   const [naturalWidth, setNaturalWidth] = useState<number>();
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -34,6 +35,7 @@ export function SankeyViewer({
     setAttempt(0);
     setZoom(defaultZoom);
     setNaturalWidth(undefined);
+    setExpanded(false);
   }, [src, defaultZoom]);
 
   const retry = () => {
@@ -55,9 +57,7 @@ export function SankeyViewer({
           type="text"
           size="small"
           icon={<IconExpand />}
-          href={src}
-          target="_blank"
-          rel="noreferrer"
+          onClick={() => setExpanded(true)}
         >
           {t('cbam.openChart')}
         </Button>
@@ -80,6 +80,16 @@ export function SankeyViewer({
           onError={() => setState('error')}
         />
       </div>
+      <Modal visible={expanded} title={alt} footer={null} onCancel={() => setExpanded(false)}
+        escToExit unmountOnExit maskClosable={false} className="sankey-fullscreen"
+        style={{ width: '100vw', height: '100dvh', top: 0, margin: 0 }}>
+        <Button className="sankey-fullscreen__exit" type="primary" onClick={() => setExpanded(false)}>
+          {t('mfa.exitFullscreen')}
+        </Button>
+        <div className="sankey-fullscreen__viewport" tabIndex={0} aria-label={viewportLabel ?? t('mfa.chartViewport')}>
+          <img src={imageSrc} alt={alt} style={naturalWidth ? { width: Math.ceil(naturalWidth * readableScale) } : undefined} />
+        </div>
+      </Modal>
     </div>
   );
 }

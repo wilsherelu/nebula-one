@@ -186,6 +186,8 @@ def resolve_purpose_derivation(
     project_background_pins: list[dict[str, Any]] | None = None,
     lcia_methods: list[str] | None = None,
     pinned_basis: dict[str, Any] | None = None,
+    user_selection: dict[str, Any] | None = None,
+    pinned_rules_ref: dict[str, Any] | None = None,
 ) -> PurposeDerivation:
     """Derive one purpose's calculation model and the identity that makes the answer replayable."""
     template = template_identity(revision, application)
@@ -229,7 +231,12 @@ def resolve_purpose_derivation(
             )
     from .returned_cbam_binding import _identity_graph
     if pinned is None:
-        pinned = (revision.application_context or {}).get("project_inputs", {}).get("model_processing_rules_ref")
+        # A new run: a user variant's exact bound package (pinned_rules_ref) is the pin; otherwise the
+        # project's forward pin; otherwise the automatic official selection. An accepted/recovered run
+        # never reaches here, because it carries its own basis pin above.
+        pinned = pinned_rules_ref or (
+            revision.application_context or {}
+        ).get("project_inputs", {}).get("model_processing_rules_ref")
     rules = _resolve_rules(template, pinned,
                            canonical_json_sha256(_identity_graph(revision.graph_snapshot)),
                            revision.graph_snapshot)
@@ -246,6 +253,7 @@ def resolve_purpose_derivation(
         background_process_pins=background_process_pins,
         mapped_background_process_pins=mapped_background_process_pins,
         project_background_pins=project_background_pins,
+        user_selection=user_selection,
     )
     basis: dict[str, Any] = {
         "schema_version": DERIVATION_BASIS_SCHEMA_VERSION,
@@ -270,6 +278,18 @@ def resolve_purpose_derivation(
     }
     if derived.project_background_pins:
         basis["effective_project_background_pins"] = _sorted_pins(derived.project_background_pins)
+    # The variant's exact identity is part of the calculation basis, so a recovered run re-derives
+    # the same narrowed model and two different variants never share a frozen answer or a cache.
+    if user_selection is not None:
+        basis["user_calculation_method"] = {
+            "source": user_selection.get("source"),
+            "rules_sha256": canonical_json_sha256(user_selection.get("rules") or []),
+            # The compiled plan and the compiler that produced it are part of what this answer means,
+            # so a variant's narrowing is identified by more than its rule text: two compiler versions
+            # or two plans never share a frozen basis, and recovery that recompiles differently drifts.
+            "execution_plan_sha256": user_selection.get("execution_plan_sha256"),
+            "compiler_version": user_selection.get("compiler_version"),
+        }
     basis_sha256 = canonical_json_sha256(basis)
     if pinned_basis is not None:
         pinned_without_hash = {

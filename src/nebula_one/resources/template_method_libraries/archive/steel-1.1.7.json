@@ -1,0 +1,56 @@
+{
+  "schema_version": "nebula_one.template-method-library.v1",
+  "id": "steel-bf-bof-accounting",
+  "version": "1.1.7",
+  "template_profile": {
+    "id": "steel-bf-bof-inventory",
+    "version": "1.1.4",
+    "content_sha256": "70a62e4442d8fa127d25fce2b19c1110ec6bd82afaa47fa2df6b5ca93caa8829"
+  },
+  "methods": [
+    {
+      "package_id": "pcf.iron-steel.native-model-boundary",
+      "version": "1.0.3",
+      "content_sha256": "4d279b79530e6e1c3d2f847557d724963279e56ae7577c2bbc8f57a535e28f42"
+    },
+    {
+      "package_id": "ghg.iron-steel.organization-period-model",
+      "version": "1.0.6",
+      "content_sha256": "04b6ebb78952a8be54d2ffe78bc931ddbb923de0e59ff651e27613eeff8f3cd6"
+    },
+    {
+      "package_id": "nebula.organization-lifecycle-carbon.steel-model",
+      "version": "1.0.10",
+      "content_sha256": "0f223a844ab95e50a01a72bd7e5de5944484a5ff36a32d4977c2a2142dd8ae4f"
+    },
+    {
+      "package_id": "cbam.eu.iron-steel.bf-bof-partial-review",
+      "version": "1.0.7",
+      "content_sha256": "e39533e280f7322e85e01b371c5d20fded59494a9ff5959da9176a3dcad3839d"
+    }
+  ],
+  "tasks": [
+    {
+      "role": "complete_model",
+      "default_ref": "pcf.iron-steel.native-model-boundary@1.0.3",
+      "refs": [
+        "pcf.iron-steel.native-model-boundary@1.0.3"
+      ]
+    },
+    {
+      "role": "cbam",
+      "default_ref": "cbam.eu.iron-steel.bf-bof-partial-review@1.0.7",
+      "refs": [
+        "cbam.eu.iron-steel.bf-bof-partial-review@1.0.7"
+      ]
+    },
+    {
+      "role": "scope_classification",
+      "default_ref": "nebula.organization-lifecycle-carbon.steel-model@1.0.10",
+      "refs": [
+        "nebula.organization-lifecycle-carbon.steel-model@1.0.10",
+        "ghg.iron-steel.organization-period-model@1.0.6"
+      ]
+    }
+  ]
+}

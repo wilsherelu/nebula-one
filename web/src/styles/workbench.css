@@ -44,6 +44,8 @@
 .analysis-context strong { color: var(--no-color-text); font-weight: 600; }
 .analysis-context > span { display: inline-flex; gap: var(--no-space-2); align-items: center; min-width: 0; }
 .analysis-context .arco-select { width: 180px; }
+.analysis-context__method strong { color: var(--no-color-accent, #165dff); }
+.analysis-context__grouping { flex-basis: 100%; display: flex; flex-direction: column; gap: 4px; color: var(--no-color-text-secondary); font-size: 13px; }
 .result-snapshot-head { border: 0; padding: 0 0 var(--no-space-3); min-height: 40px; background: transparent; align-items: center; }
 .result-snapshot-head__select { width: min(420px, 100%); display: flex; align-items: center; }
 .result-snapshot-head__select label { flex-shrink: 0; }

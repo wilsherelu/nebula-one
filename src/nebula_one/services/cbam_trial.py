@@ -20,6 +20,7 @@ from .model_processing_runtime import (
     flow_selection_of,
     resolve_purpose_derivation,
 )
+from .method_execution_contract import recover_cbam_user_selection
 from .runtime_support import require_method_package
 
 V1_SCHEMA_VERSION = "nebula_one.cbam.trial.v1"
@@ -332,11 +333,23 @@ class CbamTrialService:
                 status_code=409,
                 details={"system_revision_id": snapshot.system_revision_id},
             )
+        purpose = str(parameters.get("calculation_purpose") or "")
+        # A variant's narrowed basis folds a user_calculation_method identity the solve recorded, so
+        # reading the answer back must re-derive under the very same overlay or the reproduction
+        # drifts. It is rebuilt through the same shared execution contract the solve and worker
+        # recovery use; a whole-model run named no version and so has no overlay (returns None).
+        user_selection = recover_cbam_user_selection(
+            db,
+            application_id=model.application_id,
+            system_revision_id=revision.id,
+            purpose=purpose,
+            parameters=parameters,
+        )
         return resolve_purpose_derivation(
             db,
             revision=revision,
             application=db.get(Application, model.application_id),
-            purpose=str(parameters.get("calculation_purpose") or ""),
+            purpose=purpose,
             demand=parameters.get("demand") or [],
             background_process_pins=parameters.get("background_process_pins") or [],
             mapped_background_process_pins=parameters.get("mapped_background_process_pins")
@@ -344,6 +357,7 @@ class CbamTrialService:
             project_background_pins=parameters.get("project_background_pins") or [],
             lcia_methods=parameters.get("lcia_methods"),
             pinned_basis=basis,
+            user_selection=user_selection,
         )
 
     @staticmethod

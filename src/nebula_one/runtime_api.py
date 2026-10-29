@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Query, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 from .container import Container
 from .analysis.cbam_trial_v2 import SCHEMA_VERSION as CBAM_TRIAL_V2_SCHEMA_VERSION
@@ -22,6 +26,16 @@ from .runtime_schemas import (
     AnalysisPlanOut,
     BoundaryDefinitionCreate,
     BoundaryDefinitionOut,
+    CalculationMethodClone,
+    CalculationMethodCreate,
+    CalculationMethodDetailOut,
+    CalculationMethodCapabilitiesOut,
+    CalculationMethodOut,
+    CalculationMethodSave,
+    CalculationMethodValidationOut,
+    CalculationMethodVersionOut,
+    ClassificationSuggestionsOut,
+    ProcessingPackageOptionOut,
     ComparisonCreate,
     ComparisonOut,
     EntityCreate,
@@ -44,6 +58,8 @@ from .runtime_schemas import (
     InventorySnapshotOut,
     MethodPackageCreate,
     MethodPackageOut,
+    MethodPackageBindingCreate,
+    MethodPackageBindingOut,
     CarbonManagementCreate,
     CarbonManagementOut,
     CbamTrialCreate,
@@ -93,6 +109,11 @@ from .runtime_schemas import (
     SpatialEnergyOut,
     SpatialDistributionCreate,
     SpatialDistributionOut,
+    ResultCategoryConversionCreate,
+    ResultCategoryConversionOptions,
+    ResultCategoryConversionPreviewOut,
+    TagGroupingOut,
+    TagGroupingRequest,
 )
 
 
@@ -110,6 +131,19 @@ def register_method_package(
     return MethodPackageOut.model_validate(
         _container(request).registry.register_method_package(payload)
     )
+
+
+@router.post(
+    "/applications/{application_id}/method-package-bindings",
+    response_model=MethodPackageBindingOut,
+)
+def bind_application_method_package(
+    application_id: str, payload: MethodPackageBindingCreate, request: Request
+) -> MethodPackageBindingOut:
+    refs = _container(request).registry.bind_method_package(
+        application_id, payload.reference
+    )
+    return MethodPackageBindingOut(application_id=application_id, method_package_refs=refs)
 
 
 @router.get("/method-packages", response_model=list[MethodPackageOut])
@@ -211,6 +245,237 @@ def freeze_boundary(boundary_id: str, request: Request) -> BoundaryDefinitionOut
     return BoundaryDefinitionOut.model_validate(
         _container(request).registry.freeze_boundary(boundary_id)
     )
+
+
+@router.post(
+    "/applications/{application_id}/calculation-methods",
+    response_model=CalculationMethodDetailOut,
+    status_code=201,
+)
+def create_calculation_method(
+    application_id: str, payload: CalculationMethodCreate, request: Request
+) -> CalculationMethodDetailOut:
+    service = _container(request).calculation_methods
+    method = service.create_method(application_id, payload)
+    return CalculationMethodDetailOut.model_validate(service.build_detail(method))
+
+
+@router.get(
+    "/applications/{application_id}/calculation-methods",
+    response_model=list[CalculationMethodOut],
+)
+def list_calculation_methods(
+    application_id: str,
+    request: Request,
+    model_revision_id: str | None = Query(default=None),
+) -> list[CalculationMethodOut]:
+    service = _container(request).calculation_methods
+    return [
+        CalculationMethodOut.model_validate(method)
+        for method in service.list_methods(application_id, model_revision_id)
+    ]
+
+
+@router.get(
+    "/calculation-methods/{method_id}", response_model=CalculationMethodDetailOut
+)
+def get_calculation_method(method_id: str, request: Request) -> CalculationMethodDetailOut:
+    service = _container(request).calculation_methods
+    method = service.require_method(method_id)
+    return CalculationMethodDetailOut.model_validate(service.build_detail(method))
+
+
+@router.get(
+    "/calculation-methods/{method_id}/versions/{version}",
+    response_model=CalculationMethodVersionOut,
+)
+def get_calculation_method_version(
+    method_id: str, version: int, request: Request
+) -> CalculationMethodVersionOut:
+    service = _container(request).calculation_methods
+    service.require_method(method_id)
+    record = service.get_version(method_id, version)
+    if record is None:
+        raise DomainError(
+            code="CALCULATION_METHOD_VERSION_NOT_FOUND",
+            message=f"calculation method version not found: {method_id}@{version}",
+            status_code=404,
+        )
+    return CalculationMethodVersionOut.model_validate(record)
+
+
+@router.put(
+    "/calculation-methods/{method_id}/versions/{version}",
+    response_model=CalculationMethodDetailOut,
+)
+def save_calculation_method_version(
+    method_id: str, version: int, payload: CalculationMethodSave, request: Request
+) -> CalculationMethodDetailOut:
+    service = _container(request).calculation_methods
+    method = service.save_method_version(method_id, version, payload)
+    return CalculationMethodDetailOut.model_validate(service.build_detail(method))
+
+
+@router.post(
+    "/calculation-methods/{method_id}/versions/{version}/clone",
+    response_model=CalculationMethodDetailOut,
+    status_code=201,
+)
+def clone_calculation_method(
+    method_id: str, version: int, payload: CalculationMethodClone, request: Request
+) -> CalculationMethodDetailOut:
+    service = _container(request).calculation_methods
+    method = service.clone_method(method_id, version, payload)
+    return CalculationMethodDetailOut.model_validate(service.build_detail(method))
+
+
+@router.post(
+    "/calculation-methods/{method_id}/versions/{version}/validate",
+    response_model=CalculationMethodValidationOut,
+)
+def validate_calculation_method_version(
+    method_id: str, version: int, request: Request
+) -> CalculationMethodValidationOut:
+    service = _container(request).calculation_methods
+    return CalculationMethodValidationOut.model_validate(
+        service.validate_version(method_id, version)
+    )
+
+
+@router.get(
+    "/calculation-methods/{method_id}/versions/{version}/classification-suggestions",
+    response_model=ClassificationSuggestionsOut,
+)
+def list_classification_suggestions(
+    method_id: str, version: int, request: Request
+) -> ClassificationSuggestionsOut:
+    service = _container(request).calculation_methods
+    return ClassificationSuggestionsOut.model_validate(
+        service.classification_suggestions(method_id, version)
+    )
+
+
+@router.get(
+    "/calculation-methods/{method_id}/capabilities",
+    response_model=CalculationMethodCapabilitiesOut,
+)
+def get_calculation_method_capabilities(
+    method_id: str, request: Request
+) -> CalculationMethodCapabilitiesOut:
+    service = _container(request).calculation_methods
+    return CalculationMethodCapabilitiesOut.model_validate(service.capabilities(method_id))
+
+
+@router.get(
+    "/calculation-methods/{method_id}/versions/{version}/conversion-preview",
+    response_model=ResultCategoryConversionPreviewOut,
+)
+def preview_result_category_conversion(
+    method_id: str, version: int, request: Request
+) -> ResultCategoryConversionPreviewOut:
+    service = _container(request).calculation_methods
+    return ResultCategoryConversionPreviewOut.model_validate(
+        service.conversion_preview(method_id, version)
+    )
+
+
+@router.post(
+    "/calculation-methods/{method_id}/versions/{version}/conversion-preview",
+    response_model=ResultCategoryConversionPreviewOut,
+)
+def preview_result_category_conversion_mapping(
+    method_id: str,
+    version: int,
+    payload: ResultCategoryConversionOptions,
+    request: Request,
+) -> ResultCategoryConversionPreviewOut:
+    """Preview the same mapping the apply would use, including per-rule repair decisions."""
+    service = _container(request).calculation_methods
+    return ResultCategoryConversionPreviewOut.model_validate(
+        service.conversion_preview(method_id, version, payload.model_dump(mode="json"))
+    )
+
+
+@router.post(
+    "/calculation-methods/{method_id}/versions/{version}/convert",
+    response_model=CalculationMethodDetailOut,
+    status_code=201,
+)
+def convert_to_result_category(
+    method_id: str,
+    version: int,
+    payload: ResultCategoryConversionCreate,
+    request: Request,
+) -> CalculationMethodDetailOut:
+    service = _container(request).calculation_methods
+    method = service.convert_to_result_category(method_id, version, payload)
+    return CalculationMethodDetailOut.model_validate(service.build_detail(method))
+
+
+@router.post(
+    "/calculation-methods/{method_id}/archive",
+    response_model=CalculationMethodOut,
+)
+def archive_calculation_method(
+    method_id: str, request: Request
+) -> CalculationMethodOut:
+    return CalculationMethodOut.model_validate(
+        _container(request).calculation_methods.archive_method(method_id)
+    )
+
+
+@router.get(
+    "/calculation-methods/{method_id}/selectable-processing-packages",
+    response_model=list[ProcessingPackageOptionOut],
+)
+def list_selectable_processing_packages(
+    method_id: str, request: Request
+) -> list[ProcessingPackageOptionOut]:
+    service = _container(request).calculation_methods
+    return [
+        ProcessingPackageOptionOut.model_validate(option)
+        for option in service.list_selectable_processing_packages(method_id)
+    ]
+
+
+@router.post(
+    "/applications/{application_id}/tag-grouping",
+    response_model=TagGroupingOut,
+)
+def group_by_tag_schemes(
+    application_id: str, payload: TagGroupingRequest, request: Request
+) -> JSONResponse:
+    # Replayed results must keep their frozen shape; current schema defaults would change the
+    # hashed content of records saved by older versions.
+    return JSONResponse(jsonable_encoder(
+        _container(request).tag_grouping.group_for_snapshot(application_id, payload)
+    ))
+
+
+@router.get("/applications/{application_id}/tag-grouping-results", response_model=list[TagGroupingOut])
+def list_tag_grouping_results(application_id: str, request: Request, snapshot_id: str | None = None):
+    return JSONResponse(jsonable_encoder(
+        _container(request).tag_grouping.list_results(application_id, snapshot_id)
+    ))
+
+
+@router.get("/applications/{application_id}/tag-grouping-results/{result_id}", response_model=TagGroupingOut)
+def read_tag_grouping_result(application_id: str, result_id: str, request: Request):
+    return JSONResponse(jsonable_encoder(
+        _container(request).tag_grouping.read_result(application_id, result_id)
+    ))
+
+
+@router.get("/applications/{application_id}/tag-grouping-results/{result_id}/export")
+def export_tag_grouping_result(application_id: str, result_id: str, request: Request,
+                              format: Literal["html", "json"] = "html"):
+    import json
+    from .exports.tag_grouping import render_tag_grouping_html
+
+    result = jsonable_encoder(_container(request).tag_grouping.read_result(application_id, result_id))
+    content = render_tag_grouping_html(result) if format == "html" else json.dumps(result, ensure_ascii=False, indent=2)
+    return Response(content, media_type="text/html" if format == "html" else "application/json",
+                    headers={"Content-Disposition": f'attachment; filename="tag-result-{result_id}.{format}"'})
 
 
 @router.post(
@@ -630,6 +895,7 @@ def default_product_carbon_footprint_method(solved_snapshot_id: str, request: Re
 @router.post(
     "/solved-system-snapshots/{solved_snapshot_id}/product-carbon-footprint",
     response_model=ProductCarbonFootprintOut,
+    response_model_exclude_unset=True,
 )
 def analyze_product_carbon_footprint(
     solved_snapshot_id: str,
@@ -666,10 +932,15 @@ def get_product_carbon_footprint_chart(
     solved_snapshot_id: str,
     request: Request,
     method_package_ref: str = Query(min_length=3, max_length=320),
+    result_basis: Literal["total", "per_reference_output"] = Query("total"),
+    base_amount: float | None = Query(None, gt=0),
+    base_unit: str | None = Query(None),
 ) -> Response:
     result = _container(request).product_carbon_footprints.analyze(
         solved_snapshot_id,
-        ProductCarbonFootprintCreate(method_package_ref=method_package_ref),
+        ProductCarbonFootprintCreate(method_package_ref=method_package_ref,
+                                     result_basis=result_basis,
+                                     base_amount=base_amount, base_unit=base_unit),
     )
     return Response(
         content=render_product_pcf_svg(result), media_type="image/svg+xml"
@@ -683,10 +954,15 @@ def export_product_carbon_footprint_xlsx(
     solved_snapshot_id: str,
     request: Request,
     method_package_ref: str = Query(min_length=3, max_length=320),
+    result_basis: Literal["total", "per_reference_output"] = Query("total"),
+    base_amount: float | None = Query(None, gt=0),
+    base_unit: str | None = Query(None),
 ) -> Response:
     content, result = _container(request).product_carbon_footprints.export_xlsx(
         solved_snapshot_id,
-        ProductCarbonFootprintCreate(method_package_ref=method_package_ref),
+        ProductCarbonFootprintCreate(method_package_ref=method_package_ref,
+                                     result_basis=result_basis,
+                                     base_amount=base_amount, base_unit=base_unit),
     )
     result_hash = result["content_sha256"]
     return Response(
@@ -707,10 +983,15 @@ def report_product_carbon_footprint_html(
     solved_snapshot_id: str,
     request: Request,
     method_package_ref: str = Query(min_length=3, max_length=320),
+    result_basis: Literal["total", "per_reference_output"] = Query("total"),
+    base_amount: float | None = Query(None, gt=0),
+    base_unit: str | None = Query(None),
 ) -> Response:
     content, result = _container(request).product_carbon_footprints.report_html(
         solved_snapshot_id,
-        ProductCarbonFootprintCreate(method_package_ref=method_package_ref),
+        ProductCarbonFootprintCreate(method_package_ref=method_package_ref,
+                                     result_basis=result_basis,
+                                     base_amount=base_amount, base_unit=base_unit),
     )
     result_hash = result["content_sha256"]
     return Response(

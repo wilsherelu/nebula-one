@@ -5,9 +5,10 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
 import { api } from '../api/client';
 import { seedProjectsApi } from '../api/seedProjects';
-import type { Application, BackgroundProcessPin, MappedBackgroundProcessPin, MethodPackage, ProjectWorkspace, SolvedSystemSnapshot, SystemModel, SystemRevision } from '../api/types';
+import type { Application, BackgroundProcessPin, CalculationMethod, CalculationMethodDetail, CalculationMethodVersion, MappedBackgroundProcessPin, MethodPackage, ProjectWorkspace, SolvedSystemSnapshot, SystemModel, SystemRevision } from '../api/types';
 import { ProjectWorkspacePage } from './ProjectWorkspacePage';
 import { ProjectHistoryPage } from './ProjectHistoryPage';
+import { solveIdempotencyKey } from '../calculation/solveContract';
 
 const application: Application = {
   id: 'app-steel', name: '钢铁 BF-BOF 粗钢', application_type: 'system_analysis', description: null,
@@ -208,7 +209,7 @@ it('saves an edited inventory before solving against the returned exact revision
   await waitFor(() => expect(save).toHaveBeenCalledOnce());
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
   expect(solve.mock.calls[0][1]).toBe('r3');
-  expect(solve.mock.calls[0][2].idempotency_key).toContain(`r3:${'d'.repeat(64)}`);
+  expect(solve.mock.calls[0][2].idempotency_key).toBe(await solveIdempotencyKey('mfa', 'r3', 'd'.repeat(64)));
 });
 
 it('keeps a failed save as a draft and never starts a solve', async () => {
@@ -243,7 +244,7 @@ it('requests the server-pinned EF climate default for PCF without choosing a cat
   expect(payload.climate_default).toBe(true);
   expect(payload.lcia_methods).toBeUndefined();
   expect(payload.native_background_climate).toBeUndefined();
-  expect(payload.idempotency_key).toBe(`calc-v2-pcf:r2:${'c'.repeat(64)}`);
+  expect(payload.idempotency_key).toBe(await solveIdempotencyKey('pcf', 'r2', 'c'.repeat(64)));
 });
 
 it('uses a new idempotency key when an operator retries a failed solve on the same revision', async () => {
@@ -256,7 +257,7 @@ it('uses a new idempotency key when an operator retries a failed solve on the sa
   expect(await screen.findByText('上游计算暂时失败')).toBeInTheDocument();
   fireEvent.click(button);
   await waitFor(() => expect(solve).toHaveBeenCalledTimes(2));
-  const base = `calc-v2-pcf:r2:${'c'.repeat(64)}`;
+  const base = await solveIdempotencyKey('pcf', 'r2', 'c'.repeat(64));
   expect(solve.mock.calls.map(call => call[2].idempotency_key)).toEqual([base, `${base}:retry-1`]);
 });
 
@@ -266,7 +267,7 @@ it('uses the method-independent native inventory for mapped-background MFA', asy
   fireEvent.click(await screen.findByRole('button', { name: '核算' }));
   fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
-  expect(solve.mock.calls[0][2].idempotency_key).toBe(`calc-v2-mfa:r2:${'c'.repeat(64)}`);
+  expect(solve.mock.calls[0][2].idempotency_key).toBe(await solveIdempotencyKey('mfa', 'r2', 'c'.repeat(64)));
   expect(solve.mock.calls[0][2].native_background_inventory).toBe(true);
   expect(solve.mock.calls[0][2].native_background_climate).toBeUndefined();
 });
@@ -370,4 +371,92 @@ it('routes a return that descends from a reviewed template into the fillable wor
   fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
   await waitFor(() => expect(solve).toHaveBeenCalledOnce());
   expect(solve.mock.calls[0][2]).toMatchObject({ calculation_purpose: 'lca', climate_default: true });
+});
+
+const pcfUserMethod: CalculationMethod = {
+  id: 'm-pcf', application_id: 'app-steel', model_revision_id: 'r2', purpose: 'pcf',
+  name: '我的产品碳足迹方法', description: null, origin_method_id: null, status: 'active',
+  created_at: '2026-09-22T00:00:00Z', updated_at: '2026-09-22T00:00:00Z',
+};
+
+function pcfDetailWithReadyVersion(ready: boolean): CalculationMethodDetail {
+  const version: CalculationMethodVersion = {
+    id: 'v2', method_id: 'm-pcf', version: 2, cbam_boundary_ref: null, content_sha256: 'a'.repeat(64),
+    status: ready ? 'ready' : 'draft', created_at: '2026-09-23T00:00:00Z', validated_at: ready ? '2026-09-23T00:00:00Z' : null, rules: [],
+  };
+  return { method: pcfUserMethod, latest_version: 2, versions: [version] };
+}
+
+it('freezes a checked user method against its exact version alongside the climate default', async () => {
+  vi.spyOn(api, 'calculationMethods').mockResolvedValue([pcfUserMethod]);
+  vi.spyOn(api, 'calculationMethod').mockResolvedValue(pcfDetailWithReadyVersion(true));
+  const validate = vi.spyOn(api, 'validateCalculationMethodVersion').mockResolvedValue({
+    method_id: 'm-pcf', version: 2, model_revision_id: 'r2', content_sha256: 'a'.repeat(64),
+    valid: true, status: 'ready', validated_at: '2026-09-23T00:00:00Z', problems: [],
+  });
+  const solve = vi.spyOn(api, 'solveAndFreeze').mockResolvedValue(climateSnapshot);
+  mountClimate({ ...workspace, capabilities: ['mfa.solved.v1', 'pcf.product.v1'] });
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  await userEvent.click(await screen.findByRole('combobox', { name: '计算所用方法' }));
+  fireEvent.click(await screen.findByText('我的产品碳足迹方法'));
+  // Calculation is blocked until the exact version is explicitly checked and used.
+  expect(screen.getByRole('button', { name: '开始计算' })).toBeDisabled();
+  const checkButton = await screen.findByRole('button', { name: '检查并使用' });
+  await waitFor(() => expect(checkButton).not.toBeDisabled());
+  fireEvent.click(checkButton);
+  await waitFor(() => expect(validate).toHaveBeenCalledWith('m-pcf', 2));
+  await waitFor(() => expect(screen.getByRole('button', { name: '开始计算' })).not.toBeDisabled());
+  expect(screen.getByText(/当前生效方案/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '开始计算' }));
+  await waitFor(() => expect(solve).toHaveBeenCalledOnce());
+  const payload = solve.mock.calls[0][2];
+  expect(payload.calculation_method_ref).toEqual({ method_id: 'm-pcf', version: 2, content_sha256: 'a'.repeat(64) });
+  expect(payload.analysis_task).toBe('pcf');
+  // The user method only groups contributions; it never carries emission factors, so the climate
+  // task must still send its characterized method package (verified against the live backend,
+  // which rejects a climate task without one).
+  expect(payload.climate_default).toBe(true);
+  expect(payload.idempotency_key).toBe(await solveIdempotencyKey('pcf', 'r2', 'c'.repeat(64), payload.calculation_method_ref));
+});
+
+it('refuses to compute when the checked version fails validation and never solves', async () => {
+  vi.spyOn(api, 'calculationMethods').mockResolvedValue([pcfUserMethod]);
+  vi.spyOn(api, 'calculationMethod').mockResolvedValue(pcfDetailWithReadyVersion(false));
+  vi.spyOn(api, 'validateCalculationMethodVersion').mockResolvedValue({
+    method_id: 'm-pcf', version: 2, model_revision_id: 'r2', content_sha256: null,
+    valid: false, status: 'draft', validated_at: '2026-09-23T00:00:00Z',
+    problems: [{ code: 'missing_factor', message: '缺少特征化因子', rule_index: 0, process_instance_id: 'p-sintering', exchange_id: 'p-sintering::e3' }],
+  });
+  const solve = vi.spyOn(api, 'solveAndFreeze');
+  mountClimate({ ...workspace, capabilities: ['mfa.solved.v1', 'pcf.product.v1'] });
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  await userEvent.click(await screen.findByRole('combobox', { name: '计算所用方法' }));
+  fireEvent.click(await screen.findByText('我的产品碳足迹方法'));
+  const checkButton = await screen.findByRole('button', { name: '检查并使用' });
+  await waitFor(() => expect(checkButton).not.toBeDisabled());
+  fireEvent.click(checkButton);
+  expect(await screen.findByText('检查未通过，请修正下列定位后再计算。')).toBeInTheDocument();
+  // The located problem names the specific process and flow so the operator knows what to fix.
+  expect(await screen.findByText(/缺少特征化因子/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '开始计算' })).toBeDisabled();
+  expect(solve).not.toHaveBeenCalled();
+});
+
+it('checks the newly saved draft rather than silently defaulting to an older ready version', async () => {
+  vi.spyOn(api, 'calculationMethods').mockResolvedValue([pcfUserMethod]);
+  const detail = pcfDetailWithReadyVersion(false);
+  detail.versions.push({ ...detail.versions[0], id: 'v1', version: 1, status: 'ready', content_sha256: 'b'.repeat(64) });
+  vi.spyOn(api, 'calculationMethod').mockResolvedValue(detail);
+  const validate = vi.spyOn(api, 'validateCalculationMethodVersion').mockResolvedValue({
+    method_id: 'm-pcf', version: 2, model_revision_id: 'r2', content_sha256: 'a'.repeat(64),
+    valid: true, status: 'ready', validated_at: '2026-10-15', problems: [],
+  });
+  mountClimate({ ...workspace, capabilities: ['mfa.solved.v1', 'pcf.product.v1'] });
+  fireEvent.click(await screen.findByRole('button', { name: '核算' }));
+  await userEvent.click(await screen.findByRole('combobox', { name: '计算所用方法' }));
+  fireEvent.click(await screen.findByText('我的产品碳足迹方法'));
+  const checkButton = await screen.findByRole('button', { name: '检查并使用' });
+  await waitFor(() => expect(checkButton).not.toBeDisabled());
+  fireEvent.click(checkButton);
+  await waitFor(() => expect(validate).toHaveBeenCalledWith('m-pcf', 2));
 });

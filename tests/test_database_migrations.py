@@ -298,3 +298,43 @@ def test_sqlite_auto_create_upgrades_legacy_run_identity_columns(
         )
     finally:
         database.dispose()
+
+
+def test_sqlite_auto_create_adds_bound_processing_ref_to_an_existing_versions_table(
+    tmp_path, monkeypatch
+) -> None:
+    """A new nullable column on an existing runtime table is reconciled, not silently absent.
+
+    ``create_all`` only builds missing tables, so a variant's exact binding would have nowhere to
+    persist on a SQLite runtime whose versions table predates the column. The idempotency guard brings
+    an existing table up without touching its rows - the shared stack's whole point.
+    """
+    monkeypatch.delenv("NEBULA_ONE_DATABASE_URL", raising=False)
+    database_url = f"sqlite:///{(tmp_path / 'versions.db').as_posix()}"
+
+    # A fresh build carries the column; then simulate an older runtime table that never saw it.
+    seed = Database(Settings(database_url=database_url))
+    seed.create_schema()
+    seed.dispose()
+    drop_engine = create_engine(database_url)
+    with drop_engine.begin() as connection:
+        connection.execute(
+            text(
+                "ALTER TABLE calculation_method_versions "
+                "DROP COLUMN model_processing_rules_ref"
+            )
+        )
+    drop_engine.dispose()
+
+    database = Database(Settings(database_url=database_url))
+    try:
+        database.create_schema()
+        columns = {
+            item["name"]
+            for item in inspect(database.engine).get_columns(
+                "calculation_method_versions"
+            )
+        }
+        assert "model_processing_rules_ref" in columns
+    finally:
+        database.dispose()

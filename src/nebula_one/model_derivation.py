@@ -21,6 +21,7 @@ from .model_processing_contract import (
     PackageRef,
 )
 from .errors import DomainError
+from .analysis.cbam_user_selection import narrow_elementary_flow_decisions, variant_narrows
 
 DERIVATION_SCHEMA_VERSION = "nebula_one.model-derivation-record.v1"
 
@@ -234,12 +235,16 @@ class _Derivation:
         rules: ModelProcessingRules,
         purpose: str,
         method_packages: list[dict[str, Any]],
+        user_selection: dict[str, Any] | None = None,
     ) -> None:
         self.source_graph = graph
         self.source_graph_sha256 = canonical_graph_sha256(graph)
         self.rules = rules
         self.purpose = purpose
         self.intent = rules.purpose(purpose)
+        # A user CBAM method variant may only narrow the reviewed emission selection; when absent
+        # the derivation is exactly the reviewed package's, so no reviewed behaviour changes.
+        self.user_selection = user_selection
         self.demand = deepcopy(demand)
         self.saved_pins = {
             "background": deepcopy(background_process_pins or []),
@@ -656,6 +661,20 @@ class _Derivation:
             self.classify_emission_exchanges(flows, ports, biosphere)
             return
 
+        # A user CBAM variant can only narrow a boundary the reviewed package classifies per
+        # exchange. A whole-set (pre-limited / identity selector) basis has no per-exchange decision
+        # to take an emission out of, so a variant that excludes one must refuse rather than be
+        # answered as though the operator's boundary were applied; a variant that excludes nothing
+        # still runs as the reviewed set.
+        if self.user_selection is not None and variant_narrows(self.user_selection.get("rules")):
+            _refuse(
+                "MODEL_PROCESSING_USER_SELECTION_MODE_UNSUPPORTED",
+                "a user CBAM method variant excludes an emission, but this purpose's reviewed"
+                " basis counts the whole pre-limited emission set and declares no per-exchange"
+                " selection to narrow, so the exclusion cannot be honoured without a reviewed"
+                " re-derivation",
+                mode=flows.mode,
+            )
         evidence = flows.evidence
         package = self.package(evidence.method_package, "elementary_flows")
         manifest = package["manifest"]
@@ -832,6 +851,23 @@ class _Derivation:
                 "the explicit emission classification must be a list of exchange decisions",
                 declaration="elementary_flows",
             )
+        # A user CBAM method variant narrows the reviewed decisions before anything is cut or
+        # counted: an exchange it excludes leaves the counted set exactly as a reviewed exclusion
+        # would, and a variant that would widen or target an undeclared emission refuses closed.
+        if self.user_selection is not None:
+            narrowed = narrow_elementary_flow_decisions(
+                declared,
+                user_rules=self.user_selection.get("rules") or [],
+                source=self.user_selection.get("source") or {},
+            )
+            if not narrowed["valid"]:
+                _refuse(
+                    "MODEL_PROCESSING_USER_SELECTION_INVALID",
+                    "a user CBAM method variant could not narrow the reviewed emission selection"
+                    " without widening it or naming an emission the boundary never declared",
+                    problems=narrowed["problems"],
+                )
+            declared = narrowed["decisions"]
         applicable_gases = (
             _dig(package["manifest"], evidence.applicable_gases_path, "elementary_flows")
             if evidence.applicable_gases_path
@@ -973,6 +1009,16 @@ class _Derivation:
                     for port in (node.get(side) or [])
                     if f"{node['id']}::{port.get('id')}" not in keys
                 ]
+        # The same emission is also listed as an elementary-flow reference the solver resolves against
+        # the inventory it builds, so a dropped port must drop its reference too, or the solver reports
+        # an elementary reference pointing at an exchange no longer present.
+        metadata = self.graph.get("metadata")
+        if isinstance(metadata, dict) and isinstance(metadata.get("elementary_flow_refs"), list):
+            metadata["elementary_flow_refs"] = [
+                ref
+                for ref in metadata["elementary_flow_refs"]
+                if str((ref or {}).get("exchange_id") or "") not in keys
+            ]
 
     def resolve_precursors(self) -> None:
         precursors = self.intent.precursors
@@ -1036,6 +1082,7 @@ def derive_calculation_model(
     background_process_pins: list[dict[str, Any]] | None = None,
     mapped_background_process_pins: list[dict[str, Any]] | None = None,
     project_background_pins: list[dict[str, Any]] | None = None,
+    user_selection: dict[str, Any] | None = None,
 ) -> DerivedCalculationModel:
     """Apply one purpose's reviewed model-processing rules to the stored model."""
     return _Derivation(
@@ -1047,4 +1094,5 @@ def derive_calculation_model(
         rules=rules,
         purpose=purpose,
         method_packages=method_packages,
+        user_selection=user_selection,
     ).run()

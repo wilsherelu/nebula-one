@@ -18,13 +18,25 @@ async function main() {
   const resources = path.join(installation, 'resources/runtime');
   const manifest = JSON.parse(fs.readFileSync(path.join(resources, 'payload-manifest.json')));
   let runtime = new Runtime(resources, data);
-  const startup = await runtime.start();
-  const pids = runtime.children.map(child => child.pid);
   try {
-    const snapshots = await accept(startup.oneOrigin, data, {officialDefaultsOnly:process.argv.includes('--official-defaults')});
+    const startup = await runtime.start();
+    const engineStatus = await (await fetch(startup.lcaOrigin + '/api/desktop/status')).json();
+    assert.equal(engineStatus.runtime.ef31_runtime_source_count, 1, 'Only the installed public runtime may characterize results');
+    const pids = runtime.children.map(child => child.pid);
+    const snapshots = await accept(startup.oneOrigin, data, {
+      officialDefaultsOnly: process.argv.includes('--official-defaults'),
+      resourceDirectory: resources
+    });
+    // The shipped supply resource is read from the installation, never from the source checkout.
+    const supplyResource = path.join(resources, 'src/nebula_one/resources/public_supply/tiangong-china-grid-2022.v1.json');
+    assert.ok(fs.existsSync(supplyResource), 'Packaged installation must carry its own public supply resource');
+    assert.ok(!path.resolve(supplyResource).startsWith(path.join(__dirname, '..')), 'Supply resource must not resolve into the source tree');
     const evidence = JSON.parse(fs.readFileSync(path.join(data, 'four-task-http.json')));
-    const reads = evidence.filter(item => item.method === 'GET'
-      && (item.route.endsWith('/mfa') || /organization-lifecycle-inventories\/[a-f0-9-]+$/.test(item.route)));
+    const reads = [...new Map(evidence.filter(item => item.method === 'GET'
+      && (item.route.endsWith('/mfa') || item.route.endsWith('/solved-system-snapshots')
+        || /organization-lifecycle-inventories\/[a-f0-9-]+$/.test(item.route)))
+      .map(item => [item.route, item])).values()];
+    const pcfReads = evidence.filter(item => item.method === 'POST' && item.route.endsWith('/product-carbon-footprint'));
     await runtime.stop();
     for (const pid of pids) assert.throws(() => process.kill(pid, 0), 'Owned backend must exit');
     runtime = new Runtime(resources, data);
@@ -36,9 +48,16 @@ async function main() {
       if (actual.result) assert.deepEqual(actual.result, record.result.result);
       else assert.deepEqual(actual, record.result);
     }
-    fs.writeFileSync(report, JSON.stringify({status:'passed', installation,
+    for (const record of pcfReads) {
+      const method = record.result.method_package.reference;
+      const response = await fetch(restarted.oneOrigin + record.route, {method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify({method_package_ref:method})});
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), record.result);
+    }
+    fs.writeFileSync(report, JSON.stringify({status:'passed', installation, resources, data,
       one_commit:manifest.one_commit, lca_commit:manifest.lca_commit,
-      snapshots, startup, restarted, persisted_reads:reads.length, original_pids_exited:pids}, null, 2));
+      snapshots, startup, restarted, engineStatus, persisted_reads:reads.length + pcfReads.length, original_pids_exited:pids}, null, 2));
     console.log(JSON.stringify({status:'passed', report}));
   } finally { await runtime.stop(); }
 }

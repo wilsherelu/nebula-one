@@ -93,7 +93,9 @@ export function CbamRuleTrialPanel(props: Props) {
   const isComplex = mode.value !== 'simple';
   const activeMethod = isComplex ? complexMethod : simpleMethod;
   const needsFrozenBoundary = !isComplex && Boolean(activeMethod.value) && props.boundaryRequiredFor.includes(activeMethod.value);
-  const snapshotGraphHash = (props.snapshot.provider_receipt?.snapshot_ref as {graph_hash?: string} | undefined)?.graph_hash;
+  const frozenBasis = props.snapshot.provider_receipt?.calculation_basis as { source_model?: { graph_sha256?: string } } | undefined;
+  const snapshotGraphHash = frozenBasis?.source_model?.graph_sha256
+    ?? (props.snapshot.provider_receipt?.snapshot_ref as {graph_hash?: string} | undefined)?.graph_hash;
   // a frozen boundary that names a period or a package is only a candidate for that same choice;
   // the request would otherwise be refused for reading one year's dispositions under another name.
   const boundaryCandidates = useMemo(() => props.cbamBoundaries.filter((item) => (
@@ -221,6 +223,7 @@ export function CbamRuleTrialPanel(props: Props) {
         </> : null}
       </div> : null}
       {result ? <div className="result-frozen-summary"><span>{result.goods.aggregated_goods_category}</span><span>{periods.data.find(item => item.id === period.value)?.name}</span><span>{t(isComplex ? 'cbam.complexMode' : 'cbam.simpleMode')} · v{activeMethod.value.split('@').at(-1)}</span></div> : null}
+      {result?.claim_boundary?.user_declared_variant === true ? <Alert type="warning" content={t('cbam.userVariantDisclosure')} /> : null}
 
       {isComplex && !props.simpleMethods.length ? <Alert type="warning" title={t('cbam.noPrecursorMethod')} content={t('cbam.noPrecursorMethodNote')} /> : null}
       {isComplex && !precursorSnapshot.value && !precursorReferencesItself ? <Alert type="warning" title={t('cbam.noPrecursorSnapshot')} content={t('cbam.noPrecursorSnapshotNote')} /> : null}

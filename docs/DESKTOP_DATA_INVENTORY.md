@@ -63,6 +63,7 @@ See [retained per-version source declarations](RETAINED_SOURCE_DECLARATIONS.md) 
 | `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/organization-lifecycle-carbon-steel-1.0.7.json` | 8020 | `fcf3b516fe559dd600ef6a6bc52215986bab9bc6f11119164a8ca3d5ecb36a19` |
 | `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.1.json` | 2828 | `a3f0dd2d94f752e8c33654df99f13809873b16f6bd09a196d147d135a62d877f` |
 | `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.2.json` | 3204 | `662426f15693ad386f46c1992ca7930bf492304246784e81137372974e1760ad` |
+| `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/pcf-ef31-foreground-1.0.3.json` | 2989 | `98776027fabde9b6050fcdc78292d259bd828626d30c89d63fb9b18333753f2c` |
 | `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/pcf-ef31-native-model-boundary-1.0.0.json` | 1811 | `ffe4e8aafa33ed7f54e561caf8df405b2fab5f022d9d25b82683aec6af1e508a` |
 | `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/pcf-native-model-boundary-1.0.0.json` | 2060 | `f4f4d7c69c92c1ec010f148eb4f5814eea9979d32fceda214d5772baafb8e029` |
 | `backends/nebula-one-api/_internal/nebula_one/resources/official_methods/pcf-native-model-boundary-1.0.1.json` | 2060 | `f3813ae3649b9e05413a8e68bd633492c1e77f87e5f66cadb1269341988719a8` |

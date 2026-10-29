@@ -66,7 +66,7 @@ def test_real_http_and_sqlite_runtime_smoke(tmp_path, model_graph):
                     raise AssertionError("Nebula One HTTP smoke server did not start")
                 time.sleep(0.05)
 
-            assert health.json()["version"] == "1.0.0rc2"
+            assert health.json()["version"] == "0.1.1"
             application = client.post(
                 "/api/v1/applications",
                 json={

@@ -1,0 +1,90 @@
+{
+  "package_id": "pcf.iron-steel.ef31-model",
+  "version": "1.0.0",
+  "package_kind": "product_carbon_footprint",
+  "jurisdiction": null,
+  "valid_from": null,
+  "valid_to": null,
+  "manifest": {
+    "required_entity_types": [
+      "product",
+      "system_revision",
+      "solved_system_snapshot"
+    ],
+    "required_data_fields": [
+      "structured_product_demand",
+      "lcia_results.indicator_results",
+      "provider_receipt.elementary_flow_receipts"
+    ],
+    "accepted_units": {
+      "functional_unit": "exact demand unit identity",
+      "impact": [
+        "kg CO2-Eq"
+      ]
+    },
+    "boundary_schema": {
+      "claim_scope": "foreground_boundary",
+      "background_completion_required_for_full_declaration": true
+    },
+    "formula_graph": {
+      "source": "solved_system_snapshot.lcia_results",
+      "lcia_method": "EF v3.1",
+      "total_indicator_key": "climate change",
+      "component_indicator_keys": [],
+      "result_unit": "kg CO2-Eq",
+      "aggregation": "provider_total_no_recalculation"
+    },
+    "classification_rules": {
+      "elementary_flows": "provider exact Flow receipts",
+      "technosphere_flows": "TIDAS or explicitly versioned foreground Flow identity"
+    },
+    "default_value_rules": {
+      "allowed": false
+    },
+    "validation_rules": {
+      "fail_closed": [
+        "missing structured functional unit",
+        "missing or ambiguous total indicator",
+        "impact unit mismatch",
+        "missing elementary Flow receipts"
+      ],
+      "limitations": [
+        "This result is not a complete product declaration.",
+        "Missing background closure must not be replaced by default factors in Nebula One."
+      ],
+      "limitations_by_coverage": {
+        "foreground_only": [
+          "Only the modelled foreground contributes to this result; it is not a complete product declaration."
+        ],
+        "foreground_with_pinned_background": [
+          "The result includes the modelled foreground and exact linked background paths; other missing upstream activities remain outside this partial result."
+        ]
+      }
+    },
+    "output_schema": {
+      "schema_version": "nebula_one.pcf.product.v1"
+    },
+    "report_mapping": {
+      "headline_metric": "total_footprint",
+      "audit_section": "audit",
+      "data_quality_section": "data_quality"
+    },
+    "test_cases": [
+      "1 kg product with 2 kg fossil CO2 equals 2 kg CO2-Eq",
+      "missing total indicator fails closed",
+      "missing elementary Flow receipt fails closed"
+    ],
+    "provenance": {
+      "owner": "Nebula One open-source reference",
+      "basis": "JRC ILCD 6209b35f-9447-40b5-b68c-a1099e3674a0; installed climate-change GWP100 indicator only; exact runtime assets and missing-factor coverage are frozen in provider receipts",
+      "license": "Apache-2.0",
+      "not_a_regulatory_or_certification_claim": true
+    },
+    "assurance_level": "demonstration",
+    "template_profile": {
+      "id": "steel-bf-bof-inventory",
+      "version": "1.1.4",
+      "content_sha256": "70a62e4442d8fa127d25fce2b19c1110ec6bd82afaa47fa2df6b5ca93caa8829"
+    }
+  }
+}

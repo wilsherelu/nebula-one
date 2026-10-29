@@ -68,7 +68,12 @@ def ensure_open_process_supply_flows(client, document: dict, path: Path) -> dict
                     raise ValueError('exact public Process Flow import failed')
             imported.append(port['flowUuid'])
         resolved=client.resolve_provider_catalog({'flows':[dict(source_namespace='tiangong_open_data',flow_uuid=port['flowUuid'],version=port['flowVersion'])]}).payload['items'][0]
-        if resolved['status']!='resolved' or resolved['value']['content_hash']!=record['content_hash']:
+        if resolved['status']!='resolved':
+            # The engine's own code is the only thing that distinguishes a characterization gap
+            # (no factor for the loaded indicator) from a database row that drifted off the source.
+            raise ValueError(f"engine did not resolve public Process Flow {port['flowUuid']}: "
+                             f"{resolved.get('code') or resolved['status']}")
+        if resolved['value']['content_hash']!=record['content_hash']:
             raise ValueError('public Process Flow differs from its exact source')
         for key,field in [('flow_property_uuid','flowPropertyUuid'),('flow_property_version','flowPropertyVersion'),('unit_group_uuid','unitGroupUuid'),('unit_group_version','unitGroupVersion')]:
             if resolved['value'][key]!=port[field]:

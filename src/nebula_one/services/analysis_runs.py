@@ -818,6 +818,11 @@ class AnalysisRunService:
                 status_code=409,
                 details={"run_id": record.id},
             )
+        user_selection = self._recovered_cbam_user_selection(
+            db, purpose, parameters,
+            application_id=system_model.application_id,
+            system_revision_id=revision.id,
+        )
         derivation = resolve_purpose_derivation(
             db,
             revision=revision,
@@ -832,6 +837,7 @@ class AnalysisRunService:
             project_background_pins=parameters.get("project_background_pins") or [],
             lcia_methods=parameters.get("lcia_methods"),
             pinned_basis=basis,
+            user_selection=user_selection,
         )
         return {
             "graph": derivation.derived.graph,
@@ -856,6 +862,31 @@ class AnalysisRunService:
                 "flow_selection": flow_selection_of(derivation.derived),
             },
         }
+
+    @staticmethod
+    def _recovered_cbam_user_selection(
+        db, purpose, parameters, *, application_id: str, system_revision_id: str
+    ):
+        """Rebuild the CBAM variant overlay an accepted run was derived with, or None.
+
+        The worker must re-derive under the same identity the request was accepted with, otherwise
+        a variant's narrowed basis hash drifts and the frozen answer cannot be reproduced. This uses
+        the same shared execution contract as organization and PCF, and the same one the CBAM
+        read-back uses, so recovery resolves and recompiles the cited immutable version through one
+        entry rather than interpreting its own rules. ``require_ready`` is not re-gated there:
+        readiness was enforced when the run was accepted, and every version is immutable, so
+        recovery reproduces exactly the grouping that was frozen — including its execution-plan
+        hash — rather than following a moved head.
+        """
+        from .method_execution_contract import recover_cbam_user_selection
+
+        return recover_cbam_user_selection(
+            db,
+            application_id=application_id,
+            system_revision_id=system_revision_id,
+            purpose=purpose,
+            parameters=parameters,
+        )
 
     def _context(
         self,

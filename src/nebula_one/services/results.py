@@ -68,6 +68,12 @@ def _semantic_solved_output(output: dict) -> dict:
     receipt = normalized.get("provider_receipt")
     if isinstance(receipt, dict):
         _strip_per_run_identity(receipt)
+        user_method = receipt.get('user_calculation_method')
+        if isinstance(user_method, dict):
+            # Rechecking the exact immutable rules updates administrative metadata,
+            # not the characterized answer. Replays retain the first frozen record.
+            user_method.pop('validated_at', None)
+            user_method.pop('name', None)
     contribution_graph = normalized.get("contribution_graph")
     if isinstance(contribution_graph, dict):
         _strip_per_run_identity(contribution_graph)
@@ -241,6 +247,22 @@ class ResultService:
                 solve_basis['calculation_basis'] = receipt['calculation_basis']
             if receipt.get('analysis_task') is not None:
                 solve_basis['analysis_task'] = receipt['analysis_task']
+            # A cited user calculation method is a One-layer derivation, not an engine matrix
+            # input, so the engine's computational basis is identical whichever grouping is named.
+            # Folding the frozen plan identity in here makes two different methods (or an edited
+            # one) distinct frozen snapshots instead of colliding on the shared computational hash;
+            # a run that names no method keeps its original hash byte-for-byte. The plan, compiler
+            # and content hashes — never the display name — are folded so an exact history version
+            # replays to exactly the snapshot it first produced.
+            user_method = receipt.get('user_calculation_method')
+            if isinstance(user_method, dict) and user_method.get('rules') is not None:
+                solve_basis['calculation_execution'] = {
+                    'method_id': user_method.get('method_id'),
+                    'version': user_method.get('version'),
+                    'content_sha256': user_method.get('content_sha256'),
+                    'execution_plan_sha256': user_method.get('execution_plan_sha256'),
+                    'compiler_version': user_method.get('compiler_version'),
+                }
             solve_hash = canonical_json_sha256(solve_basis)
             output = payload.model_dump(mode="json")
             content_sha256 = canonical_json_sha256(

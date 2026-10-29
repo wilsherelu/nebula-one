@@ -33,6 +33,9 @@ def test_exact_background_labels_restore_names_without_changing_quantities_or_gr
     assert [(l["id"], l["source"], l["target"], l["value"]) for l in old["links"]] == [(l["id"], l["source"], l["target"], l["value"]) for l in new["links"]]
     assert {n["id"] for n in old["nodes"]} == {n["id"] for n in new["nodes"]}
     assert next(n for n in new["nodes"] if n["id"] == "process:b")["label"] == supplier["nodes"][0]["name"]
+    assert next(n for n in new["nodes"] if n["id"] == "process:b")["background"] is True
+    from nebula_one.analysis.solved_mfa import render_sankey_svg
+    assert '背景过程' in render_sankey_svg(new, chinese_labels=True)
     assert next(n for n in old["nodes"] if n.get("flow_uuid") == "co2")["label"] == "Carbon dioxide, fossil"
 
 

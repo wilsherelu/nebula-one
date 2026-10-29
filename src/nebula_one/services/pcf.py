@@ -3,6 +3,7 @@ from __future__ import annotations
 from ..analysis.pcf import build_product_pcf
 from ..analysis.native_product_pcf import build_native_product_pcf
 from ..analysis.pcf_visual import render_product_pcf_svg
+from ..analysis.result_basis import project_result_basis
 from ..database import Database
 from ..errors import DomainError
 from ..models import AnalysisRun, Application
@@ -73,27 +74,35 @@ class ProductCarbonFootprintService:
                 if package.package_kind != "product_carbon_footprint":
                     raise DomainError(code="PCF_METHOD_PACKAGE_KIND_MISMATCH", message="native product method must be a product_carbon_footprint package", status_code=422)
                 _, _, answer, request = NativeClimateArtifactService(self.database)._frozen_answer(snapshot.id)
-                return build_native_product_pcf(
-                    snapshot_id=snapshot.id, snapshot_hash=snapshot.content_sha256,
-                    revision_id=snapshot.system_revision_id, graph_hash=run.model_graph_sha256,
-                    source_parameters=run.parameters, provider_receipt=snapshot.provider_receipt,
-                    request=request, answer=answer, method_ref=payload.method_package_ref,
-                    method_hash=package.content_sha256, manifest=package.manifest,
-                )
-            return build_product_pcf(
-                solved_snapshot_id=snapshot.id,
-                solved_snapshot_sha256=snapshot.content_sha256,
-                lcia_results=snapshot.lcia_results,
-                provider_receipt=snapshot.provider_receipt,
-                source_run_parameters=run.parameters,
-                system_revision_id=snapshot.system_revision_id,
-                model_graph_sha256=run.model_graph_sha256,
-                scaled_elementary_exchanges=snapshot.scaled_elementary_exchanges,
-                method_package_ref=payload.method_package_ref,
-                method_package_sha256=package.content_sha256,
-                method_package_kind=package.package_kind,
-                manifest=package.manifest,
-            )
+                return project_result_basis(
+                    build_native_product_pcf(
+                        snapshot_id=snapshot.id, snapshot_hash=snapshot.content_sha256,
+                        revision_id=snapshot.system_revision_id, graph_hash=run.model_graph_sha256,
+                        source_parameters=run.parameters, provider_receipt=snapshot.provider_receipt,
+                        request=request, answer=answer, method_ref=payload.method_package_ref,
+                        method_hash=package.content_sha256, manifest=package.manifest,
+                    ),
+                    basis=payload.result_basis, base_amount=payload.base_amount,
+                    base_unit=payload.base_unit,
+                    producing_outputs=snapshot.scaled_technosphere_exchanges)
+            return project_result_basis(
+                build_product_pcf(
+                    solved_snapshot_id=snapshot.id,
+                    solved_snapshot_sha256=snapshot.content_sha256,
+                    lcia_results=snapshot.lcia_results,
+                    provider_receipt=snapshot.provider_receipt,
+                    source_run_parameters=run.parameters,
+                    system_revision_id=snapshot.system_revision_id,
+                    model_graph_sha256=run.model_graph_sha256,
+                    scaled_elementary_exchanges=snapshot.scaled_elementary_exchanges,
+                    method_package_ref=payload.method_package_ref,
+                    method_package_sha256=package.content_sha256,
+                    method_package_kind=package.package_kind,
+                    manifest=package.manifest,
+                ),
+                basis=payload.result_basis, base_amount=payload.base_amount,
+                base_unit=payload.base_unit,
+                producing_outputs=snapshot.scaled_technosphere_exchanges)
 
     def export_xlsx(
         self, solved_snapshot_id: str, payload: ProductCarbonFootprintCreate

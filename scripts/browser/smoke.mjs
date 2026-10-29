@@ -1,0 +1,20 @@
+import { launchChrome, Cdp, sleep } from './cdp.mjs';
+
+const port = Number(process.argv[2] ?? 9333);
+const url = process.argv[3] ?? 'http://127.0.0.1:18954/templates';
+const launched = await launchChrome({ port });
+console.log('binary', launched.binary);
+const cdp = new Cdp(launched.wsUrl);
+await cdp.ready;
+await cdp.newTab();
+await cdp.setViewport({ width: 1280, height: 800 });
+const href = await cdp.navigate(url);
+console.log('href', href);
+const shot = await cdp.screenshot('.local-evidence/u6-smoke.png');
+console.log('screenshot', JSON.stringify(shot));
+const text = await cdp.evaluate(`document.body.innerText.slice(0, 400)`);
+console.log('text', JSON.stringify(text));
+console.log('consoleErrors', JSON.stringify(cdp.consoleErrors().slice(0, 5)));
+cdp.close();
+await sleep(200);
+launched.child.kill();

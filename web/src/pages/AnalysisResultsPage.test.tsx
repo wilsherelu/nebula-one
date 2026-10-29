@@ -248,8 +248,8 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     expect(screen.queryByRole('combobox', { name: '核算方法包' })).not.toBeInTheDocument();
     expect(screen.getByText('Bound LCIA method')).toBeInTheDocument();
     expect(screen.getByText('边界范围结果')).toBeInTheDocument();
-    expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@2.0.0');
-    expect(api.productCarbonFootprintChart).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@2.0.0');
+    expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@2.0.0', { result_basis: 'total' });
+    expect(api.productCarbonFootprintChart).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@2.0.0', { result_basis: 'total' });
     await userEvent.click(screen.getByRole('button', { name: '更多' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: '详情' }));
     expect(await screen.findByRole('img', { name: '产品碳足迹气候变化分项图' })).toHaveAttribute('src', 'blob:pcf-chart');
@@ -319,14 +319,14 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
     const { unmount } = renderResults(<QueryClientProvider client={client}><MemoryRouter initialEntries={[entry]}><Routes><Route path="/applications/:applicationId/results" element={<AnalysisResultsPage />} /></Routes></MemoryRouter></QueryClientProvider>);
 
     expect(await screen.findByText('Bound LCIA pcf.bound@3.0.0')).toBeInTheDocument();
-    expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@3.0.0');
+    expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@3.0.0', { result_basis: 'total' });
     expect(client.getQueryData(['product-carbon-footprint', 'snapshot-1', 'pcf.bound@2.0.0'])).toBeUndefined();
 
     unmount();
     vi.mocked(api.productCarbonFootprint).mockClear();
     renderResults(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter initialEntries={[entry]}><Routes><Route path="/applications/:applicationId/results" element={<AnalysisResultsPage />} /></Routes></MemoryRouter></QueryClientProvider>);
     expect(await screen.findByText('Bound LCIA pcf.bound@3.0.0')).toBeInTheDocument();
-    expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@3.0.0');
+    expect(api.productCarbonFootprint).toHaveBeenCalledWith('snapshot-1', 'pcf.bound@3.0.0', { result_basis: 'total' });
   });
 
   it('shows period carbon results without inventing Scope attribution', async () => {
@@ -618,10 +618,10 @@ const processMetric = (await screen.findByText('边界输入')).closest('article
         package_kind: 'product_carbon_footprint', jurisdiction: null, valid_from: null, valid_to: null,
         manifest: { formula_graph: { lcia_method: 'EF v3.1', total_indicator_key: 'climate change' } },
         content_sha256: 'a'.repeat(64), status: 'active', created_at: snapshot.created_at }]);
-    await waitFor(() => expect(pcf).toHaveBeenCalledWith('snapshot-supplied-pcf', reference));
+    await waitFor(() => expect(pcf).toHaveBeenCalledWith('snapshot-supplied-pcf', reference, { result_basis: 'total' }));
     expect(screen.queryByText('该任务尚无匹配当前数据版本的计算结果。')).not.toBeInTheDocument();
     expect(api.pcfDefaultMethod).toHaveBeenCalledWith('snapshot-supplied-pcf');
-    expect(pcf).toHaveBeenCalledWith('snapshot-supplied-pcf', reference);
+    expect(pcf).toHaveBeenCalledWith('snapshot-supplied-pcf', reference, { result_basis: 'total' });
   });
 
   it('explains the missing electricity association for a solved organization deep link', async () => {

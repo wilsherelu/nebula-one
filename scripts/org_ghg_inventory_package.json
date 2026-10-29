@@ -1,0 +1,65 @@
+{
+  "package_id": "ghg.iron-steel.organization-ghg-inventory.v1",
+  "version": "1.0.1",
+  "package_kind": "organization_ghg_inventory",
+  "jurisdiction": null,
+  "valid_from": "2026-01-01",
+  "manifest": {
+    "required_entity_types": ["process", "elementary_flow"],
+    "required_data_fields": ["exchange_id", "flow_uuid", "version", "contribution_value"],
+    "accepted_units": ["kg CO2-Eq"],
+    "boundary_schema": {
+      "claim_scope": "organizational_boundary",
+      "consolidation": "operational_control"
+    },
+    "formula_graph": {
+      "lcia_method": "EF3.1 climate change",
+      "total_indicator_key": "climate change|climate change - radiative forcing as global warming potential (gwp100)",
+      "result_unit": "kg CO2-Eq"
+    },
+    "classification_rules": {
+      "role_mappings": [
+        {
+          "role_pattern": "steel.own.production*",
+          "scope": "scope_1",
+          "category": "own_production"
+        }
+      ],
+      "required_scopes": ["scope_1"],
+      "note": "Scope is the user's declared grouping carried in each bound snapshot's frozen user calculation method; this package maps a binding role to a reporting category, it does not decide numbers or emit a GHG-Protocol statement. This demonstration package declares only scope_1 because the reviewed public foreground data yields onsite (scope_1) contributions only; a package may declare scope_2/scope_3 once background/offsite contributions are attributed, and any declared scope must actually be populated."
+    },
+    "default_value_rules": {
+      "counted_from": "user_method_grouping",
+      "fallback": "engine_total_footprint",
+      "unattributed_and_engine_gap_counted": false
+    },
+    "validation_rules": {
+      "bindings_exactly_pinned": true,
+      "one_period_boundary_method_unit_release": true,
+      "distinct_snapshot_per_binding": true,
+      "limitations": [
+        "The organization inventory reports the user's declared Scope grouping of engine contributions; it is not a regulatory filing value.",
+        "Foreground-only coverage means background supply-chain emissions are not yet attributed and are reported as gaps, never zeroed."
+      ]
+    },
+    "output_schema": {
+      "schema_version": "nebula_one.organization-ghg-inventory.v1"
+    },
+    "report_mapping": {
+      "scopes": ["scope_1", "scope_2", "scope_3"],
+      "total": "sum_of_scope_totals"
+    },
+    "test_cases": [
+      {
+        "name": "include_exclude_changes_org_counted",
+        "expect": "counted_total_drops_by_excluded_path"
+      }
+    ],
+    "provenance": {
+      "author": "nebula-one",
+      "license": "Apache-2.0",
+      "derivation": "hand-authored application reporting method; no third-party factor or regulatory mapping is embedded"
+    },
+    "assurance_level": "none"
+  }
+}

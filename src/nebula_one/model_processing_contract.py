@@ -208,6 +208,11 @@ class ModelContent(_Frozen):
     reviewed_returned_graph: dict[str, Any] | None = None
     reviewed_returned_selector: dict[str, Any] | None = None
     reviewed_source_method_package: PackageRef | None = None
+    # How this package may be chosen. `automatic` packages take part in the template auto-resolver;
+    # `explicit_only` packages never do, so publishing one for a variant cannot change what an
+    # unpinned official calculation resolves to - it is reachable only by exact reference or when a
+    # user variant explicitly binds it. Old packages omit the field and keep their content hash.
+    selection_mode: Literal["automatic", "explicit_only"] = "automatic"
 
     @model_validator(mode="after")
     def require_review_pair(self) -> "ModelContent":
@@ -276,6 +281,7 @@ class ModelProcessingRules:
         self.version = str(payload.get("version") or "").strip()
         self.content_sha256 = str(stated)
         self.applicable_template = validated.applicable_template
+        self.selection_mode = validated.selection_mode
         self._purposes = validated.purposes
         self.reviewed_returned_graph = validated.reviewed_returned_graph
         self.reviewed_returned_selector = validated.reviewed_returned_selector
@@ -385,6 +391,9 @@ def load_model_processing_rules_for_template(
     reinterpret its model under a later review. Selection therefore filters on the full
     id/version/content hash and accepts only a single match; it never resolves several candidates by
     version number, because that is exactly the silent reinterpretation a pin exists to prevent.
+    `explicit_only` packages are not candidates here at all: they are reachable only by exact
+    reference or when a user variant binds them, so a variant's rule package can never change what an
+    unpinned official calculation resolves to, and can never untie a real automatic ambiguity.
     """
     wanted = _as_template_ref(template)
     directories = search_paths if search_paths is not None else _candidate_directories()
@@ -395,6 +404,8 @@ def load_model_processing_rules_for_template(
         if not isinstance(payload, dict):
             continue
         rules = ModelProcessingRules(payload, str(path.name))
+        if rules.selection_mode == "explicit_only":
+            continue
         if rules.applicable_template.id != wanted.id:
             continue
         declared.append(rules)
@@ -461,9 +472,18 @@ def load_model_processing_rules_for_template(
 
 def list_model_processing_rules_for_template(
     template: TemplateRef | Mapping[str, Any], *, graph_identity_sha256: str,
+    graph: dict[str, Any] | None = None,
     search_paths: list[Path] | None = None,
 ) -> list[ModelProcessingRules]:
-    """List exact reviewed choices so a new revision can bind one explicitly."""
+    """List exact reviewed choices so a new revision or a user variant can bind one explicitly.
+
+    This is the explicit-selection surface, so it offers every applicable package regardless of
+    selection strategy - including `explicit_only` ones, which the automatic resolver hides.
+    Applicability is enforced with the same deterministic predicate the auto-resolver uses: a
+    returned-graph package must match this graph identity, and a returned-selector package must
+    actually select against the supplied graph. A selector package is therefore never offered merely
+    because a graph hash was passed without the graph to verify it against.
+    """
     wanted = _as_template_ref(template)
     directories = search_paths if search_paths is not None else _candidate_directories()
     matches = []
@@ -472,11 +492,21 @@ def list_model_processing_rules_for_template(
         if not isinstance(payload, dict):
             continue
         rules = ModelProcessingRules(payload, str(path.name))
-        if (rules.applicable_template == wanted and
-                (rules.reviewed_returned_graph is None or
-                 rules.reviewed_returned_graph["accepted_graph_identity_sha256"] == graph_identity_sha256) and
-                (rules.reviewed_returned_selector is None or graph_identity_sha256 is not None)):
-            matches.append(rules)
+        if rules.applicable_template != wanted:
+            continue
+        if (rules.reviewed_returned_graph is not None and
+                rules.reviewed_returned_graph["accepted_graph_identity_sha256"] != graph_identity_sha256):
+            continue
+        if rules.reviewed_returned_selector is not None:
+            selector = rules.reviewed_returned_selector
+            selects = graph is not None and (
+                any(selector_matches(selector["identity"], node, port)
+                    for node in graph.get("nodes", []) for port in node.get("outputs", []))
+                or any(node.get("process_uuid") not in selector["in_boundary_process_uuids"]
+                       for node in graph.get("nodes", [])))
+            if not selects:
+                continue
+        matches.append(rules)
     return matches
 
 

@@ -11,6 +11,9 @@ class SpaStaticFiles(StaticFiles):
     """Serve built assets and fall back to index.html for client-side routes."""
 
     async def get_response(self, path: str, scope) -> Response:
+        route_path = path.replace("\\", "/").lstrip("/")
+        if route_path == "api" or route_path.startswith("api/"):
+            raise HTTPException(status_code=404)
         index = Path(self.directory) / "index.html"
         if path in {"", ".", "index.html"} and scope.get("method") in {"GET", "HEAD"}:
             return FileResponse(index, headers={"Cache-Control": "no-store"})

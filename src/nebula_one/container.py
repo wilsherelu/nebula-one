@@ -16,6 +16,8 @@ from .services.system_bindings import SystemBindingService
 from .services.system_revisions import SystemRevisionService
 from .services.inventory import InventoryService
 from .services.registry import RegistryService
+from .services.calculation_methods import CalculationMethodService
+from .services.tag_grouping import TagGroupingService
 from .services.results import ResultService
 from .services.energy_carrier import EnergyCarrierResultService
 from .services.energy_flow import EnergyFlowService
@@ -68,6 +70,8 @@ class Container:
     system_revisions: SystemRevisionService
     analysis_runs: AnalysisRunService
     registry: RegistryService
+    calculation_methods: CalculationMethodService
+    tag_grouping: TagGroupingService
     inventory: InventoryService
     scenarios: ScenarioService
     results: ResultService
@@ -171,6 +175,8 @@ def build_container(
     system_models = SystemModelService(database, client)
     applications = ApplicationService(database, profiles)
     registry = RegistryService(database)
+    calculation_methods = CalculationMethodService(database)
+    tag_grouping = TagGroupingService(database)
     seed_installation = SeedInstallationService(database, client, system_models)
     container = Container(
         settings=settings,
@@ -186,6 +192,8 @@ def build_container(
         system_revisions=system_revisions,
         analysis_runs=analysis_runs,
         registry=registry,
+        calculation_methods=calculation_methods,
+        tag_grouping=tag_grouping,
         inventory=InventoryService(database),
         scenarios=ScenarioService(database),
         results=results,

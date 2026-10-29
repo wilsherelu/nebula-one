@@ -286,6 +286,23 @@ class SeedProjectService:
                 pins[new_ref] = digest
                 registrations.append((package, digest))
             context['method_package_refs'] = [replacements.get(ref, ref) for ref in refs]
+        from .template_method_libraries import load_template_method_library
+        structural_profile = {'id': profile[0]['id'], 'version': profile[0]['version'],
+                              'content_sha256': profile[1]} if profile else None
+        library = load_template_method_library(structural_profile)
+        if library:
+            library_identity, library_packages = library
+            declared_refs = list(context.get('method_package_refs') or [])
+            for package, digest in library_packages:
+                reference = f'{package.package_id}@{package.version}'
+                existing_pin = pins.get(reference)
+                if existing_pin is not None and existing_pin != digest:
+                    fail('TEMPLATE_METHOD_LIBRARY_PIN_MISMATCH', '核算方案集的方法与已绑定版本不一致。')
+                pins[reference] = digest
+                if reference not in declared_refs:
+                    declared_refs.append(reference)
+                    registrations.append((package, digest))
+            context['method_package_refs'] = declared_refs
         capabilities = ['mfa.solved.v1']
         for p in packages:
             if f'{p.package_id}@{p.version}' not in refs:
@@ -294,6 +311,11 @@ class SeedProjectService:
                 capabilities.append('pcf.product.v1')
             if p.package_kind == 'cbam_trial':
                 capabilities.append('cbam.trial.v2')
+        if library:
+            from .official_product_method import METHOD_CAPABILITIES
+            capabilities.extend(METHOD_CAPABILITIES[p.package_kind] for p, _ in library_packages
+                                if p.package_kind in METHOD_CAPABILITIES)
+            capabilities = list(dict.fromkeys(capabilities))
         content = {'seed_id': row.seed_id, 'seed_version': row.seed_version,
             'bundle_content_sha256': row.bundle_content_sha256, 'graph_sha256': model.graph_sha256,
             'boundary_pins': {b.id: b.content_sha256 for b in db.scalars(select(BoundaryDefinition).where(
@@ -301,6 +323,8 @@ class SeedProjectService:
             'method_pins': pins, 'source_context': context, 'capabilities': capabilities,
             'method_replacements': replacements,
             'profile': {'id': profile[0]['id'], 'version': profile[0]['version'], 'content_sha256': profile[1]} if profile else None}
+        if library:
+            content['accounting_library'] = library_identity
         upgrade = profile[0].get('identity_revision') if profile else None
         if profile:
             for key in ('inventory_derivation', 'boundary_revision'):
@@ -325,7 +349,8 @@ class SeedProjectService:
             content['identity_revision'] = deepcopy(upgrade)
             content['derived_graph_sha256'] = canonical_json_sha256(derived_graph)
         editor_pin = (row.stage_receipts or {}).get('editor_source') or {}
-        editor_current = not content.get('inventory_derivation') or editor_pin.get('template_profile') == content.get('profile')
+        editor_current = ((not content.get('inventory_derivation') or editor_pin.get('template_profile') == content.get('profile'))
+                          and editor_pin.get('accounting_library') == content.get('accounting_library'))
         editor_model = db.get(SystemModel, editor_pin.get('system_model_id')) if editor_pin else None
         editor_revision = db.get(SystemRevision, editor_pin.get('revision_id')) if editor_pin else None
         if editor_pin and (not editor_model or not editor_revision or
@@ -346,6 +371,9 @@ class SeedProjectService:
             'source_revision_id': editor_revision.id if editor_revision else (model.upstream_receipt or {}).get('base_revision_id'),
             'process_count': len(model.graph_snapshot.get('nodes', [])),
             'field_count': len(inventory_fields(model.graph_snapshot)), 'capabilities': capabilities}
+        if library:
+            item['version'] = library_identity['version']
+            item['accounting_library'] = deepcopy(library_identity)
         release_catalog = getattr(self.c, 'release_catalog', None)
         if release_catalog and release_catalog.seed_title(row):
             item['title'] = release_catalog.seed_title(row)
@@ -364,7 +392,8 @@ class SeedProjectService:
                 return 'replayed', {'installation_id': row.id, 'system_model_id': source.id}
             if ((row.stage_receipts or {}).get('editor_source') and
                     (not definition.get('inventory_derivation') or
-                     row.stage_receipts['editor_source'].get('template_profile') == definition.get('profile'))):
+                     row.stage_receipts['editor_source'].get('template_profile') == definition.get('profile')) and
+                    row.stage_receipts['editor_source'].get('accounting_library') == definition.get('accounting_library')):
                 editor = (row.stage_receipts or {})['editor_source']
                 exact = self.c.client.get_provider_model_snapshot(editor['engine_project_id'], editor['engine_version']).payload
                 model = db.get(SystemModel, editor['system_model_id'])
@@ -375,6 +404,8 @@ class SeedProjectService:
                 return 'replayed', deepcopy(editor)
             project_id = source.upstream_project_id
             project_key = uuid5(NAMESPACE_URL, f'nebula-one:template-editor:{row.seed_id}:{row.seed_version}:{definition["profile"]["content_sha256"]}')
+            if definition.get('accounting_library'):
+                project_key = uuid5(project_key, definition['accounting_library']['content_sha256'])
         created = self.create(installation_id, SeedProjectCreate(
             name=f'{item["title"]} · 建模源', project_key=project_key,
             expected_template_sha256=item['template_sha256']), resource_purpose=MODELING_SOURCE)
@@ -403,6 +434,8 @@ class SeedProjectService:
                        'revision_content_sha256': revision.content_sha256,
                        'engine_project_id': project_id, 'engine_version': exact['version'],
                        'engine_graph_hash': exact['graph_hash'], 'template_profile': definition.get('profile')}
+            if definition.get('accounting_library'):
+                receipt['accounting_library'] = deepcopy(definition['accounting_library'])
             model.upstream_version = exact['version']
             model.graph_snapshot = deepcopy(exact['graph'])
             model.graph_sha256 = canonical_graph_sha256(exact['graph'])

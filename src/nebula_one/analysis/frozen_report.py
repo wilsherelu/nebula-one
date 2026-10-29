@@ -71,13 +71,22 @@ def cbam_report(result, graph, workspace):
 
 
 def organization_report(result, snapshot, graph, workspace):
+    if result.get('user_method_grouping'):
+        from .frozen_organization_user import organization_user_report
+        return organization_user_report(result, snapshot, graph, workspace)
     processes, exchanges = names(graph, workspace)
     source = result.get("climate_source") or {}
     groups = result["groups"]
     scale = result["activity_basis"]["scale_factor"]
     controlled = {node.get("process_uuid") for node in graph.get("nodes", [])
                   if node["id"] in result["organizational_boundary"]["controlled_process_ids"]}
-    energy = {row["process_uuid"] for row in source.get("energy_suppliers", source.get("suppliers", []))}
+    # A collapsed network supplier keeps only the boundary process on its top-level row, but its
+    # engine receipt emits one term per emitting node. Include every node process so each term
+    # classifies into the purchased-energy group and the detail sum reconciles to the group total.
+    energy = set()
+    for supplier in source.get("energy_suppliers", source.get("suppliers", [])):
+        energy.add(supplier["process_uuid"])
+        energy.update(node["process_uuid"] for node in supplier.get("network_nodes", []))
     other = {row["process_uuid"] for row in source.get("category_suppliers", [])}
     receipts = (snapshot.get("lcia_results") or {}).get("indicator_contribution_receipts") or []
     receipt = next((r for r in receipts if r.get("canonical_indicator_key") == source.get("indicator_key")), None)
@@ -93,6 +102,13 @@ def organization_report(result, snapshot, graph, workspace):
             contribution_value=value * scale if value is not None else None,
             contribution_unit=term.get("contribution_unit"), status="method_has_no_cf" if no_cf else "unassigned" if group == "unassigned" else "explicit_zero_cf" if term.get("cf_presence") == "explicit_zero" else "counted",
             basis=None, identity=term))
+    for gap in unsupported.values():
+        if any(row["exchange_id"] == gap["exchange_id"] for row in rows):
+            continue
+        rows.append(detail_row(processes, exchanges, gap["exchange_id"], gap["process_uuid"],
+            group="unassigned", quantity=gap.get("amount"), quantity_unit=gap.get("amount_unit"),
+            contribution_value=None, contribution_unit=source.get("unit"),
+            status="method_has_no_cf", basis=None, identity=gap))
     for category in groups["other_value_chain"]["categories"]:
         for activity in category.get("activities", []) + category.get("proxy_activities", []):
             field = next((f for f in workspace.get("fields", []) if f["key"] == activity["consumer_exchange_id"]), {})

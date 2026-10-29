@@ -281,6 +281,9 @@ class SystemRevisionService:
                 db.add(batch)
                 db.flush()
                 db.add_all(operations)
+                if template_input and application is not None:
+                    from .template_calculation_methods import inherit_input_tag_schemes
+                    inherit_input_tag_schemes(db, application, parent, revision)
                 db.commit()
             except IntegrityError as exc:
                 db.rollback()

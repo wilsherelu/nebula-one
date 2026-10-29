@@ -147,6 +147,28 @@ class RegistryService:
             db.refresh(record)
             return record
 
+    def bind_method_package(self, application_id: str, reference: str) -> list[str]:
+        """Append a registered versioned method package to an application's bound package set.
+
+        This is the init adapter for method packages the seed does not already bind: the package must
+        already be registered and its content unchanged, and the reference is stored exactly as
+        ``package_id@version``. It never fabricates or edits package bytes and never relaxes the
+        downstream binding chain checks.
+        """
+        from copy import deepcopy
+
+        with self.database.session() as db:
+            application = require_application(db, application_id)
+            require_method_package(db, reference)
+            context = deepcopy(application.context) if application.context else {}
+            refs = list(context.get("method_package_refs") or [])
+            if reference not in refs:
+                refs.append(reference)
+                context["method_package_refs"] = refs
+                application.context = context
+                db.commit()
+            return refs
+
     def list_method_packages(self) -> list[MethodPackage]:
         with self.database.session() as db:
             return list(
@@ -156,7 +178,6 @@ class RegistryService:
                     )
                 )
             )
-
     def find_method_package(self, package_id: str, version: str) -> MethodPackage | None:
         with self.database.session() as db:
             return db.scalar(

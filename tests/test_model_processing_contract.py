@@ -40,7 +40,7 @@ def _republish(payload: dict) -> dict:
 def test_bundled_steel_package_verifies_its_own_content_hash():
     rules = load_bundled_model_processing_rules(BUNDLED)
     assert rules.package_id == "steel-bf-bof.model-processing"
-    assert rules.version == "1.0.1"
+    assert rules.version == "1.0.5"
     assert rules.applicable_template.id == TEMPLATE_ID
     assert rules.purposes == ("cbam", "lca")
     assert rules.reference()["content_sha256"] == rules.content_sha256
@@ -221,8 +221,8 @@ def test_template_lookup_requires_exactly_one_package(tmp_path):
         load_model_processing_rules_for_template(_identity(), search_paths=[tmp_path])
     assert ambiguous.value.code == "MODEL_PROCESSING_PACKAGE_AMBIGUOUS"
     assert sorted(ambiguous.value.details["packages"]) == [
-        "second-steel.model-processing@1.0.1",
-        "steel-bf-bof.model-processing@1.0.1",
+        "second-steel.model-processing@1.0.5",
+        "steel-bf-bof.model-processing@1.0.5",
     ]
 
 
@@ -244,18 +244,18 @@ def test_a_newer_version_over_the_same_template_identity_does_not_break_the_tie(
     assert ambiguous.value.code == "MODEL_PROCESSING_PACKAGE_AMBIGUOUS"
     assert sorted(ambiguous.value.details["packages"]) == [
         "second-steel.model-processing@9.9.9",
-        "steel-bf-bof.model-processing@1.0.1",
+        "steel-bf-bof.model-processing@1.0.5",
     ]
 
 
 def test_a_project_from_an_older_template_revision_gets_the_rules_reviewed_for_it():
     """The newest package is not the answer: each template revision gets its own reviewed rules."""
     superseded, current = _identity(SUPERSEDED), _identity(BUNDLED)
-    assert (superseded["version"], current["version"]) == ("1.1.1", "1.1.2")
+    assert (superseded["version"], current["version"]) == ("1.1.1", "1.1.3")
 
     old_project = load_model_processing_rules_for_template(superseded)
     new_project = load_model_processing_rules_for_template(current)
-    assert (old_project.version, new_project.version) == ("1.0.0", "1.0.1")
+    assert (old_project.version, new_project.version) == ("1.0.0", "1.0.5")
     assert old_project.applicable_template.model_dump() == superseded
     assert new_project.applicable_template.model_dump() == current
     # Both revisions stay computable, and each still declares the same two purposes.
@@ -267,13 +267,19 @@ def test_a_template_content_no_package_was_reviewed_against_reports_every_bindin
         load_model_processing_rules_for_template({**_identity(), "content_sha256": "f" * 64})
     assert mismatch.value.code == "MODEL_PROCESSING_TEMPLATE_MISMATCH"
     assert mismatch.value.status_code == 409
+    # No package reviewed the forged content, so the report binds against the newest declared
+    # package (the SUT's documented tie-break); here that is 1.0.11 at template revision 1.1.4.
+    newest = _payload("steel-bf-bof-model-processing-1.0.11.json")["content"]["applicable_template"]
     assert mismatch.value.details["mismatches"] == {
-        "content_sha256": {"template": "f" * 64, "rules": _identity()["content_sha256"]}
+        "version": {"template": _identity()["version"], "rules": newest["version"]},
+        "content_sha256": {"template": "f" * 64, "rules": newest["content_sha256"]},
     }
     assert [(item["version"], item["template"]["version"])
             for item in mismatch.value.details["reviewed_by"]] == [
             ("1.0.0", "1.1.1"), ("1.0.1", "1.1.2"), ("1.0.2", "1.1.2"),
-            ("1.0.3", "1.1.2"), ("1.0.4", "1.1.2")]
+            ("1.0.3", "1.1.2"), ("1.0.4", "1.1.2"), ("1.0.5", "1.1.3"),
+            ("1.0.6", "1.1.3"), ("1.0.7", "1.1.3"), ("1.0.8", "1.1.3"),
+            ("1.0.9", "1.1.4"), ("1.0.10", "1.1.4"), ("1.0.11", "1.1.4")]
 
 
 def test_a_lookup_without_the_full_template_identity_is_refused(tmp_path):
@@ -290,7 +296,7 @@ def test_a_superseded_rule_version_stays_replayable_by_its_exact_identity():
     was derived with, so the superseded package stays on disk and loads on its own identity."""
     archived = _payload(SUPERSEDED)
     current = load_model_processing_rules_for_template(_identity())
-    assert current.version == "1.0.1" and current.package_id == "steel-bf-bof.model-processing"
+    assert current.version == "1.0.5" and current.package_id == "steel-bf-bof.model-processing"
 
     old = load_model_processing_rules_by_reference(
         archived["package_id"], archived["version"], archived["content_sha256"])
@@ -315,9 +321,9 @@ def test_secondary_co2_review_selects_only_its_exact_returned_graph():
     assert selected.reviewed_returned_graph["boundary_rule"]["exchange_id"] == (
         "secondary-metallurgy-and-degassing::output_da4f27")
     assert load_model_processing_rules_for_template(
-        _identity(), graph_identity_sha256=source_pin).version == "1.0.1"
+        _identity(), graph_identity_sha256=source_pin).version == "1.0.5"
     assert load_model_processing_rules_for_template(
-        _identity(), graph_identity_sha256="0" * 64).version == "1.0.1"
+        _identity(), graph_identity_sha256="0" * 64).version == "1.0.5"
 
 
 def test_unreadable_package_reports_its_path(tmp_path):
