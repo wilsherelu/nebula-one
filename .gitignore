@@ -55,6 +55,13 @@ local-databases/
 local-imports/
 import-cache/
 /.local-evidence/
+# Handoff notes stay local. Existing tracked history is retained.
+/docs/local-handoff/
+/CURRENT_HANDOFF.md
+/HANDOFF*.md
+/docs/HANDOFF*.md
+/docs/*HANDBACK*.md
+/docs/*交接*.md
 /evidence/
 /review/
 /deploy/local-test.env
